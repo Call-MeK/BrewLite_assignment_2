@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "test": "node -r ts-node/register --test test/*.test.cjs",
+    "test": "node -r ts-node/register --test --test-concurrency=1 test/*.test.cjs",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",

@@ -60,17 +60,22 @@ async function order(pointsToUse = 0) {
   return row;
 }
 async function pay(id) {
-  await prisma.$transaction(async (tx) => {
-    const row = await tx.order.findUniqueOrThrow({ where: { id } });
-    await tx.payment.create({
-      data: {
-        orderId: id, idempotencyKey: randomUUID(), requestHash: 'integration-test',
-        amount: row.finalAmount, method: 'E_WALLET', status: 'SUCCESS',
-        source: 'ZALOPAY_SANDBOX', transactionRef: `ZLP_TEST_${randomUUID()}`,
-      },
+  try {
+    await prisma.$transaction(async (tx) => {
+      const row = await tx.order.findUniqueOrThrow({ where: { id } });
+      await tx.payment.create({
+        data: {
+          orderId: id, idempotencyKey: randomUUID(), requestHash: 'integration-test',
+          amount: row.finalAmount, method: 'E_WALLET', status: 'SUCCESS',
+          source: 'ZALOPAY_SANDBOX', transactionRef: `ZLP_TEST_${randomUUID()}`,
+        },
+      });
+      await service.transition(id, 'PAID', tx, owner, 'ZaloPay sandbox test payment');
     });
-    await service.transition(id, 'PAID', tx, owner, 'ZaloPay sandbox test payment');
-  });
+  } catch (error) {
+    // A concurrent cancellation may win the race; surface its HTTP status instead of throwing.
+    return { code: error?.status ?? 500 };
+  }
   return { code: 201 };
 }
 
