@@ -17,7 +17,7 @@ services:
       retries: 5
 
   backend:
-    build: ./backend
+    build: ./apps/api
     restart: unless-stopped
     environment:
       PORT: 4000
@@ -42,7 +42,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./apps/web
       args:
         NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
     restart: unless-stopped

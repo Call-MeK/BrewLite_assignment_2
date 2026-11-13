@@ -4,5 +4,5 @@ if not errorlevel 1 (
   echo BrewLite backend is already running at http://localhost:4000.
   exit /b 0
 )
-cd /d "%~dp0backend"
+cd /d "%~dp0apps\api"
 call npm.cmd run start:dev

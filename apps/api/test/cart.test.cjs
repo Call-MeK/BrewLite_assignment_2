@@ -29,7 +29,7 @@ before(async () => {
   other = await prisma.user.create({ data: { email: `${marker}-other@example.test`, passwordHash: 'test' } });
   ingredient = await prisma.ingredient.create({ data: { name: marker, nameKey: marker, unit: 'G', stock: 10 } });
   product = await prisma.product.create({
-    data: { name: `Cart test ${marker}`, basePrice: 10000, stock: 0, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId: ingredient.id, quantity: 1 } } } } },
+    data: { name: `Cart test ${marker}`, basePrice: 10000, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId: ingredient.id, quantity: 1 } } } } },
   });
   app = await NestFactory.create(CartTestModule, { logger: false });
   app.setGlobalPrefix('api/v1');

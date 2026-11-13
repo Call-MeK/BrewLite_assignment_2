@@ -12,7 +12,7 @@ test('cancelling restores the quantity reserved before a recipe change', async (
   try {
     await prisma.user.create({ data: { id, email: `${id}@example.test`, passwordHash: 'test' } });
     await prisma.ingredient.create({ data: { id, name: id, nameKey: id, unit: 'G', stock: 100 } });
-    await prisma.product.create({ data: { id, name: id, basePrice: 100, stock: 10, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId: id, quantity: 2.5 } } } } } });
+    await prisma.product.create({ data: { id, name: id, basePrice: 100, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId: id, quantity: 2.5 } } } } } });
     const service = new OrdersService(prisma);
     order = await service.create(id, { items: [{ productId: id, size: 'M', quantity: 2 }] });
     assert.equal((await prisma.ingredient.findUnique({ where: { id } })).stock, 95);

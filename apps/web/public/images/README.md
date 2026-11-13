@@ -7,7 +7,7 @@ Thư mục này chỉ chứa **ảnh chụp thật** (ảnh sản phẩm, ảnh 
 ## Cấu trúc
 
 ```
-frontend/public/images/
+apps/web/public/images/
 ├── menu/                 Ảnh từng món, dùng trong thẻ sản phẩm
 │   ├── americano.jpg
 │   ├── bac-xiu.jpg
@@ -46,15 +46,15 @@ frontend/public/images/
 ## Cách thêm ảnh mới
 
 1. Chụp hoặc tải ảnh thật, đặt tên theo slug sản phẩm.
-2. Copy vào `frontend/public/images/menu/`.
-3. Mở `frontend/src/lib/local-product-images.ts` và thêm một dòng:
+2. Copy vào `apps/web/public/images/menu/`.
+3. Mở `apps/web/src/lib/local-product-images.ts` và thêm một dòng:
 
    ```ts
    'ten-san-pham-moi': '/images/menu/ten-san-pham-moi.jpg',
    ```
 
    Nếu tên file trùng slug sản phẩm thì chỉ cần thêm dòng này một lần.
-4. Chạy `npm run build` trong `frontend/` để kiểm tra.
+4. Chạy `npm run build` trong `apps/web/` để kiểm tra.
 
 Ảnh trong `public/` được phục vụ tại đường dẫn `/images/...`, không cần import.
 

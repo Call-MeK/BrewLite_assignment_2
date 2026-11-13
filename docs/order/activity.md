@@ -5,7 +5,7 @@
 
 ## 1. Sơ đồ
 
-> Sơ đồ PlantUML chuẩn được đặt tại: [`activity-order.puml`](./activity-order.puml)
+> Sơ đồ PlantUML chuẩn được đặt tại: [`activity-order.puml`](../diagrams/activity-order.puml)
 
 ```mermaid
 flowchart TD

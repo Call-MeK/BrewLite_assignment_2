@@ -112,8 +112,8 @@
 
 ### Tài liệu liên quan
 
-- `activity-order.puml` (Sơ đồ Activity PlantUML)
-- `usecase-order.puml` (Sơ đồ Use Case PlantUML)
+- `../diagrams/activity-order.puml` (Sơ đồ Activity PlantUML)
+- `../diagrams/usecase-order.puml` (Sơ đồ Use Case PlantUML)
 - `activity.md` (Đặc tả Activity flow)
 - `state-machine.md` (Đặc tả Order State Machine)
 - `api-contract.md` (Hợp đồng API)

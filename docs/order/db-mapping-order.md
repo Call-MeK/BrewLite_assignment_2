@@ -3,7 +3,7 @@
 > **Feature:** Order (Quản lý và tạo đơn hàng)  
 > **Tác giả:** Vo Thi Thuy  
 > **Phiên bản:** v1.0 (Kiến trúc Tuần 1)  
-> **Mục tiêu:** Ánh xạ chi tiết từ API Request / Business Logic sang các bảng vật lý PostgreSQL và Prisma Models trong `backend/prisma/schema.prisma`.
+> **Mục tiêu:** Ánh xạ chi tiết từ API Request / Business Logic sang các bảng vật lý PostgreSQL và Prisma Models trong `apps/api/prisma/schema.prisma`.
 
 ---
 

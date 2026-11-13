@@ -7,9 +7,9 @@ Tài liệu thiết kế cấu trúc mã nguồn chi tiết cho phân hệ Giỏ
 ## 1. Frontend Skeleton (Next.js 15 App Router & Zustand)
 
 ### 1.1. Store quản lý trạng thái giỏ hàng (Zustand + Persist)
-`frontend/src/store/useCartStore.ts`
+`apps/web/src/store/useCartStore.ts`
 
-> **Bản đang chạy:** `frontend/src/store/useCartStore.ts` — cùng mô hình trên nhưng thao tác theo vị trí dòng trong giỏ (`addItem`, `replaceItem`, `setQuantity`, `removeItem`, `clearCart`). LocalStorage vẫn là **mảng JSON thuần** ở key `brewlite-cart` để `checkout` và `pending-order` đọc trực tiếp; `pendingOrderId` vẫn nằm trong `lib/pending-order.ts`. Đoạn code dưới đây là bản thiết kế tham khảo.
+> **Bản đang chạy:** `apps/web/src/store/useCartStore.ts` — cùng mô hình trên nhưng thao tác theo vị trí dòng trong giỏ (`addItem`, `replaceItem`, `setQuantity`, `removeItem`, `clearCart`). LocalStorage vẫn là **mảng JSON thuần** ở key `brewlite-cart` để `checkout` và `pending-order` đọc trực tiếp; `pendingOrderId` vẫn nằm trong `lib/pending-order.ts`. Đoạn code dưới đây là bản thiết kế tham khảo.
 
 ```typescript
 import { create } from 'zustand';
@@ -124,12 +124,12 @@ export const useCartStore = create<CartState>()(
 
 ### 1.2. Cấu trúc Component giao diện
 Các component được tổ chức theo quy chuẩn React & Tailwind CSS:
-* `frontend/src/components/cart/CartDrawer.tsx`: Khung trượt bên phải hiển thị danh sách giỏ hàng, tổng tiền và nút Thanh toán.
-* `frontend/src/components/cart/CartItemCard.tsx`: Thẻ hiển thị từng dòng món (ảnh, tên, size, danh sách topping, bộ điều khiển tăng/giảm `+ / -` và nút xóa).
-* `frontend/src/components/cart/CartEmptyState.tsx`: Giao diện khi giỏ hàng trống kèm nút bấm điều hướng về thực đơn.
+* `apps/web/src/components/cart/CartDrawer.tsx`: Khung trượt bên phải hiển thị danh sách giỏ hàng, tổng tiền và nút Thanh toán.
+* `apps/web/src/components/cart/CartItemCard.tsx`: Thẻ hiển thị từng dòng món (ảnh, tên, size, danh sách topping, bộ điều khiển tăng/giảm `+ / -` và nút xóa).
+* `apps/web/src/components/cart/CartEmptyState.tsx`: Giao diện khi giỏ hàng trống kèm nút bấm điều hướng về thực đơn.
 
 ### 1.3. Service kết nối API (Frontend Service)
-`frontend/src/services/order.service.ts`
+`apps/web/src/services/order.service.ts`
 
 ```typescript
 import { fetchApi } from '@/lib/api-client';
@@ -169,7 +169,7 @@ export const checkoutCart = async (payload: CreateOrderPayload) => {
 
 Bộ Data Transfer Object (DTO) nhận request từ giỏ hàng để tạo đơn hàng mới, đảm bảo tính toàn vẹn dữ liệu trước khi xử lý nghiệp vụ tại Controller & Service:
 
-`backend/src/modules/orders/dto/create-order.dto.ts`
+`apps/api/src/modules/orders/dto/create-order.dto.ts`
 
 ```typescript
 import {

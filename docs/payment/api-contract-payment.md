@@ -167,7 +167,7 @@ ZALOPAY_REDIRECT_URL=http://localhost:3000
 ## 10. Kiểm thử
 
 ```powershell
-cd backend
+cd apps/api
 npm test                 # unit test ZaloPay + integration Orders (cần PostgreSQL)
 npm run build
 npx prisma validate

@@ -15,7 +15,7 @@ API cung cấp dữ liệu để Frontend hiển thị trang chi tiết sản ph
 
 Backend chịu trách nhiệm xác định giá chính thức. Frontend có thể tính giá ước tính để hiển thị khi người dùng thay đổi lựa chọn.
 
-**Lưu ý:** Cấu trúc API đã được thống nhất 100% với `schema.prisma`, `backend/prisma/seed.ts` và tài liệu `db-mapping-product-detail.md`.
+**Lưu ý:** Cấu trúc API đã được thống nhất 100% với `schema.prisma`, `apps/api/prisma/seed.ts` và tài liệu `db-mapping-product-detail.md`.
 
 ---
 

@@ -28,7 +28,7 @@ before(async () => {
     await prisma.user.create({ data: { id, email: `${id}@example.test`, passwordHash: 'test', role: id === admin ? 'ADMIN' : 'CUSTOMER' } });
   }
   await prisma.ingredient.create({ data: { id: productId, name: productId, nameKey: productId, unit: 'G', stock: 1000 } });
-  await prisma.product.create({ data: { id: productId, name: productId, basePrice: 30000, stock: 100, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId: productId, quantity: 2.5 } } } } } });
+  await prisma.product.create({ data: { id: productId, name: productId, basePrice: 30000, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId: productId, quantity: 2.5 } } } } } });
   app = await NestFactory.create(AppModule, { logger: false });
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
@@ -108,7 +108,6 @@ test('admin orders enforce authentication/role, owner scope, filtering and seque
 
 test('concurrent paid cancellation restores snapshot and spent points once, permits negative balance, records manual refund', async () => {
   await prisma.user.update({ where: { id: owner }, data: { loyaltyPoints: 10 } });
-  const stock = await prisma.product.findUnique({ where: { id: productId } });
   const ingredient = await prisma.ingredient.findUnique({ where: { id: productId } });
   const row = await order(10);
   assert.equal((await pay(row.id)).code, 201);
@@ -125,7 +124,6 @@ test('concurrent paid cancellation restores snapshot and spent points once, perm
   assert.equal(saved.loyaltyTransactions.filter(item => item.type === 'REVERSED').length, 1);
   assert.equal(saved.loyaltyTransactions.filter(item => item.type === 'REFUNDED').length, 1);
   assert.equal((await prisma.user.findUnique({ where: { id: owner } })).loyaltyPoints, -19);
-  assert.equal((await prisma.product.findUnique({ where: { id: productId } })).stock, stock.stock);
   assert.equal((await prisma.ingredient.findUnique({ where: { id: productId } })).stock, ingredient.stock);
   assert.equal((await request(`/orders/${row.id}`)).body.data.refundStatus, 'MANUAL_REQUIRED');
 });

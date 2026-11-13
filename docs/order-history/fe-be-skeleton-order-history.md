@@ -14,11 +14,11 @@ tài khoản của mình, lọc theo trạng thái, phân trang/tải thêm và 
 Tài liệu này là bộ khung triển khai FE-BE dựa trên
 [`usecase-order-history.md`](./usecase-order-history.md).
 
-* **Phía Backend:** Mở rộng module `backend/src/modules/orders/`. Endpoint
+* **Phía Backend:** Mở rộng module `apps/api/src/modules/orders/`. Endpoint
   `GET /api/v1/orders/me` lấy `userId` từ JWT, không nhận `userId` từ Client.
   Endpoint `GET /api/v1/orders/:id` được đề xuất để tải dữ liệu Order Detail và
   phải kiểm tra quyền sở hữu ở Server.
-* **Phía Frontend:** Cung cấp route `frontend/src/app/orders/page.tsx`, các
+* **Phía Frontend:** Cung cấp route `apps/web/src/app/orders/page.tsx`, các
   component hiển thị danh sách/card đơn hàng, bộ lọc trạng thái, Loading/Empty/
   Error states và hook `useOrderHistory` quản lý tải dữ liệu, phân trang và retry.
 * **Hợp đồng dữ liệu:** Danh sách dùng `data` là mảng và `pagination` ở
@@ -33,7 +33,7 @@ endpoint chi tiết) cần được Backend xác nhận trước khi triển kha
 
 ```
 BrewLite/
-├── backend/src/modules/orders/
+├── apps/api/src/modules/orders/
 │   ├── orders.module.ts                 # Module Order History/Order Detail
 │   ├── orders.controller.ts             # GET /orders/me và GET /orders/:id
 │   ├── orders.service.ts                # Query theo user, filter, pagination
@@ -42,7 +42,7 @@ BrewLite/
 │       ├── order-history-item.dto.ts    # DTO tóm tắt một Order
 │       └── order-detail.dto.ts          # DTO Order kèm OrderItem
 │
-└── frontend/src/
+└── apps/web/src/
     ├── app/
     │   └── orders/
     │       ├── page.tsx                 # Trang Lịch sử đơn hàng
@@ -68,10 +68,10 @@ BrewLite/
 
 ## 3. KHUNG MÃ NGUỒN FRONTEND (FRONTEND SKELETON)
 
-### 3.1. Type định nghĩa dùng chung — `frontend/src/types/order.ts`
+### 3.1. Type định nghĩa dùng chung — `apps/web/src/types/order.ts`
 
 ```typescript
-// frontend/src/types/order.ts
+// apps/web/src/types/order.ts
 
 export const ORDER_STATUSES = [
   'PENDING',
@@ -135,10 +135,10 @@ export interface OrderDetail extends OrderHistoryItem {
 `id` là định danh chuẩn để điều hướng tới Order Detail. `orderNumber` chỉ dùng
 để hiển thị cho khách hàng và không thay thế `id` khi gọi API.
 
-### 3.2. Service gọi API — `frontend/src/services/order.service.ts`
+### 3.2. Service gọi API — `apps/web/src/services/order.service.ts`
 
 ```typescript
-// frontend/src/services/order.service.ts
+// apps/web/src/services/order.service.ts
 import { fetchApi } from '@/lib/api-client';
 import {
   OrderDetail,
@@ -182,10 +182,10 @@ export const getOrderDetail = async (id: string): Promise<OrderDetail> => {
 };
 ```
 
-### 3.3. Custom hook quản lý state — `frontend/src/hooks/useOrderHistory.ts`
+### 3.3. Custom hook quản lý state — `apps/web/src/hooks/useOrderHistory.ts`
 
 ```typescript
-// frontend/src/hooks/useOrderHistory.ts
+// apps/web/src/hooks/useOrderHistory.ts
 import { useCallback, useEffect, useState } from 'react';
 import {
   OrderHistoryItem,
@@ -271,7 +271,7 @@ bị lỗi; lỗi không được chuyển thành Empty State.
 ### 3.4. Trang và component chính
 
 ```tsx
-// frontend/src/app/orders/page.tsx
+// apps/web/src/app/orders/page.tsx
 'use client';
 
 import { OrderHistory } from '@/components/order-history/OrderHistory';
@@ -282,7 +282,7 @@ export default function OrdersPage() {
 ```
 
 ```tsx
-// frontend/src/components/order-history/OrderHistory.tsx
+// apps/web/src/components/order-history/OrderHistory.tsx
 'use client';
 
 import Link from 'next/link';
@@ -343,10 +343,10 @@ tiết trong use case; không hiển thị Empty khi request đang lỗi.
 
 ## 4. KHUNG MÃ NGUỒN BACKEND (BACKEND SKELETON)
 
-### 4.1. DTO query — `backend/src/modules/orders/dto/order-history-query.dto.ts`
+### 4.1. DTO query — `apps/api/src/modules/orders/dto/order-history-query.dto.ts`
 
 ```typescript
-// backend/src/modules/orders/dto/order-history-query.dto.ts
+// apps/api/src/modules/orders/dto/order-history-query.dto.ts
 import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
@@ -374,10 +374,10 @@ export class OrderHistoryQueryDto {
 Validation query sai phải trả `400 Bad Request`; Backend không truy vấn database
 với query không hợp lệ.
 
-### 4.2. Module — `backend/src/modules/orders/orders.module.ts`
+### 4.2. Module — `apps/api/src/modules/orders/orders.module.ts`
 
 ```typescript
-// backend/src/modules/orders/orders.module.ts
+// apps/api/src/modules/orders/orders.module.ts
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
@@ -390,10 +390,10 @@ import { OrdersService } from './orders.service';
 export class OrdersModule {}
 ```
 
-### 4.3. Controller — `backend/src/modules/orders/orders.controller.ts`
+### 4.3. Controller — `apps/api/src/modules/orders/orders.controller.ts`
 
 ```typescript
-// backend/src/modules/orders/orders.controller.ts
+// apps/api/src/modules/orders/orders.controller.ts
 import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -430,10 +430,10 @@ export class OrdersController {
 `JwtAuthGuard` phải chạy trước service. Cả danh sách và chi tiết đều lấy identity
 từ request đã xác thực; không dùng `userId` từ query, body hoặc path.
 
-### 4.4. Service — `backend/src/modules/orders/orders.service.ts`
+### 4.4. Service — `apps/api/src/modules/orders/orders.service.ts`
 
 ```typescript
-// backend/src/modules/orders/orders.service.ts
+// apps/api/src/modules/orders/orders.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';

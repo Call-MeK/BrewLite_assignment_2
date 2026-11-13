@@ -11,7 +11,7 @@
 
 ### 1.1. Data Transfer Objects (DTO) kèm Validation
 
-File tham khảo: `backend/src/modules/orders/dto/create-order.dto.ts`
+File tham khảo: `apps/api/src/modules/orders/dto/create-order.dto.ts`
 
 ```typescript
 import {
@@ -70,7 +70,7 @@ export class CreateOrderDto {
 
 ### 1.2. Controller Skeleton (`orders.controller.ts`)
 
-File tham khảo: `backend/src/modules/orders/orders.controller.ts`
+File tham khảo: `apps/api/src/modules/orders/orders.controller.ts`
 
 ```typescript
 import {
@@ -119,7 +119,7 @@ export class OrdersController {
 
 ### 1.3. Service Skeleton & State Transition (`orders.service.ts`)
 
-File tham khảo: `backend/src/modules/orders/orders.service.ts`
+File tham khảo: `apps/api/src/modules/orders/orders.service.ts`
 
 ```typescript
 import {
@@ -368,7 +368,7 @@ export class OrdersService {
 
 ### 2.1. TypeScript Interfaces
 
-File tham khảo: `frontend/src/types/order.ts`
+File tham khảo: `apps/web/src/types/order.ts`
 
 ```typescript
 export interface CreateOrderItemInput {
@@ -399,7 +399,7 @@ export interface OrderResponse {
 
 ### 2.2. Custom Hook Tạo Đơn (`useCreateOrder.ts`)
 
-File tham khảo: `frontend/src/hooks/useCreateOrder.ts`
+File tham khảo: `apps/web/src/hooks/useCreateOrder.ts`
 
 ```typescript
 import { useState } from 'react';

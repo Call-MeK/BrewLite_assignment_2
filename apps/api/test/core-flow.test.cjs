@@ -23,7 +23,7 @@ before(async () => {
   const ingredient = await prisma.ingredient.create({ data: { name: email, nameKey: email, unit: 'G', stock: 2 } });
   ingredientId = ingredient.id;
   const product = await prisma.product.create({
-    data: { name: 'Core flow coffee', basePrice: 20000, stock: 0, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId, quantity: 1 } } } } },
+    data: { name: 'Core flow coffee', basePrice: 20000, sizePrices: { create: { size: 'M', recipeItems: { create: { ingredientId, quantity: 1 } } } } },
   });
   productId = product.id;
   app = await NestFactory.create(AppModule, { logger: false });

@@ -51,6 +51,6 @@ Mỗi commit phải giải thích rõ hành động vừa thực hiện theo cú
    git checkout feat/<tên-nhánh>
    git merge develop
    ```
-2. Đảm bảo dự án **không bị lỗi build TypeScript** ở cả `frontend` và `backend`.
+2. Đảm bảo dự án **không bị lỗi build TypeScript** ở cả `apps/web` và `apps/api`.
 3. Tạo Pull Request vào nhánh `develop`.
 4. Mỗi PR phải được **ít nhất 1 thành viên khác review** duyệt trước khi merge.

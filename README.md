@@ -16,8 +16,8 @@ docker compose up --build -d
 
 Mở http://localhost:3000; API ở http://localhost:4000/api/v1. Docker chạy cả frontend, backend và PostgreSQL; không cần chạy npm trên máy.
 
-Nếu chạy backend trực tiếp bằng npm (không qua Docker), Prisma chỉ đọc `backend/.env`:
-`Copy-Item .env.example backend/.env`.
+Nếu chạy backend trực tiếp bằng npm (không qua Docker), Prisma chỉ đọc `apps/api/.env`:
+`Copy-Item .env.example apps/api/.env`.
 
 Các cổng 3000, 4000 và 5433 phải còn trống. Nếu 5433 đã được sử dụng, đổi `POSTGRES_PORT` trong `.env` sang cổng trống. Nếu 3000 hoặc 4000 đã được sử dụng, dừng ứng dụng đang chiếm cổng trước khi chạy.
 
@@ -35,28 +35,30 @@ Dữ liệu PostgreSQL được giữ trong volume khi dùng `docker compose dow
 
 ```
 BrewLite/
-├── backend/                  # NestJS API (Port 4000)
-│   ├── src/
-│   │   ├── common/           # Interceptor, Exception Filter
-│   │   ├── modules/          # auth, products, orders, payments
-│   │   └── prisma/           # Prisma service & client
-│   └── prisma/schema.prisma  # Định nghĩa CSDL PostgreSQL
-├── frontend/                 # Next.js App Router (Port 3000)
-│   ├── src/
-│   │   ├── app/              # Trang chủ, menu, giỏ hàng, đặt hàng
-│   │   ├── components/       # ui/ (dùng chung) & features/ (nghiệp vụ)
-│   │   └── lib/api-client.ts # Fetch wrapper chuẩn hóa
-├── docs/                     # Quy chuẩn làm việc nhóm
-│   ├── requirements/         # Bối cảnh, phạm vi, SRS
-│   ├── architecture/adr/     # Quyết định kiến trúc
-│   ├── diagrams/             # Sequence diagram
-│   ├── git-convention.md     # Quy tắc nhánh & commit
-│   ├── naming-convention.md  # Tiêu chuẩn đặt tên API & DB
+├── apps/
+│   ├── api/                  # NestJS API (Port 4000)
+│   │   ├── src/
+│   │   │   ├── common/       # Interceptor, Exception Filter
+│   │   │   ├── modules/      # auth, products, orders, payments, cart, ...
+│   │   │   └── prisma/       # Prisma service & client
+│   │   ├── prisma/schema.prisma  # Định nghĩa CSDL PostgreSQL + migrations
+│   │   └── test/             # Unit & integration test (node:test)
+│   └── web/                  # Next.js App Router (Port 3000)
+│       ├── src/
+│       │   ├── app/          # Trang chủ, menu, giỏ hàng, đặt hàng
+│       │   ├── components/   # ui/ (dùng chung) & features/ (nghiệp vụ)
+│       │   └── lib/api-client.ts
+│       └── tests/            # Unit test cho logic frontend
+├── docs/                     # Tài liệu đồ án
+│   ├── requirements/         # Task 1: bối cảnh, phạm vi, SRS
+│   ├── diagrams/             # Task 2: activity, use-case, sequence
+│   ├── architecture/adr/     # Task 3: kiến trúc + ADR
 │   ├── deployment.md         # Triển khai, CI, rollback
 │   ├── traceability-matrix.md
 │   └── checklist-review.md   # Tiêu chí review code trước khi merge
-├── Bai_2_UML/                # Tổng hợp sơ đồ UML bài tập
-├── docker-compose.yml        # PostgreSQL container
+├── tests/e2e/                # End-to-end: menu → đặt đơn → xác nhận
+├── .github/workflows/        # CI và keep-alive
+├── docker-compose.yml        # PostgreSQL + API + Web
 ├── .env.example              # Mẫu biến môi trường
 └── README.md
 ```
@@ -89,8 +91,10 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
 ## 🚀 CI VÀ TRIỂN KHAI
 
 - CI chạy trên nhánh `main` qua `.github/workflows/ci.yml`: PostgreSQL service → Prisma
-  generate/migrate → test backend → build backend/frontend.
+  generate/migrate → test backend → lint/test/build `apps/web`.
 - Chạy local bằng Docker: `docker compose up --build -d`.
+- Kiểm thử: unit ở `apps/web/tests` + `apps/api/test`, end-to-end ở `tests/e2e`
+  (xem [tests/README.md](tests/README.md)).
 - Quy trình deploy, biến môi trường và rollback: xem [docs/deployment.md](docs/deployment.md).
 - **Môi trường demo công khai:**
   - Frontend: <https://brewlite-acme-1b6f1.vercel.app>
@@ -104,7 +108,7 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
 
 ## Tài khoản test
 
-Sau khi chạy `npm run prisma:seed` (hoặc `npx prisma db seed` trong `backend/`), hệ thống có sẵn 2 tài khoản trong `backend/prisma/seed.ts`:
+Sau khi chạy `npm run prisma:seed` (hoặc `npx prisma db seed` trong `apps/api/`), hệ thống có sẵn 2 tài khoản trong `apps/api/prisma/seed.ts`:
 
 | Vai trò | Email | Mật khẩu | Ghi chú |
 |---|---|---|---|

@@ -11,7 +11,7 @@
 | API | <https://brewlite-api-u2jb.onrender.com/api/v1> |
 | Health check | <https://brewlite-api-u2jb.onrender.com/api/v1/health> |
 | Render service | `srv-dbre87c9v7es73cb98u0` (workspace `tea-dbre3c5ckfvc73e0s500`) |
-| Vercel project | `prj_Rqb03eNemvWHYK1hD5s0VJzcELX3` (root `frontend`) |
+| Vercel project | `prj_Rqb03eNemvWHYK1hD5s0VJzcELX3` (root `apps/web`) |
 
 ## 1. Môi trường
 
@@ -42,7 +42,7 @@ docker compose ps
 - PostgreSQL: `localhost:5433` (đổi `POSTGRES_PORT` nếu trùng cổng).
 
 Migration được áp dụng khi container backend khởi động (`prisma migrate deploy` trong
-`backend/Dockerfile`). Seed dữ liệu mẫu:
+`apps/api/Dockerfile`). Seed dữ liệu mẫu:
 
 ```powershell
 docker compose exec backend npx prisma db seed
@@ -58,14 +58,14 @@ Dừng mà giữ dữ liệu: `docker compose down`. Xoá cả volume: `docker c
 docker compose up -d postgres
 
 # Terminal 2 – backend
-cd backend
+cd apps/api
 npm install
 npx prisma migrate deploy
 npx prisma db seed
 npm run start:dev
 
 # Terminal 3 – frontend
-cd frontend
+cd apps/web
 npm install
 npm run dev
 ```
@@ -127,13 +127,13 @@ Tạo **Web Service** từ repo GitHub:
 |---|---|
 | Branch | `main` |
 | Runtime | Docker |
-| Dockerfile Path | `backend/Dockerfile` |
-| Docker Build Context | `backend` |
+| Dockerfile Path | `apps/api/Dockerfile` |
+| Docker Build Context | `apps/api` |
 | Health Check Path | `/api/v1/health` |
 | Plan | Free (demo) |
 | Region | Singapore |
 
-`backend/Dockerfile` tự chạy `npm ci`, `prisma generate`, `nest build`, rồi
+`apps/api/Dockerfile` tự chạy `npm ci`, `prisma generate`, `nest build`, rồi
 `prisma migrate deploy` trước khi start `node dist/src/main`. Render inject `PORT`, ứng dụng
 đã đọc biến này.
 
@@ -158,7 +158,7 @@ ZALOPAY_REDIRECT_URL=https://<vercel-domain>
 Seed dữ liệu (chạy một lần, từ máy local trỏ vào Neon hoặc qua Render Shell):
 
 ```powershell
-cd backend
+cd apps/api
 $env:DATABASE_URL='postgresql://...neon.tech/neondb?sslmode=require'
 npx prisma migrate deploy
 npx prisma db seed
@@ -168,7 +168,7 @@ Sau khi seed, lấy `users.id` của tài khoản admin và điền `PAYMENT_ADM
 
 ### 6.3. Frontend trên Vercel
 
-1. Import repo, **Root Directory** = `frontend`, framework Next.js.
+1. Import repo, **Root Directory** = `apps/web`, framework Next.js.
 2. Environment variable cho **Production + Preview**:
    `NEXT_PUBLIC_API_URL=https://<render-domain>/api/v1`.
 3. Deploy. Biến `NEXT_PUBLIC_*` được nhúng lúc build, nên đổi API URL phải **Redeploy**.
@@ -227,7 +227,7 @@ Lưu ý free tier:
 |---|---|
 | Neon migrate | `prisma migrate deploy` áp dụng đủ migration |
 | Neon seed | 2 user, 8 sản phẩm, 24 nguyên liệu, 105 dòng công thức, 2 voucher |
-| Render build | Docker (`backend/Dockerfile`), health check `/api/v1/health` → `live` |
+| Render build | Docker (`apps/api/Dockerfile`), health check `/api/v1/health` → `live` |
 | Vercel build | Next.js 15.5.27, alias production `brewlite-acme-1b6f1.vercel.app` |
 | `GET /health` | `200`, `data.status = ok` |
 | Đăng nhập + `GET /orders/me` | `200`, thấy đơn đã tạo |

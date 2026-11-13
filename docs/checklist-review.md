@@ -50,7 +50,7 @@ Khi xảy ra lỗi (Status code 400, 401, 403, 404, 500), được bọc tự đ
 Trước khi duyệt bất kỳ Pull Request nào vào nhánh `develop`, người review phải kiểm tra danh sách sau:
 
 - [ ] **Bảo mật:** Không commit file `.env`, không hardcode password, secret key hoặc token.
-- [ ] **Kiểm thử biên dịch:** Chạy `npm run build` trên cả `backend/` và `frontend/` không phát sinh lỗi TypeScript.
+- [ ] **Kiểm thử biên dịch:** Chạy `npm run build` trên cả `apps/api/` và `apps/web/` không phát sinh lỗi TypeScript.
 - [ ] **Validation:** Phía Backend, tất cả request body đều có DTO kèm decorator `class-validator` (ví dụ: `@IsNotEmpty()`, `@IsString()`).
 - [ ] **Quy chuẩn tên:** Tên biến, hàm, endpoint tuân thủ đúng `naming-convention.md`.
 - [ ] **Xử lý bất đồng bộ:** Sử dụng đúng `async/await` và có xử lý bắt lỗi (try/catch hoặc để ExceptionFilter xử lý).

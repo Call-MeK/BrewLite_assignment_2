@@ -247,7 +247,7 @@ Thành tiền = (basePrice + priceAdjustment(size) + Σ giá topping) × quantit
 - `unitPrice` trên là giá cho **1 sản phẩm** với cấu hình đã chọn.
 - Thành tiền = `unitPrice × quantity`.
 
-#### Bảng phụ phí Size (từ `backend/prisma/seed.ts`, áp dụng cho **tất cả sản phẩm**)
+#### Bảng phụ phí Size (từ `apps/api/prisma/seed.ts`, áp dụng cho **tất cả sản phẩm**)
 
 | Size | `priceAdjustment` |
 |------|-------------------|
@@ -255,7 +255,7 @@ Thành tiền = (basePrice + priceAdjustment(size) + Σ giá topping) × quantit
 | M    | +5.000 đ          |
 | L    | +10.000 đ         |
 
-#### Bảng giá Topping (từ `backend/prisma/seed.ts`)
+#### Bảng giá Topping (từ `apps/api/prisma/seed.ts`)
 
 | Topping            | Giá topping |
 |--------------------|-------------|

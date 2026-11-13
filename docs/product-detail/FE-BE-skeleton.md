@@ -26,15 +26,15 @@ Repository được chia thành các phần chính:
 
 | Thư mục/File | Trách nhiệm |
 | :--- | :--- |
-| `backend/` | NestJS API, chạy ở port `4000` |
-| `backend/src/common/` | Interceptor (`TransformInterceptor`) và exception filter (`AllExceptionsFilter`) |
-| `backend/src/modules/products/` | **ProductsModule dùng chung** cho cả Catalog (`GET /products`) và Detail (`GET /products/:id`) |
-| `backend/src/prisma/` | Prisma service và client |
-| `backend/prisma/schema.prisma` | Định nghĩa schema PostgreSQL |
-| `frontend/` | Next.js App Router, chạy ở port `3000` |
-| `frontend/src/app/` | Các trang và route của ứng dụng (`/menu`, `/products/[id]`) |
-| `frontend/src/components/` | Component UI nghiệp vụ |
-| `frontend/src/lib/api-client.ts` | Wrapper `fetchApi` dùng chung để gọi Backend |
+| `apps/api/` | NestJS API, chạy ở port `4000` |
+| `apps/api/src/common/` | Interceptor (`TransformInterceptor`) và exception filter (`AllExceptionsFilter`) |
+| `apps/api/src/modules/products/` | **ProductsModule dùng chung** cho cả Catalog (`GET /products`) và Detail (`GET /products/:id`) |
+| `apps/api/src/prisma/` | Prisma service và client |
+| `apps/api/prisma/schema.prisma` | Định nghĩa schema PostgreSQL |
+| `apps/web/` | Next.js App Router, chạy ở port `3000` |
+| `apps/web/src/app/` | Các trang và route của ứng dụng (`/menu`, `/products/[id]`) |
+| `apps/web/src/components/` | Component UI nghiệp vụ |
+| `apps/web/src/lib/api-client.ts` | Wrapper `fetchApi` dùng chung để gọi Backend |
 | `docs/` | Tài liệu kỹ thuật và quy ước làm việc |
 
 ---
@@ -44,7 +44,7 @@ Repository được chia thành các phần chính:
 ### 3.1. Frontend
 
 ```text
-frontend/
+apps/web/
 └── src/
     ├── app/
     │   └── products/
@@ -68,7 +68,7 @@ frontend/
 Theo **Quyết định 2 của Nhóm trưởng**, không tạo module riêng. Cả Product Catalog và Product Detail cùng chia sẻ module `products/`:
 
 ```text
-backend/src/modules/products/
+apps/api/src/modules/products/
 ├── products.module.ts              # Module chung: export ProductsService
 ├── products.controller.ts          # Controller chung: chứa getProducts() và getProductById(id)
 ├── products.service.ts             # Service chung: chứa getProducts() và getProductById(id)

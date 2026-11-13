@@ -2,7 +2,7 @@
  * Bổ sung dữ liệu mẫu vào DB đang có, không xoá đơn/người dùng.
  * Muốn reset sạch toàn bộ thì dùng `npm run prisma:seed`.
  *
- * Chạy trong thư mục `backend/`: npm run demo:patch
+ * Chạy trong thư mục `apps/api/`: npm run demo:patch
  */
 import { Prisma, PrismaClient, ProductSize } from '@prisma/client';
 import { additionalMenuItems } from './additional-menu-items';

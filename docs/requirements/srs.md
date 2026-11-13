@@ -106,4 +106,4 @@ Tài liệu này tóm tắt yêu cầu chức năng, phi chức năng và ràng 
 2. Không bán vượt tồn kho khi đặt đồng thời.
 3. Retry thanh toán và callback lặp không tạo giao dịch/điểm trùng.
 4. Admin đối soát được mọi giao dịch và trạng thái đơn.
-5. `npm run build` ở backend/frontend và `npm test` ở backend chạy thành công trong CI.
+5. `npm run build` ở apps/api/frontend và `npm test` ở backend chạy thành công trong CI.

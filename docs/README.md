@@ -20,6 +20,7 @@ Muốn chạy thử: xem [README gốc](../README.md).
 | Nhánh và commit thế nào | [git-convention.md](git-convention.md) |
 | Review code cần kiểm gì | [checklist-review.md](checklist-review.md) |
 | Vì sao chọn monorepo / bỏ mock payment | [architecture/adr/](architecture/adr/) |
+| Sơ đồ activity / use-case / sequence | [diagrams/](diagrams/) |
 
 ---
 
@@ -32,18 +33,18 @@ Menu → Chi tiết sản phẩm (size + topping) → Giỏ hàng → Checkout
 
 Nhánh lỗi: `PENDING → PAYMENT_FAILED → PENDING` (thử lại) hoặc `→ CANCELLED` (hủy, hoàn nguyên liệu + điểm).
 
-Trạng thái đơn nằm trong `backend/src/modules/orders/order-state.ts` — đây là nguồn đúng, docs chỉ mô tả lại.
+Trạng thái đơn nằm trong `apps/api/src/modules/orders/order-state.ts` — đây là nguồn đúng, docs chỉ mô tả lại.
 
 ---
 
 ## 3. Tài liệu theo từng chức năng
 
-Mỗi thư mục là **một chức năng**, cùng một bộ file:
+Mỗi thư mục là **một chức năng**. Sơ đồ PlantUML của mọi chức năng nằm chung ở
+[`diagrams/`](diagrams/) (Task 2), tài liệu đặc tả giữ theo chức năng:
 
 | File | Nội dung |
 |---|---|
-| `usecase-*.md` / `usecase-*.puml` | Actor, luồng, điều kiện trước/sau |
-| `activity-*.puml` | Sơ đồ hoạt động |
+| `usecase-*.md` | Actor, luồng, điều kiện trước/sau |
 | `api-contract*.md` | Endpoint, request/response, mã lỗi |
 | `db-mapping*.md` | Dữ liệu FE ↔ bảng DB |
 | `fe-be-skeleton*.md` | Cấu trúc code gợi ý cho FE/BE |
@@ -68,6 +69,6 @@ Thứ tự đọc một chức năng: **usecase → api-contract → db-mapping*
 
 1. **Tiền và tồn kho chỉ tính ở backend**, trong transaction; client không gửi `userId`, `finalAmount`.
 2. **Thanh toán idempotent**: bắt buộc `Idempotency-Key`, callback lặp không tạo giao dịch/điểm trùng.
-3. **Không commit secret**: chỉ commit `.env.example`; giá trị thật để trong `.env` / `backend/.env`.
+3. **Không commit secret**: chỉ commit `.env.example`; giá trị thật để trong `.env` / `apps/api/.env`.
 
 Chi tiết đầy đủ ở [SRS](requirements/srs.md) mục 2 và [checklist-review.md](checklist-review.md).

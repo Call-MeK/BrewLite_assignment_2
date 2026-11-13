@@ -9,7 +9,7 @@
 
 ## 1. TỔNG QUAN
 
-Tài liệu này đặc tả quy tắc ánh xạ (mapping) giữa Cơ sở dữ liệu quan hệ PostgreSQL (thông qua Prisma ORM tại `backend/prisma/schema.prisma`) và Cấu trúc dữ liệu phản hồi (API Response DTO) của API `GET /api/v1/products`.
+Tài liệu này đặc tả quy tắc ánh xạ (mapping) giữa Cơ sở dữ liệu quan hệ PostgreSQL (thông qua Prisma ORM tại `apps/api/prisma/schema.prisma`) và Cấu trúc dữ liệu phản hồi (API Response DTO) của API `GET /api/v1/products`.
 
 Hệ thống truy xuất dữ liệu từ bảng chính `products` và liên kết (JOIN) với hai bảng quan hệ là `categories` và `product_size_prices`.
 
@@ -55,10 +55,10 @@ Hệ thống truy xuất dữ liệu từ bảng chính `products` và liên k�
 
 ## 3. CÂU LỆNH TRUY VẤN PRISMA MẪU (PRISMA QUERY IMPLEMENTATION)
 
-Tại `backend/src/modules/products/products.service.ts`, hàm `getProducts()` thực thi truy vấn an toàn và tối ưu như sau:
+Tại `apps/api/src/modules/products/products.service.ts`, hàm `getProducts()` thực thi truy vấn an toàn và tối ưu như sau:
 
 ```typescript
-// backend/src/modules/products/products.service.ts
+// apps/api/src/modules/products/products.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 

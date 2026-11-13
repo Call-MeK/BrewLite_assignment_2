@@ -19,14 +19,16 @@ Giữ **một repository** với hai thư mục ứng dụng độc lập:
 
 ```
 BrewLite/
-├── backend/      # NestJS + Prisma
-├── frontend/     # Next.js App Router
+├── apps/
+│   ├── api/      # NestJS + Prisma
+│   └── web/      # Next.js App Router
+├── tests/        # end-to-end
 ├── docs/         # đặc tả, ADR, kịch bản kiểm thử
 ├── postman/      # smoke test collection
 └── docker-compose.yml
 ```
 
-Mỗi thư mục có `package.json`, `node_modules`, Dockerfile và pipeline build riêng. Không
+Mỗi thư mục ứng dụng có `package.json`, `node_modules`, Dockerfile và pipeline build riêng. Không
 dùng workspace tool (Turborepo/Nx) để giữ cấu hình đơn giản.
 
 ## Hệ quả
@@ -52,5 +54,6 @@ dùng workspace tool (Turborepo/Nx) để giữ cấu hình đơn giản.
 
 ## Ghi chú
 
-Kế hoạch dài hạn (chưa thực hiện) là chuyển sang `apps/web` + `apps/api` + `packages/shared`
-khi có nhu cầu chia sẻ type thực sự. Việc tái cấu trúc được để sau khi hoàn tất đồ án.
+Cấu trúc `apps/web` + `apps/api` + `docs/` + `tests/` được chốt theo yêu cầu
+Assignment 2 (§9 Cấu trúc repository); `packages/shared` vẫn để ngỏ cho tới khi
+thực sự cần chia sẻ type.

@@ -10,10 +10,10 @@
 ## 1. TỔNG QUAN KIẾN TRÚC & PHÂN BỔ TRÁCH NHIỆM
 
 Tuân thủ nghiêm ngặt **Quyết định 2 của Nhóm trưởng** và `docs/naming-convention.md`:
-* **Phía Backend:** Không tạo module riêng `product-catalog`. Toàn bộ chức năng hiển thị danh sách Menu (`GET /api/v1/products`) và chức năng xem Chi tiết sản phẩm (`GET /api/v1/products/:id`) được gom chung vào module duy nhất: `backend/src/modules/products/`.
+* **Phía Backend:** Không tạo module riêng `product-catalog`. Toàn bộ chức năng hiển thị danh sách Menu (`GET /api/v1/products`) và chức năng xem Chi tiết sản phẩm (`GET /api/v1/products/:id`) được gom chung vào module duy nhất: `apps/api/src/modules/products/`.
   * **Đinh Nhật Lan (Catalog):** Phụ trách method `getProducts()` trong `ProductsController` và `ProductsService`.
   * **Vũ Hoàng Huy (Detail):** Phụ trách method `getProductById(id)` trong cùng `ProductsController` và `ProductsService`.
-* **Phía Frontend:** Cung cấp trang Menu tại `frontend/src/app/menu/page.tsx`, bộ component hiển thị lưới đồ uống, và custom hook `useProductCatalog` xử lý tìm kiếm không dấu và lọc danh mục tại Client-side.
+* **Phía Frontend:** Cung cấp trang Menu tại `apps/web/src/app/menu/page.tsx`, bộ component hiển thị lưới đồ uống, và custom hook `useProductCatalog` xử lý tìm kiếm không dấu và lọc danh mục tại Client-side.
 
 ---
 
@@ -21,7 +21,7 @@ Tuân thủ nghiêm ngặt **Quyết định 2 của Nhóm trưởng** và `docs
 
 ```
 BrewLite/
-├── backend/src/modules/products/
+├── apps/api/src/modules/products/
 │   ├── products.module.ts              # Module quản lý tài nguyên Sản phẩm
 │   ├── products.controller.ts          # Controller: GET /products (Lan) & GET /products/:id (Huy)
 │   ├── products.service.ts             # Service: getProducts (Lan) & getProductById (Huy)
@@ -29,7 +29,7 @@ BrewLite/
 │       ├── product-response.dto.ts     # DTO response cho danh sách và chi tiết món
 │       └── product-detail.dto.ts       # DTO chi tiết sản phẩm kèm toppings
 │
-└── frontend/src/
+└── apps/web/src/
     ├── app/
     │   └── menu/
     │       └── page.tsx                # Trang hiển thị Thực đơn đồ uống
@@ -52,10 +52,10 @@ BrewLite/
 
 ## 3. KHUNG MÃ NGUỒN FRONTEND (FRONTEND SKELETON)
 
-### 3.1. Type Định Nghĩa Dùng Chung — `frontend/src/types/product.ts`
+### 3.1. Type Định Nghĩa Dùng Chung — `apps/web/src/types/product.ts`
 
 ```typescript
-// frontend/src/types/product.ts
+// apps/web/src/types/product.ts
 
 export type ProductSize = 'S' | 'M' | 'L';
 
@@ -79,10 +79,10 @@ export interface ProductItem {
 }
 ```
 
-### 3.2. Service Gọi API — `frontend/src/services/product.service.ts`
+### 3.2. Service Gọi API — `apps/web/src/services/product.service.ts`
 
 ```typescript
-// frontend/src/services/product.service.ts
+// apps/web/src/services/product.service.ts
 import { fetchApi } from '@/lib/api-client';
 import { ProductItem } from '@/types/product';
 
@@ -95,10 +95,10 @@ export const getProductCatalog = async (): Promise<ProductItem[]> => {
 };
 ```
 
-### 3.3. Custom Hook Quản Lý State & Bộ Lọc — `frontend/src/hooks/useProductCatalog.ts`
+### 3.3. Custom Hook Quản Lý State & Bộ Lọc — `apps/web/src/hooks/useProductCatalog.ts`
 
 ```typescript
-// frontend/src/hooks/useProductCatalog.ts
+// apps/web/src/hooks/useProductCatalog.ts
 import { useState, useMemo, useEffect } from 'react';
 import { ProductItem } from '@/types/product';
 import { getProductCatalog } from '@/services/product.service';
@@ -205,10 +205,10 @@ export function useProductCatalog() {
 
 ## 4. KHUNG MÃ NGUỒN BACKEND (BACKEND SKELETON)
 
-### 4.1. Module Dùng Chung — `backend/src/modules/products/products.module.ts`
+### 4.1. Module Dùng Chung — `apps/api/src/modules/products/products.module.ts`
 
 ```typescript
-// backend/src/modules/products/products.module.ts
+// apps/api/src/modules/products/products.module.ts
 import { Module } from '@nestjs/common';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
@@ -221,10 +221,10 @@ import { ProductsService } from './products.service';
 export class ProductsModule {}
 ```
 
-### 4.2. Controller Dùng Chung — `backend/src/modules/products/products.controller.ts`
+### 4.2. Controller Dùng Chung — `apps/api/src/modules/products/products.controller.ts`
 
 ```typescript
-// backend/src/modules/products/products.controller.ts
+// apps/api/src/modules/products/products.controller.ts
 import { Controller, Get, Param } from '@nestjs/common';
 import { ProductsService } from './products.service';
 
@@ -254,10 +254,10 @@ export class ProductsController {
 }
 ```
 
-### 4.3. Service Dùng Chung — `backend/src/modules/products/products.service.ts`
+### 4.3. Service Dùng Chung — `apps/api/src/modules/products/products.service.ts`
 
 ```typescript
-// backend/src/modules/products/products.service.ts
+// apps/api/src/modules/products/products.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
