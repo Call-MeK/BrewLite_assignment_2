@@ -2,17 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from 'next/link';
-import { BookOpen, Plus, Trash2, X } from "lucide-react";
+import { BookOpen, Plus, Trash2 } from "lucide-react";
 import {
   getAllProducts,
   createProduct,
   deleteProduct,
   getAllCategories,
-  getProductRecipe,
-  addRecipeItem,
-  removeRecipeItem,
 } from "@/services/product.service";
-import { ingredientsService } from "@/services/ingredients.service";
 import { getSizePrices, updateSizePrices, type SizeAdjustment } from '@/services/product.service';
 
 const smallButton = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-ticket border border-ink/25 bg-white px-3 text-xs font-semibold text-ink transition-colors hover:border-ink hover:bg-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
@@ -20,7 +16,6 @@ const smallButton = "inline-flex min-h-10 items-center justify-center gap-1.5 ro
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [ingredients, setIngredients] = useState<any[]>([]);
   const [priceProduct, setPriceProduct] = useState<{ id: string; name: string; basePrice: number } | null>(null);
   const [sizePrices, setSizePrices] = useState<{ size: SizeAdjustment['size']; priceAdjustment: string }[]>([]);
   const [priceLoading, setPriceLoading] = useState(false);
@@ -34,17 +29,9 @@ export default function AdminProductsPage() {
     basePrice: 0,
   });
 
-  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [recipeItems, setRecipeItems] = useState<any[]>([]);
-
-  const [selectedIngredientId, setSelectedIngredientId] = useState("");
-  const [quantity, setQuantity] = useState("");
-
   useEffect(() => {
     loadProducts();
     loadCategories();
-    loadIngredients();
   }, []);
 
   async function editPrices(product: { id: string; name: string; basePrice: number }) {
@@ -87,13 +74,6 @@ export default function AdminProductsPage() {
       console.error(error);
     }
   };
-  const loadIngredients = async () => {
-    try {
-      setIngredients(await ingredientsService.getAll());
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,43 +92,6 @@ export default function AdminProductsPage() {
     }
   };
 
-  const openRecipeModal = async (product: any) => {
-    setSelectedProduct(product);
-    setIsRecipeModalOpen(true);
-    setRecipeItems([]);
-    try {
-      const data = await getProductRecipe(product.id);
-      if (Array.isArray(data)) {
-        setRecipeItems(data);
-      } else if (data && Array.isArray(data.data)) {
-        setRecipeItems(data.data);
-      } else {
-        setRecipeItems([]);
-      }
-    } catch (error) {
-      console.error("Lỗi tải công thức", error);
-    }
-  };
-
-  const handleAddRecipe = async () => {
-    if (!selectedIngredientId || !quantity)
-      return alert("Vui lòng chọn nguyên liệu và nhập số lượng");
-    try {
-      await addRecipeItem(selectedProduct.id, selectedIngredientId, Number(quantity));
-      const data = await getProductRecipe(selectedProduct.id);
-      if (Array.isArray(data)) {
-        setRecipeItems(data);
-      } else if (data && Array.isArray(data.data)) {
-        setRecipeItems(data.data);
-      } else {
-        setRecipeItems([]);
-      }
-      setQuantity("");
-      setSelectedIngredientId("");
-    } catch (error) {
-      alert("Lỗi thêm nguyên liệu");
-    }
-  };
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này? Toàn bộ công thức đi kèm cũng sẽ bị xóa.")) return;
 
@@ -160,17 +103,6 @@ export default function AdminProductsPage() {
       console.error("Lỗi xóa sản phẩm:", error);
     }
   };
-  const handleDeleteRecipe = async (ingredientId: string) => {
-    try {
-      await removeRecipeItem(selectedProduct.id, ingredientId);
-      setRecipeItems(recipeItems.filter((item) => item.ingredientId !== ingredientId));
-    } catch (error) {
-      alert("Lỗi xóa nguyên liệu");
-    }
-  };
-
-  const cost = recipeItems.reduce((sum, item) => sum + item.quantity * (Number(item.ingredient?.price) || 0), 0);
-
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b-[1.5px] border-ink pb-5">
@@ -266,69 +198,6 @@ export default function AdminProductsPage() {
         </div>
       )}
 
-      {isRecipeModalOpen && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/50 p-4 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="recipe-title">
-          <div className="ticket flex max-h-[90vh] w-full max-w-2xl flex-col">
-            <div className="flex items-start justify-between gap-4 border-b border-dashed border-ink/25 p-6">
-              <div>
-                <p className="kicker">Định lượng</p>
-                <h2 id="recipe-title" className="mt-1 text-xl font-bold text-ink">Công thức sản phẩm</h2>
-                <p className="mt-1 text-sm font-medium text-primary">{selectedProduct?.name}</p>
-              </div>
-              <button onClick={() => setIsRecipeModalOpen(false)} aria-label="Đóng" className="rounded-ticket border border-ink/20 p-2 text-content-secondary hover:border-ink hover:text-ink">
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto p-6">
-              <div className="flex flex-wrap items-end gap-3 rounded-ticket border border-ink/15 bg-paper-deep/40 p-4">
-                <label className="min-w-40 flex-1 text-xs font-semibold text-content-secondary">Chọn nguyên liệu
-                  <select className="field mt-2" value={selectedIngredientId} onChange={(e) => setSelectedIngredientId(e.target.value)}>
-                    <option value="">Chọn nguyên liệu</option>
-                    {ingredients.map((ing) => <option key={ing.id} value={ing.id}>{ing.name} ({ing.unit})</option>)}
-                  </select>
-                </label>
-                <label className="w-28 text-xs font-semibold text-content-secondary">Định lượng
-                  <input type="number" min="0.1" step="0.1" className="field mt-2" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="VD: 20" />
-                </label>
-                <button onClick={handleAddRecipe} className="btn-primary min-h-12 px-4 text-white">Thêm</button>
-              </div>
-
-              <h3 className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-content-secondary">Thành phần hiện tại</h3>
-              <div className="mt-3 overflow-hidden rounded-ticket border border-ink/15">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b border-ink/15 bg-paper-deep/50 text-[11px] uppercase tracking-[0.12em] text-content-secondary">
-                    <tr><th scope="col" className="px-3 py-2.5 font-semibold">Nguyên liệu</th><th scope="col" className="px-3 py-2.5 font-semibold">Định lượng</th><th scope="col" className="px-3 py-2.5 text-right font-semibold">Xóa</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-ink/10">
-                    {recipeItems.length === 0 ? (
-                      <tr><td colSpan={3} className="px-3 py-8 text-center text-content-secondary">Chưa có nguyên liệu nào.</td></tr>
-                    ) : recipeItems.map((item) => (
-                      <tr key={item.id}>
-                        <td className="px-3 py-3 font-medium text-ink">{item.ingredient?.name}</td>
-                        <td className="price px-3 py-3 font-semibold text-primary">{item.quantity} {item.ingredient?.unit}</td>
-                        <td className="px-3 py-3 text-right">
-                          <button onClick={() => handleDeleteRecipe(item.ingredientId)} aria-label={`Xóa ${item.ingredient?.name}`} className="rounded-ticket p-1.5 text-danger hover:bg-danger-light">
-                            <X size={15} aria-hidden="true" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  {recipeItems.length > 0 && (
-                    <tfoot className="border-t border-ink/15 bg-paper-deep/40">
-                      <tr>
-                        <td colSpan={2} className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-content-secondary">Tổng giá vốn (COGS)</td>
-                        <td className="price px-3 py-3 text-right text-lg font-bold text-danger">{cost.toLocaleString("vi-VN")} ₫</td>
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

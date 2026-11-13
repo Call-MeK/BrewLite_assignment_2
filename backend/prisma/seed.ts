@@ -73,7 +73,7 @@ async function main() {
   console.log("✅ Đã tạo 2 danh mục: Cà phê, Trà & Trái cây");
 
   // 4. Tạo Toppings
-  const toppingBoba = await prisma.topping.create({
+  await prisma.topping.create({
     data: {
       name: "Trân châu hoàng kim",
       price: 5000,
@@ -81,7 +81,7 @@ async function main() {
     },
   });
 
-  const toppingCheese = await prisma.topping.create({
+  await prisma.topping.create({
     data: {
       name: "Vải",
       price: 8000,
@@ -89,7 +89,7 @@ async function main() {
     },
   });
 
-  const toppingPeach = await prisma.topping.create({
+  await prisma.topping.create({
     data: {
       name: "Đác thơm",
       price: 8000,

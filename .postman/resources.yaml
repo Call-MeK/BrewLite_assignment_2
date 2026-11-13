@@ -1,9 +1,11 @@
-# Use this workspace to collaborate
 workspace:
   id: 91851b3a-3e86-4816-8268-a4a383dede9f
-
-# All resources in the `postman/` folder are automatically registered in Local View.
-# Point to additional files outside the `postman/` folder to register them individually. Example:
-#localResources:
-#  collections:
-#    - ../tests/E2E Test Collection/
+cloudResources:
+  collections:
+    ../postman/collections/payment: 59115983-68f33123-f1c1-4da7-90da-a5194c2d802e
+  environments:
+    ../postman/environments/BrewLite Local.environment.yaml: 59115983-c1c750d4-9f18-4977-8e53-a10eec5f231b
+  mocks:
+    ../postman/mocks/new-mock/config.yaml: 01a171fe-3fc4-76d0-bda9-9de38f4c74ea
+  globals:
+    ../postman/globals/workspace.globals.yaml: 0f15445f-471d-4f01-8f38-829472d57a10
