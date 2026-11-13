@@ -15,6 +15,7 @@ export interface OrderSummary {
 }
 
 export interface OrderDetail extends Omit<OrderSummary, 'itemCount'> {
+  refundStatus: 'NONE' | 'MANUAL_REQUIRED';
   totalAmount: number;
   discountAmount: number;
   pointsRedeemed: number;
@@ -34,9 +35,9 @@ export const orderStatusLabel: Record<OrderStatus, string> = {
   READY: 'Sẵn sàng nhận', COMPLETED: 'Hoàn thành', PAYMENT_FAILED: 'Thanh toán thất bại', CANCELLED: 'Đã hủy',
 };
 
-export function createOrder(items: CartItemDraft[], pointsToUse = 0) {
+export function createOrder(items: CartItemDraft[], pointsToUse = 0, promotionCode?: string) {
   return fetchApi<{ id: string }>('/orders', {
-    method: 'POST', body: JSON.stringify({ items: toOrderItems(items), pointsToUse }),
+    method: 'POST', body: JSON.stringify({ items: toOrderItems(items), pointsToUse, promotionCode: promotionCode?.trim() || undefined }),
   });
 }
 
@@ -50,12 +51,4 @@ export function getOrder(id: string) {
 
 export function cancelOrder(id: string) {
   return fetchApi<{ status: OrderStatus }>(`/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
-}
-
-export function payOrder(id: string, method: PaymentMethod, key: string, outcome: 'SUCCESS' | 'FAILED') {
-  return fetchApi<{ status: 'SUCCESS' | 'FAILED'; failureReason: string | null }>('/payments', {
-    method: 'POST',
-    headers: { 'Idempotency-Key': key, 'X-Mock-Outcome': outcome },
-    body: JSON.stringify({ orderId: id, method }),
-  });
 }

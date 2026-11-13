@@ -6,6 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "test": "node -r ts-node/register --test test/*.test.cjs",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
@@ -17,6 +18,9 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node -r dotenv/config prisma/seed.ts",
     "menu:add": "ts-node -r dotenv/config prisma/add-menu-items.ts",
+    "ingredients:add": "ts-node -r dotenv/config prisma/add-ingredients.ts",
+    "recipes:add": "ts-node -r dotenv/config prisma/add-recipes.ts",
+    "stock-import:add": "ts-node -r dotenv/config prisma/add-stock-import.ts",
     "toppings:add": "ts-node -r dotenv/config prisma/add-toppings.ts"
   },
   "dependencies": {
@@ -24,8 +28,10 @@
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/jwt": "^11.0.0",
+    "@nestjs/mapped-types": "*",
     "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/schedule": "^12.0.2",
     "@prisma/client": "^6.4.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",

@@ -1,0 +1,51 @@
+@startuml BrewLite-Deployment
+title BrewLite – Sơ đồ triển khai mục tiêu
+
+node "Trình duyệt khách hàng" as Browser {
+  [Next.js App] as WebApp
+}
+
+node "Frontend Host\n(Vercel / static host)" as FE {
+  [Next.js build\nNEXT_PUBLIC_API_URL] as FEApp
+}
+
+node "Backend Host\n(Container / VM, chạy dài)" as BE {
+  [NestJS API\n/api/v1] as API
+  [Cron mỗi phút\nhủy đơn quá hạn] as Cron
+  [Prisma Client] as Prisma
+}
+
+database "PostgreSQL managed\n(SSL + backup)" as DB
+
+cloud "ZaloPay Sandbox" as ZLP {
+  [Create / Query / Cancel API] as ZLPAPI
+  [Callback HTTPS] as ZLPCB
+}
+
+cloud "GitHub" as GH {
+  [Repository] as Repo
+  [GitHub Actions\nCI trên main] as CI
+}
+
+Browser --> FEApp : HTTPS
+FEApp --> API : HTTPS JSON + JWT
+API --> Prisma
+Prisma --> DB : TCP 5432 / SSL
+API --> ZLPAPI : HTTPS form-urlencoded\nHMAC-SHA256
+ZLPCB --> API : POST /payments/zalopay/callback\n(verify MAC key2)
+Cron --> DB
+
+Repo --> CI : push / pull_request (main)
+CI --> Repo : build + test + artifact
+
+note right of BE
+  Không dùng serverless thuần vì @Cron.
+  Rollback = deploy lại image tag trước.
+end note
+
+note bottom of DB
+  Migration: prisma migrate deploy (forward-only).
+  Backup trước mỗi lần migration production.
+end note
+
+@enduml

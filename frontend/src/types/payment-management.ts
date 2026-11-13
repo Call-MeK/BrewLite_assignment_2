@@ -1,3 +1,4 @@
+// MOCK is retained only so historical rows still render; new payments use ZaloPay Sandbox.
 export type PaymentSource = 'MOCK' | 'ZALOPAY_SANDBOX' | 'BANK_TRANSFER';
 export type PaymentStatus = 'SUCCESS' | 'PENDING' | 'FAILED';
 export type Reconciliation = 'MATCHED' | 'WAITING' | 'AMOUNT_MISMATCH' | 'UNMATCHED' | 'NEEDS_REVIEW';
@@ -19,9 +20,6 @@ export interface ManagedPayment {
   createdAt: string;
 }
 
-// Retained for the standalone prototype fixtures.
-export type DemoPayment = ManagedPayment;
-
 export interface PaymentManagementResult {
   items: ManagedPayment[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
@@ -29,7 +27,8 @@ export interface PaymentManagementResult {
 }
 
 export interface PaymentFilters {
-  source: PaymentSource | 'ALL';
+  // ZaloPay Sandbox is the only payment source still offered by the backend.
+  source: 'ALL' | 'ZALOPAY_SANDBOX';
   status: PaymentStatus | 'ALL' | 'REVIEW';
   search: string;
   from: string;

@@ -17,8 +17,8 @@ export class PaymentManagementQueryDto {
   limit = 6;
 
   @IsOptional()
-  @IsIn(['ALL', 'MOCK', 'ZALOPAY_SANDBOX', 'BANK_TRANSFER'])
-  source: 'ALL' | 'MOCK' | 'ZALOPAY_SANDBOX' | 'BANK_TRANSFER' = 'ALL';
+  @IsIn(['ALL', 'ZALOPAY_SANDBOX'])
+  source: 'ALL' | 'ZALOPAY_SANDBOX' = 'ALL';
 
   @IsOptional()
   @IsIn(['ALL', 'SUCCESS', 'PENDING', 'FAILED', 'REVIEW'])

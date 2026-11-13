@@ -1,0 +1,5 @@
+$kind: collection
+name: BrewLite API smoke test
+description: Register, browse products, create an order, and start a ZaloPay Sandbox payment.
+variables:
+  latestOrderId: ""
