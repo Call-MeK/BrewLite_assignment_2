@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { BookOpen, Plus, Trash2 } from "lucide-react";
 import {
-  getAllProducts,
+  getProducts,
   createProduct,
   deleteProduct,
   getAllCategories,
@@ -62,7 +62,7 @@ export default function AdminProductsPage() {
 
   const loadProducts = async () => {
     try {
-      setProducts(await getAllProducts());
+      setProducts(await getProducts());
     } catch (error) {
       console.error(error);
     }

@@ -9,6 +9,7 @@ import { getOrder, type OrderDetail } from '@/services/order.service';
 import { ZaloPaySandboxPanel } from '@/components/payments/zalopay-sandbox-panel';
 import type { ZaloPayPayment } from '@/services/zalopay.service';
 import { money } from '@/lib/money';
+import { useCartStore } from '@/store/useCartStore';
 
 export default function PaymentGatewayPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,8 +40,7 @@ export default function PaymentGatewayPage() {
         if (!active || currentSequence !== sequence || localStorage.getItem('token') !== currentToken) return;
         setOrder(value);
         if (value.status === 'PAID' && localStorage.getItem('brewlite-pending-order-id') === value.id) {
-          finishPaidPendingOrder(localStorage, value.id);
-          window.dispatchEvent(new Event('cart-changed'));
+          if (finishPaidPendingOrder(localStorage, value.id)) useCartStore.getState().clearCart();
         }
       } catch (cause) {
         if (active && currentSequence === sequence && localStorage.getItem('token') === currentToken) {

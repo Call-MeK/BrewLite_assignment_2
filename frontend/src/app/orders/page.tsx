@@ -4,11 +4,10 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowRight, ClipboardList } from 'lucide-react';
 import { ApiError } from '@/lib/api-client';
+import { formatDateTime as date } from '@/lib/date';
 import { money } from '@/lib/money';
 import { getOrders, orderStatusLabel, type OrderSummary } from '@/services/order.service';
 import { useRequestCooldown } from '@/components/use-request-cooldown';
-
-const date = (value: string) => new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 
 export default function OrdersPage() {
   const cooldown = useRequestCooldown('GET', '/orders/me');

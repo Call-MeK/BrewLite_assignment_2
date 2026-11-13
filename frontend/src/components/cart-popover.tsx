@@ -3,27 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ShoppingBag, X } from 'lucide-react';
-import type { CartItemDraft } from '@/types/product';
+import { useCartReady, useCartStore } from '@/store/useCartStore';
 
 export function CartPopover() {
-  const [items, setItems] = useState<CartItemDraft[]>([]);
+  const ready = useCartReady();
+  const items = useCartStore((state) => state.items);
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const load = () => {
-      try {
-        const value = JSON.parse(localStorage.getItem('brewlite-cart') || '[]');
-        setItems(Array.isArray(value) ? value : []);
-      } catch { setItems([]); }
-    };
-    load();
-    window.addEventListener('storage', load);
-    window.addEventListener('cart-changed', load);
-    return () => {
-      window.removeEventListener('storage', load);
-      window.removeEventListener('cart-changed', load);
-    };
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +30,7 @@ export function CartPopover() {
       className="relative flex h-11 w-11 items-center justify-center rounded-ticket border-[1.5px] border-ink bg-white text-ink transition-colors hover:bg-ink hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <ShoppingBag size={19} aria-hidden="true" />
-      {count > 0 && <span className="price absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-ticket bg-accent px-1 text-xs font-bold text-ink" aria-hidden="true">{count}</span>}
+      {ready && count > 0 && <span className="price absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-ticket bg-accent px-1 text-xs font-bold text-ink" aria-hidden="true">{count}</span>}
     </button>
 
     {open && <>

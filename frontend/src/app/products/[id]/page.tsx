@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Check, Coffee, Minus, Plus, RefreshCw, ShoppingBag } from 'lucide-react';
 import { ApiError } from '@/lib/api-client';
-import { addOrMergeCartItem } from '@/lib/cart-items';
 import { getProductById } from '@/services/product.service';
 import { resolveProductImage } from '@/lib/local-product-images';
 import type { CartItemDraft, ProductDetail, ProductSize } from '@/types/product';
 import { useRequestCooldown } from '@/components/use-request-cooldown';
 import { money } from '@/lib/money';
+import { useCartStore } from '@/store/useCartStore';
 
 function isValidProduct(value: ProductDetail): boolean {
   return Boolean(
@@ -30,6 +30,7 @@ export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const cooldown = useRequestCooldown('GET', `/products/${id}`);
+  const addItem = useCartStore((state) => state.addItem);
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -97,11 +98,7 @@ export default function ProductDetailPage() {
         estimatedUnitPrice: estimatedPrice,
         currency: product.currency,
       };
-      const saved = localStorage.getItem('brewlite-cart');
-      const items: CartItemDraft[] = saved ? JSON.parse(saved) : [];
-      if (!Array.isArray(items)) throw new Error('Danh sách món đã chọn không hợp lệ.');
-      localStorage.setItem('brewlite-cart', JSON.stringify(addOrMergeCartItem(items, newItem)));
-      window.dispatchEvent(new Event('cart-changed'));
+      addItem(newItem);
       setNotice(`Đã thêm ${product.name}. Mở biểu tượng túi món ở đầu trang để xem.`);
       setAdding(false);
     } catch (cause) {

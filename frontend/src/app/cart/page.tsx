@@ -1,37 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Coffee, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { resolveProductImageByName } from '@/lib/local-product-images';
-import type { CartItemDraft } from '@/types/product';
 import { ProductPurchaseModal } from '@/components/menu/product-purchase-modal';
 import { money } from '@/lib/money';
+import { useCartReady, useCartStore } from '@/store/useCartStore';
 
 export default function CartPage() {
   const router = useRouter();
-  const [items, setItems] = useState<CartItemDraft[]>([]);
-  const [ready, setReady] = useState(false);
+  const ready = useCartReady();
+  const items = useCartStore((state) => state.items);
+  const setQuantity = useCartStore((state) => state.setQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const clearCart = useCartStore((state) => state.clearCart);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('brewlite-cart');
-      const parsed = saved ? JSON.parse(saved) : [];
-      setItems(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setItems([]);
-    } finally {
-      setReady(true);
-    }
-  }, []);
-
-  function save(next: CartItemDraft[]) {
-    setItems(next);
-    localStorage.setItem('brewlite-cart', JSON.stringify(next));
-    window.dispatchEvent(new Event('cart-changed'));
-  }
 
   const total = items.reduce((sum, item) => sum + item.estimatedUnitPrice * item.quantity, 0);
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -87,7 +72,7 @@ export default function CartPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => save(items.filter((_, i) => i !== index))}
+                          onClick={() => removeItem(index)}
                           aria-label={`Xóa ${item.productName}`}
                           className="flex h-10 w-10 items-center justify-center rounded-ticket text-content-secondary hover:bg-danger-light hover:text-danger"
                         >
@@ -104,7 +89,7 @@ export default function CartPage() {
                       <button
                         aria-label="Giảm số lượng"
                         disabled={item.quantity <= 1}
-                        onClick={() => save(items.map((x, i) => i === index ? { ...x, quantity: Math.max(1, x.quantity - 1) } : x))}
+                        onClick={() => setQuantity(index, Math.max(1, item.quantity - 1))}
                         className="flex h-10 w-10 items-center justify-center rounded-ticket border border-ink/20 text-ink disabled:opacity-40"
                       >
                         <Minus size={14} aria-hidden="true" />
@@ -113,7 +98,7 @@ export default function CartPage() {
                       <button
                         aria-label="Tăng số lượng"
                         disabled={item.quantity >= 99}
-                        onClick={() => save(items.map((x, i) => i === index ? { ...x, quantity: Math.min(99, x.quantity + 1) } : x))}
+                        onClick={() => setQuantity(index, Math.min(99, item.quantity + 1))}
                         className="flex h-10 w-10 items-center justify-center rounded-ticket border border-ink/20 text-ink disabled:opacity-40"
                       >
                         <Plus size={14} aria-hidden="true" />
@@ -127,7 +112,7 @@ export default function CartPage() {
               ))}
             </div>
 
-            <button onClick={() => save([])} className="mt-3 text-sm font-semibold text-danger hover:underline">
+            <button onClick={clearCart} className="mt-3 text-sm font-semibold text-danger hover:underline">
               Xóa tất cả món đã chọn
             </button>
           </div>
@@ -174,11 +159,7 @@ export default function CartPage() {
           initialItem={items[editingIndex]}
           editingIndex={editingIndex}
           onClose={() => setEditingIndex(null)}
-          onSaved={() => {
-            const saved = JSON.parse(localStorage.getItem('brewlite-cart') || '[]');
-            setItems(Array.isArray(saved) ? saved : []);
-            setEditingIndex(null);
-          }}
+          onSaved={() => setEditingIndex(null)}
         />
       )}
     </section>

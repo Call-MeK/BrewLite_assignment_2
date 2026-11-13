@@ -6,6 +6,7 @@ import { useRequestCooldown } from '@/components/use-request-cooldown';
 import { finishPaidPendingOrder } from '@/lib/pending-order';
 import { getOrder, type OrderDetail, type PaymentMethod } from '@/services/order.service';
 import { cancelZaloPay, createZaloPay, getLatestZaloPay, getZaloPayConfig, syncZaloPay, type ZaloPayPayment } from '@/services/zalopay.service';
+import { useCartStore } from '@/store/useCartStore';
 
 export function ZaloPaySandboxPanel({ order, onOrderUpdated, onPendingChange, onPaymentChange }: {
   order: OrderDetail;
@@ -33,8 +34,7 @@ export function ZaloPaySandboxPanel({ order, onOrderUpdated, onPendingChange, on
     onPendingChange(next?.status === 'PENDING' || next?.status === 'SUCCESS');
     if (next && next.status !== 'PENDING') sessionStorage.removeItem(`brewlite-zalopay-${updated.id}-${next.method}`);
     if (updated.status === 'PAID' && localStorage.getItem('brewlite-pending-order-id') === updated.id) {
-      finishPaidPendingOrder(localStorage, updated.id);
-      window.dispatchEvent(new Event('cart-changed'));
+      if (finishPaidPendingOrder(localStorage, updated.id)) useCartStore.getState().clearCart();
     }
   }, [onOrderUpdated, onPendingChange, onPaymentChange]);
 

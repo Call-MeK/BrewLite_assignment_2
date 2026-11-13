@@ -9,6 +9,8 @@ Tài liệu thiết kế cấu trúc mã nguồn chi tiết cho phân hệ Giỏ
 ### 1.1. Store quản lý trạng thái giỏ hàng (Zustand + Persist)
 `frontend/src/store/useCartStore.ts`
 
+> **Bản đang chạy:** `frontend/src/store/useCartStore.ts` — cùng mô hình trên nhưng thao tác theo vị trí dòng trong giỏ (`addItem`, `replaceItem`, `setQuantity`, `removeItem`, `clearCart`). LocalStorage vẫn là **mảng JSON thuần** ở key `brewlite-cart` để `checkout` và `pending-order` đọc trực tiếp; `pendingOrderId` vẫn nằm trong `lib/pending-order.ts`. Đoạn code dưới đây là bản thiết kế tham khảo.
+
 ```typescript
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';

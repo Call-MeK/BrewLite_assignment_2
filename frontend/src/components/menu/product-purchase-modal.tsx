@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, Coffee, Minus, Plus, RefreshCw, ShoppingBag, X } from 'lucide-react';
-import { addOrMergeCartItem, replaceCartItem } from '@/lib/cart-items';
 import { resolveProductImage } from '@/lib/local-product-images';
 import { getProductById } from '@/services/product.service';
 import type { CartItemDraft, ProductDetail, ProductSize } from '@/types/product';
 import { useRequestCooldown } from '@/components/use-request-cooldown';
 import { money } from '@/lib/money';
+import { useCartStore } from '@/store/useCartStore';
 
 interface Props {
   productId: string;
@@ -19,6 +19,8 @@ interface Props {
 
 export function ProductPurchaseModal({ productId, initialItem, editingIndex, onClose, onSaved }: Props) {
   const cooldown = useRequestCooldown('GET', `/products/${productId}`);
+  const addItem = useCartStore((state) => state.addItem);
+  const replaceItem = useCartStore((state) => state.replaceItem);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [size, setSize] = useState<ProductSize | ''>('');
@@ -67,17 +69,13 @@ export function ProductPurchaseModal({ productId, initialItem, editingIndex, onC
     if (!product || !product.isAvailable || !sizePrice?.isAvailable || !Number.isInteger(quantity) || quantity < 1 || quantity > Math.min(99, sizePrice.availableQuantity)) return;
     setError('');
     try {
-      const stored = JSON.parse(localStorage.getItem('brewlite-cart') || '[]');
-      if (!Array.isArray(stored)) throw new Error('Danh sách món đã chọn không hợp lệ.');
       const item: CartItemDraft = {
         productId: product.id, productName: product.name, imageUrl: product.imageUrl,
         size: sizePrice.size, toppingIds: selectedToppings.map((option) => option.id),
         toppingNames: selectedToppings.map((option) => option.name), quantity,
         estimatedUnitPrice: unitPrice, currency: product.currency,
       };
-      const next = editingIndex === undefined ? addOrMergeCartItem(stored, item) : replaceCartItem(stored, editingIndex, item);
-      localStorage.setItem('brewlite-cart', JSON.stringify(next));
-      window.dispatchEvent(new Event('cart-changed'));
+      if (editingIndex === undefined) addItem(item); else replaceItem(editingIndex, item);
       onSaved();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không thể lưu món đã chọn.');

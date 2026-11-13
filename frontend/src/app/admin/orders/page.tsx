@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { ApiError } from '@/lib/api-client';
+import { formatDateTime as date } from '@/lib/date';
 import { money } from '@/lib/money';
 import { orderStatusLabel, type OrderStatus } from '@/services/order.service';
 import { advanceAdminOrder, cancelAdminOrder, getAdminOrder, getAdminOrders, type AdminOrder, type AdminOrderDetail } from '@/services/admin-order.service';
 
-const date = (value: string) => new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 const button = 'inline-flex min-h-11 items-center justify-center rounded-ticket border border-ink/25 bg-white px-4 text-sm font-semibold text-ink hover:border-ink hover:bg-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40';
 const nextStatus: Partial<Record<OrderStatus, 'PREPARING' | 'READY' | 'COMPLETED'>> = { PAID: 'PREPARING', PREPARING: 'READY', READY: 'COMPLETED' };
 const nextLabel = { PREPARING: 'Bắt đầu chuẩn bị', READY: 'Đánh dấu sẵn sàng', COMPLETED: 'Hoàn thành đơn' };

@@ -5,12 +5,11 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, CreditCard } from 'lucide-react';
 import { ApiError } from '@/lib/api-client';
+import { formatDateTime as date } from '@/lib/date';
 import { money } from '@/lib/money';
 import { clearPendingOrder } from '@/lib/pending-order';
 import { cancelOrder, getOrder, orderStatusLabel, type OrderDetail } from '@/services/order.service';
 import { useRequestCooldown } from '@/components/use-request-cooldown';
-
-const date = (value: string) => new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
