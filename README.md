@@ -91,6 +91,7 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
   - Frontend: <https://brewlite-acme-1b6f1.vercel.app>
   - API: <https://brewlite-api-u2jb.onrender.com/api/v1> (health: `/health`)
   - Database: Neon PostgreSQL (Singapore), migrate + seed bằng Prisma.
+- Cập nhật gần nhất: 13/11/2026 (kiểm tra CD backend).
 - Thanh toán chỉ dùng ZaloPay Sandbox; mock payment đã được gỡ (xem ADR-002). Trên môi trường
   demo, sandbox đã bật bằng bộ key sandbox công khai (`app_id=2554`); giao dịch tạo được
   `paymentUrl` và đối soát ở `/admin/payments`. Callback công khai có thể không được app demo
