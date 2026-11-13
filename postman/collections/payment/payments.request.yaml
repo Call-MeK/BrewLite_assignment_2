@@ -1,12 +1,11 @@
 $kind: http-request
-url: "{{baseUrl}}/payments"
+url: "{{baseUrl}}/payments/zalopay"
 method: POST
 order: 7000
 headers:
   Authorization: Bearer {{token}}
   Content-Type: application/json
   Idempotency-Key: "{{idempotencyKey}}"
-  X-Mock-Outcome: SUCCESS
 body:
   type: json
   content: |-
@@ -24,12 +23,14 @@ scripts:
     language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test('Payment belongs to the current order', function () {
+      pm.test('ZaloPay payment belongs to the current order', function () {
         const body = pm.response.json();
         if (pm.response.code === 404) throw new Error('Không tìm thấy orderId trong database hiện tại. Chạy lại POST /orders và dùng data.id của đơn mới.');
+        if (pm.response.code === 503) throw new Error('ZaloPay Sandbox chưa được bật hoặc thiếu ZALOPAY_* trong backend/.env.');
         pm.expect(pm.response.code).to.be.oneOf([200, 201]);
         const payment = body.data;
         pm.expect(payment.orderId).to.eql(pm.collectionVariables.get('latestOrderId'));
-        pm.expect(payment.status).to.eql('SUCCESS');
+        pm.expect(payment.source).to.eql('ZALOPAY_SANDBOX');
+        pm.expect(payment.status).to.be.oneOf(['PENDING', 'SUCCESS']);
       });
     language: text/javascript

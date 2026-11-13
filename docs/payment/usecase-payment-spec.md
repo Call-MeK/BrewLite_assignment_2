@@ -1,70 +1,78 @@
-# Use Case Specification – Payment
+# Use Case Specification – Payment (ZaloPay Sandbox)
 
 ## 1. Thông tin chung
 
 - **Use Case ID:** UC-PAY-01
-- **Tên Use Case:** Thanh toán đơn hàng
+- **Tên Use Case:** Thanh toán đơn hàng qua ZaloPay Sandbox
 - **Actor chính:** Khách hàng
-- **Actor phụ:** Cổng thanh toán giả lập (Mock Payment Gateway)
-- **Mục tiêu:** Cho phép khách hàng thanh toán đơn hàng bằng ví điện tử hoặc thẻ ngân hàng và nhận kết quả giao dịch.
+- **Actor phụ:** ZaloPay Sandbox (cổng thanh toán thử nghiệm), Quản trị viên (đối soát)
+- **Mục tiêu:** Cho phép khách hàng thanh toán đơn hàng bằng Ví ZaloPay hoặc thẻ nội địa
+  trong môi trường sandbox và nhận kết quả giao dịch đã xác minh.
 
 ## 2. Tiền điều kiện (Preconditions)
 
 - Khách hàng đã đăng nhập.
-- Đơn hàng tồn tại và thuộc quyền truy cập của khách hàng.
-- Đơn hàng chưa được thanh toán và đủ điều kiện thanh toán.
+- Đơn hàng tồn tại, thuộc khách hàng và đang `PENDING` hoặc `PAYMENT_FAILED`.
+- Sandbox đã bật: `ZALOPAY_SANDBOX_ENABLED=true`, `NODE_ENV=development|test`,
+  `ZALOPAY_APP_ID`/`ZALOPAY_KEY1`/`ZALOPAY_KEY2` hợp lệ.
 - Backend và cơ sở dữ liệu hoạt động bình thường.
 
 ## 3. Luồng chính (Main Flow)
 
-1. Khách hàng chọn đơn hàng cần thanh toán.
-2. Hệ thống hiển thị số tiền cần thanh toán.
-3. Khách hàng chọn ví điện tử hoặc thẻ ngân hàng.
-4. Frontend gửi yêu cầu `POST /api/v1/payments` kèm `orderId`, `method` và `Idempotency-Key`.
-5. Backend xác thực dữ liệu, quyền truy cập và trạng thái đơn hàng.
-6. Backend kiểm tra `Idempotency-Key`.
-7. Backend xác định số tiền thanh toán từ dữ liệu đơn hàng trong database.
-8. Backend tạo bản ghi Payment với trạng thái `PENDING`.
-9. Backend gửi yêu cầu đến Mock Payment Gateway.
-10. Nếu thanh toán thành công, Backend cập nhật Payment thành `SUCCESS` và cập nhật đơn hàng thành `PAID`.
-11. Hệ thống trả kết quả đã được bọc qua `TransformInterceptor` (`{ success: true, statusCode: 201, data: {...}, timestamp }`) để Frontend hiển thị cho khách hàng.
+1. Khách hàng mở trang thanh toán của đơn hàng.
+2. Frontend gọi `GET /payments/zalopay/config` và
+   `GET /payments/zalopay/orders/:orderId`.
+3. Hệ thống hiển thị số tiền và lựa chọn `E_WALLET` / `BANK_CARD`.
+4. Frontend gửi `POST /payments/zalopay` kèm `orderId`, `method`, `Idempotency-Key`.
+5. Backend khóa đơn, kiểm tra quyền/trạng thái/key và ghi Payment `PENDING` trước khi gọi mạng.
+6. Backend ký HMAC-SHA256 và gọi API create của ZaloPay Sandbox.
+7. Backend trả `paymentUrl`; Frontend mở trang thanh toán ZaloPay.
+8. Khách hoàn tất thanh toán sandbox.
+9. ZaloPay gọi callback (nếu có `ZALOPAY_CALLBACK_URL`) hoặc Frontend gọi
+   `POST /payments/zalopay/:id/sync`.
+10. Backend xác thực MAC/số tiền, cập nhật Payment `SUCCESS` và chuyển Order `PAID`.
+11. Hệ thống cộng điểm loyalty một lần và Frontend xóa giỏ hàng khi thấy `PAID`.
 
 ## 4. Luồng thay thế (Alternative Flows)
 
-### A1 – Thanh toán thất bại
+### A1 – Khách hủy hoặc giao dịch hết hạn
 
-1. Cổng thanh toán giả lập trả kết quả thất bại (hoặc gateway timeout).
-2. Backend cập nhật Payment thành `FAILED` kèm lý do thất bại.
-3. Backend chuyển trạng thái đơn hàng `PENDING → PAYMENT_FAILED` thông qua `OrderService.transition`.
-4. Frontend hiển thị thông báo thất bại và giữ nguyên giỏ hàng của khách hàng.
-5. Khách hàng có thể chọn thử lại thanh toán không giới hạn số lần: hệ thống chuyển đơn hàng `PAYMENT_FAILED → PENDING` và thực hiện thanh toán với `Idempotency-Key` mới.
+1. Khách bấm đổi phương thức hoặc ZaloPay báo hết hạn (`-54`) sau `expiresAt`.
+2. Backend gọi API cancel (nếu đổi phương thức) và chỉ chuyển trạng thái khi ZaloPay xác nhận.
+3. Payment `FAILED`, Order `PAYMENT_FAILED`.
+4. Frontend giữ giỏ hàng; khách có thể tạo lượt mới với `Idempotency-Key` mới.
 
-### A2 – Idempotency-Key đã tồn tại
+### A2 – Không xác định được kết quả
 
-- Nếu key và nội dung yêu cầu giống nhau, Backend trả lại kết quả đã lưu (HTTP 200). Request đồng thời dùng cùng key: request thua (lỗi unique) truy vấn và trả lại kết quả đã lưu (HTTP 200), không trả lỗi 500.
-- Nếu key giống nhưng nội dung yêu cầu khác (`requestHash` lệch), Backend từ chối với mã lỗi `409 Conflict`.
-- Không tạo giao dịch thanh toán trùng.
+- Timeout hoặc mã lỗi truy vấn của ZaloPay trả `503`; Payment giữ `PENDING`.
+- Khách chọn "Kiểm tra kết quả" (`sync`) trước khi thử lại. Hệ thống không tự kết luận thất bại
+  và không cho tạo lượt thanh toán thứ hai khi lượt cũ còn `PENDING`.
 
-### A3 – Timeout từ cổng thanh toán
+### A3 – Callback bất thường
 
-1. Khi yêu cầu sang Gateway bị timeout, hệ thống ghi nhận Payment là `FAILED` với lý do `"Gateway timeout"`.
-2. Đơn hàng chuyển sang trạng thái `PAYMENT_FAILED` qua `OrderService.transition`.
-3. Khách hàng có thể bấm "Thử lại" để chuyển đơn sang `PENDING` và thanh toán lại với key mới.
+- MAC sai, `app_id` lạ hoặc dữ liệu hỏng: trả `return_code: -1`, không đổi dữ liệu.
+- Số tiền lệch, giao dịch trùng hoặc đơn đã hủy: Payment `SUCCESS` kèm `reviewReason`,
+  Order không chuyển `PAID`; Quản trị viên đối soát trong `/admin/payments`.
+
+### A4 – Idempotency-Key đã tồn tại
+
+- Cùng key + cùng payload: trả bản ghi đã lưu, không gọi ZaloPay lại.
+- Cùng key + payload khác: `409 Conflict`.
+- Request đồng thời: một bản ghi duy nhất, request thua đọc lại kết quả, không `500`.
 
 ## 5. Hậu điều kiện (Postconditions)
 
-- Thành công: Payment có trạng thái `SUCCESS`; Order chuyển sang trạng thái `PAID`; Giỏ hàng được xóa (`clearCart()` và xóa `pendingOrderId`); Tích lũy điểm thưởng loyalty.
-- Thất bại: Payment có trạng thái `FAILED`; Order chuyển sang trạng thái `PAYMENT_FAILED`; Giỏ hàng được giữ nguyên để khách hàng có thể thử lại.
+- Thành công: Payment `SUCCESS`, Order `PAID`, điểm loyalty cộng một lần, giỏ hàng được xóa.
+- Thất bại: Payment `FAILED`, Order `PAYMENT_FAILED`, giỏ hàng giữ nguyên.
+- Bất thường: Payment `SUCCESS` + `reviewReason`, Order giữ nguyên để admin xử lý.
 
 ## 6. Acceptance Criteria
 
-- Khách hàng có thể chọn một trong hai phương thức: `E_WALLET` hoặc `BANK_CARD`.
-- Backend tự xác định số tiền từ đơn hàng, không tin số tiền do Frontend tự gửi.
-- Thanh toán thành công cập nhật trạng thái đơn hàng thành `PAID` và làm rỗng giỏ hàng.
-- Thanh toán thất bại chuyển đơn hàng thành `PAYMENT_FAILED`, giữ nguyên giỏ hàng.
-- Cùng Idempotency-Key và cùng nội dung yêu cầu không tạo giao dịch trùng, trả về kết quả đã lưu.
-- Cùng Idempotency-Key nhưng nội dung khác phải bị từ chối với lỗi 409 Conflict.
-- Hỗ trợ thử lại thanh toán không giới hạn số lần với Idempotency-Key mới.
+- Chỉ ZaloPay Sandbox được dùng; không còn mock gateway hay `X-Mock-Outcome`.
+- Backend tự xác định số tiền từ `Order.finalAmount`.
+- Callback được xác thực MAC và đối chiếu `app_id`, `app_trans_id`, số tiền.
+- Không tạo giao dịch trùng khi retry hoặc request đồng thời.
+- Sandbox fail closed khi thiếu cấu hình hoặc chạy ngoài `development`/`test`.
 
 ---
 
@@ -72,32 +80,35 @@
 
 | Mã quy tắc | Tên quy tắc | Nội dung chi tiết |
 | :--- | :--- | :--- |
-| **BR-PAY-01** | Idempotency (Cơ chế chống trùng lặp) | Header `Idempotency-Key` là bắt buộc khi gọi `POST /api/v1/payments`.<br>- **Cùng key + cùng payload:** Backend trả lại kết quả đã lưu trong bảng `Payment` (HTTP 200) mà không tạo giao dịch mới hay gọi lại Mock Gateway.<br>- **Request đồng thời:** Request bị lỗi unique constraint truy vấn và trả kết quả đã lưu (HTTP 200), không trả 500.<br>- **Cùng key + khác payload (`requestHash`):** Backend từ chối với mã lỗi `409 Conflict`. |
-| **BR-PAY-02** | Số tiền thanh toán từ CSDL (Amount Verification) | Số tiền thanh toán (`amount`) bắt buộc phải lấy từ trường `Order.finalAmount` trong database. Backend tuyệt đối không tin cậy và không sử dụng bất kỳ số tiền nào do Client tự gửi lên. |
-| **BR-PAY-03** | Điều kiện trạng thái đơn hàng (Order State Precondition) | `POST /api/v1/payments` chỉ chấp nhận các đơn hàng đang ở trạng thái `PENDING` hoặc `PAYMENT_FAILED`. Nếu đơn hàng ở các trạng thái khác (`PAID`, `CANCELLED`, `PREPARING`...), Backend từ chối giao dịch với mã lỗi `409 Conflict`. |
-| **BR-PAY-04** | Xử lý thanh toán thành công (Payment Success) | Khi Mock Gateway xác nhận thành công:<br>1. Cập nhật `Payment.status = SUCCESS`, lưu `transactionRef`.<br>2. Gọi `OrderService.transition(orderId, PAID)`, gán `Order.paidAt = now()`.<br>3. Ghi nhận lịch sử trạng thái vào `OrderStatusHistory` và tích lũy điểm thưởng loyalty (`Order.pointsEarned`) trong cùng transaction.<br>4. Client thực hiện xóa giỏ hàng (`clearCart()` và xóa `pendingOrderId`). |
-| **BR-PAY-05** | Xử lý thanh toán thất bại (Payment Failure) | Khi Mock Gateway trả về kết quả thất bại (từ chối thẻ, không đủ số dư, timeout...):<br>1. Cập nhật bản ghi `Payment.status = FAILED`, lưu `failureReason`.<br>2. Gọi `OrderService.transition(orderId, PAYMENT_FAILED)` để chuyển trạng thái đơn hàng sang `PAYMENT_FAILED`.<br>3. Giữ nguyên giỏ hàng tại Frontend để khách hàng có thể thử lại hoặc đổi phương thức. |
-| **BR-PAY-06** | Quy tắc thử lại thanh toán (Retry Policy) | Khi khách hàng thử lại sau một giao dịch thất bại (`PAYMENT_FAILED`), hệ thống chuyển đơn hàng `PAYMENT_FAILED → PENDING` qua `OrderService.transition`. Frontend **bắt buộc phải sinh một `Idempotency-Key` mới**. Hệ thống cho phép thử lại không giới hạn số lần (gỡ bỏ giới hạn 3 lần và thời hạn 15 phút). Mỗi lần thử lại sẽ tạo một bản ghi `Payment` mới liên kết với cùng `orderId`. |
-| **BR-PAY-07** | Xử lý Timeout (Timeout Handling) | Khi yêu cầu sang Gateway bị timeout, Backend ghi nhận `Payment.status = FAILED` với `failureReason = "Gateway timeout"` và chuyển `Order.status = PAYMENT_FAILED`. Không duy trì trạng thái treo PENDING hay đối soát bất đồng bộ trong MVP. |
-
----
+| **BR-PAY-01** | Idempotency | `Idempotency-Key` bắt buộc khi tạo giao dịch. Cùng key + cùng payload trả kết quả đã lưu; cùng key + payload khác trả `409`; request đồng thời không được trả `500`. |
+| **BR-PAY-02** | Số tiền từ CSDL | `amount` luôn lấy từ `Order.finalAmount`; client không được gửi hoặc ghi đè số tiền. |
+| **BR-PAY-03** | Điều kiện trạng thái | Chỉ nhận đơn `PENDING` hoặc `PAYMENT_FAILED`. Đơn khác trả `409`. |
+| **BR-PAY-04** | Thanh toán thành công | Chỉ khi MAC/số tiền hợp lệ: Payment `SUCCESS`, Order `PAID`, ghi `paidAt`, lịch sử trạng thái và điểm loyalty trong cùng transaction. |
+| **BR-PAY-05** | Thanh toán thất bại | ZaloPay từ chối/hủy/hết hạn: Payment `FAILED` + lý do, Order `PAYMENT_FAILED`, giữ giỏ hàng. |
+| **BR-PAY-06** | Thử lại | Đơn `PAYMENT_FAILED` được chuyển về `PENDING` trong transaction tạo lượt mới; bắt buộc `Idempotency-Key` mới; không giới hạn số lần. |
+| **BR-PAY-07** | Kết quả không xác định | Timeout hoặc mã lỗi truy vấn không được coi là thất bại; giữ `PENDING` và yêu cầu `sync`. |
+| **BR-PAY-08** | Đối soát | Sai tiền, giao dịch trùng hoặc đơn đã hủy ghi `reviewReason`; Order không tự chuyển `PAID`; admin xử lý tại `/admin/payments`. |
 
 ## 8. Kết luận các vấn đề thiết kế
 
-### [Q1] Khi nào chuyển đơn hàng sang trạng thái `OrderStatus.PAYMENT_FAILED`?
+### [Q1] Khi nào chuyển đơn sang `PAYMENT_FAILED`?
 
-**ĐÃ CHỐT (Quyết định D1):**
-- Khi giao dịch thanh toán thất bại (gateway từ chối hoặc timeout), `Payment.status = FAILED` và đơn hàng lập tức chuyển sang `OrderStatus.PAYMENT_FAILED` thông qua `OrderService.transition`.
-- Khách hàng được phép thử lại không giới hạn số lần: khi thử lại, đơn hàng chuyển `PAYMENT_FAILED → PENDING` và gửi thanh toán với `Idempotency-Key` mới.
-- Gỡ bỏ toàn bộ quy định giới hạn 3 lần, 15 phút và khóa vĩnh viễn đơn hàng.
+- Khi ZaloPay xác nhận hủy/từ chối/hết hạn. Timeout và lỗi truy vấn **không** chuyển trạng thái.
+- Khách được thử lại không giới hạn với key mới.
 
-### [Q2] Thời gian chờ thanh toán tối đa (Payment Timeout Window)
+### [Q2] Thời gian chờ thanh toán
 
-**ĐÃ CHỐT (Quyết định D6):**
-- Gỡ bỏ scheduler/cron-job tự động hết hạn 15 phút và trường `expiresAt` khỏi phạm vi MVP.
-- **Giới hạn đã biết (Known Limitation):** Các đơn hàng ở trạng thái `PENDING` hoặc `PAYMENT_FAILED` nếu bị khách hàng bỏ dở sẽ tiếp tục giữ tồn kho cho đến khi được hủy thủ công thông qua `POST /orders/:id/cancel`.
+- Mỗi giao dịch có `expiresAt = createdAt + 15 phút` và gửi `expire_duration_seconds=900`
+  sang ZaloPay. Chỉ khi ZaloPay xác nhận `-54` và đã quá `expiresAt` mới đóng giao dịch.
+- Đơn bị bỏ dở vẫn giữ tồn kho cho đến khi khách hủy hoặc admin xử lý.
+
+### [Q3] Vì sao bỏ mock payment?
+
+- Rubric cho phép mô phỏng, nhưng mock tạo hai nguồn sự thật và không kiểm chứng được
+  callback/MAC. ZaloPay Sandbox bao phủ đầy đủ luồng thật ở mức thử nghiệm nên mock bị gỡ.
 
 ## 9. Lịch sử thay đổi
-- v1.0 (2026-10-11): Khởi tạo đặc tả Use Case Payment.
-- v1.1 – áp dụng quyết định D1, D2, D6 (ngày 2026-10-16).
 
+- v2.0 (2026-11-13): ZaloPay Sandbox là luồng duy nhất; bổ sung callback, sync, cancel, đối soát.
+- v1.1 (2026-10-16): Áp dụng quyết định D1, D2, D6.
+- v1.0 (2026-10-11): Khởi tạo đặc tả Use Case Payment.

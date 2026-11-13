@@ -168,7 +168,7 @@ export default function AdminDashboardPage() {
             { href: "/admin/orders", label: "Xử lý đơn hàng", hint: "Chuẩn bị, sẵn sàng, hoàn thành hoặc hủy đơn." },
             { href: "/admin/products", label: "Cập nhật thực đơn", hint: "Thêm món mới và chỉnh công thức định lượng." },
             { href: "/admin/imports", label: "Nhập hàng vào kho", hint: "Ghi phiếu nhập để cộng tồn và cập nhật giá vốn." },
-            { href: "/admin/payments", label: "Đối soát thanh toán", hint: "Kiểm tra giao dịch Mock và ZaloPay Sandbox." },
+            { href: "/admin/payments", label: "Đối soát thanh toán", hint: "Kiểm tra giao dịch ZaloPay Sandbox." },
           ].map((item) => <Link key={item.href} href={item.href} className="group flex items-center justify-between gap-3 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <span>
               <span className="block text-sm font-semibold text-ink group-hover:text-primary">{item.label}</span>

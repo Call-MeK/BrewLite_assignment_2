@@ -13,6 +13,7 @@ import { RecipesModule } from './modules/recipes/recipes.module';
 import { StockImportsModule } from './modules/stock-imports/stock-imports.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RequestLimitsInterceptor } from './common/interceptors/request-limits.interceptor';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { RequestLimitsInterceptor } from './common/interceptors/request-limits.i
     RecipesModule,
     StockImportsModule,
   ],
+  controllers: [AppController],
   providers: [{ provide: APP_INTERCEPTOR, useClass: RequestLimitsInterceptor }],
 })
 export class AppModule {}

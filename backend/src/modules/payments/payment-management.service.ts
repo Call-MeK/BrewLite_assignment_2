@@ -73,8 +73,7 @@ export class PaymentManagementService {
       throw new BadRequestException('Ngày bắt đầu phải trước hoặc bằng ngày kết thúc');
     }
     const conditions: Prisma.Sql[] = [];
-    if (query.source === 'BANK_TRANSFER') conditions.push(Prisma.sql`FALSE`);
-    else if (query.source !== 'ALL') conditions.push(Prisma.sql`p.source::text = ${query.source}`);
+    if (query.source !== 'ALL') conditions.push(Prisma.sql`p.source::text = ${query.source}`);
     if (query.status === 'REVIEW') conditions.push(Prisma.sql`(COALESCE(p.provider_amount, p.amount) <> o.final_amount OR p.review_reason IS NOT NULL)`);
     else if (query.status !== 'ALL') conditions.push(Prisma.sql`p.status::text = ${query.status}`);
     if (query.from) conditions.push(Prisma.sql`p.created_at >= ${new Date(`${query.from}T00:00:00+07:00`)}`);
@@ -114,7 +113,7 @@ export class PaymentManagementService {
       source: row.source, method: row.method, amount, expectedAmount, status: row.status,
       reconciliation: amount !== expectedAmount ? 'AMOUNT_MISMATCH' as const
         : row.reviewReason ? 'NEEDS_REVIEW' as const : row.status === 'SUCCESS' ? 'MATCHED' as const : 'WAITING' as const,
-      reference: row.reference, description: `${row.source === 'MOCK' ? 'Thanh toán mô phỏng' : 'ZaloPay Sandbox'} đơn #${row.orderNumber}`,
+      reference: row.reference, description: `${row.source === 'MOCK' ? 'Thanh toán mock lưu trữ' : 'ZaloPay Sandbox'} đơn #${row.orderNumber}`,
       failureReason: row.failureReason, reviewReason: row.reviewReason, createdAt: row.createdAt,
     };
   }

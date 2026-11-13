@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight, Building2, CheckCircle2, ChevronLeft, ChevronRight,
-  CircleAlert, Clock3, FlaskConical, Landmark, Search, ShieldCheck, SlidersHorizontal,
+  CircleAlert, Clock3, FlaskConical, Landmark, Search, SlidersHorizontal,
   RefreshCw, Wallet, X,
 } from 'lucide-react';
 import { PaymentDetailDialog } from '@/components/payments/payment-detail-dialog';
@@ -11,7 +11,7 @@ import {
   formatPaymentMoney as money,
   formatPaymentTime as time, initialFilters, needsPaymentReview, reconciliationLabels,
   sourceLabels, statusLabels,
-} from '@/lib/payment-management-demo';
+} from '@/lib/payment-management-format';
 import { ApiError } from '@/lib/api-client';
 import { getZaloPayConfig } from '@/services/zalopay.service';
 import { getManagedPayment, getManagedPayments } from '@/services/payment-management.service';
@@ -19,17 +19,15 @@ import type { ManagedPayment, PaymentFilters, PaymentManagementResult, PaymentSo
 import { useRequestCooldown } from '@/components/use-request-cooldown';
 
 const pageSize = 6;
-const sources: { value: PaymentSource | 'ALL'; label: string }[] = [
+const sources: { value: PaymentFilters['source']; label: string }[] = [
   { value: 'ALL', label: 'Tất cả giao dịch' },
-  { value: 'MOCK', label: 'Mock Payment' },
   { value: 'ZALOPAY_SANDBOX', label: 'ZaloPay Sandbox' },
-  { value: 'BANK_TRANSFER', label: 'Chuyển khoản' },
 ];
 const controlClass = 'min-h-11 w-full rounded-ticket border border-ink/20 bg-white px-3 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
 const buttonClass = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-ticket border border-ink/25 bg-white px-4 text-sm font-semibold text-ink transition-colors hover:border-ink hover:bg-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40';
 
 function SourceIcon({ source }: { source: PaymentSource }) {
-  const Icon = source === 'MOCK' ? FlaskConical : source === 'ZALOPAY_SANDBOX' ? Wallet : Landmark;
+  const Icon = source === 'ZALOPAY_SANDBOX' ? Wallet : source === 'BANK_TRANSFER' ? Landmark : FlaskConical;
   return <Icon size={18} aria-hidden="true" />;
 }
 
@@ -174,10 +172,10 @@ export default function PaymentManagementPage() {
         <div className="mt-2 flex flex-wrap items-end justify-between gap-5">
           <div>
             <h1 id="payments-title" className="text-3xl font-extrabold tracking-[-0.03em] text-ink sm:text-4xl">Quản lý thanh toán</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-content-secondary">Theo dõi giao dịch Mock Payment, ZaloPay Sandbox và kiểm tra thông tin đơn hàng.</p>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-content-secondary">Theo dõi giao dịch ZaloPay Sandbox và kiểm tra thông tin đơn hàng.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-ticket border border-ink/15 bg-paper-deep/50 px-3 py-2 text-xs font-semibold text-content-secondary">MOCK + SANDBOX</span>
+            <span className="rounded-ticket border border-ink/15 bg-paper-deep/50 px-3 py-2 text-xs font-semibold text-content-secondary">ZALOPAY SANDBOX</span>
             <button type="button" onClick={() => { if (cooldown.start()) setRefresh((value) => value + 1); }} disabled={loading || invalidDates || cooldown.blocked} className={buttonClass}><RefreshCw size={18} aria-hidden="true" /> {cooldown.label || 'Làm mới'}</button>
           </div>
         </div>
@@ -185,7 +183,7 @@ export default function PaymentManagementPage() {
 
       <div className="flex items-start gap-3 rounded-ticket border-l-4 border-primary bg-primary-light p-4 text-sm leading-relaxed text-primary">
         <FlaskConical size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
-        <p><strong>Giao dịch thử nghiệm từ hệ thống.</strong> Mock Payment và ZaloPay Sandbox không phải doanh thu tiền thật. Thông báo chuyển khoản ngân hàng chưa được kết nối.</p>
+        <p><strong>Giao dịch thử nghiệm từ hệ thống.</strong> ZaloPay Sandbox không phải doanh thu tiền thật. Thông báo chuyển khoản ngân hàng chưa được kết nối.</p>
       </div>
 
       {error && <div role="alert" className="rounded-ticket border-l-4 border-danger bg-danger-light p-4 text-sm text-danger">{error}</div>}
@@ -195,8 +193,8 @@ export default function PaymentManagementPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: 'Chuyển khoản ngân hàng', value: 'Chưa kết nối', caption: 'Chưa nhận thông báo chuyển khoản thật', icon: Landmark, color: 'bg-success-light text-success' },
-          { label: 'Thanh toán thử nghiệm thành công', value: ready ? money(summary.test) : '—', caption: 'Mock + sandbox đã khớp đơn theo bộ lọc', icon: Wallet, color: 'bg-primary-light text-primary' },
-          { label: 'Giao dịch đang chờ', value: ready ? String(summary.pending).padStart(2, '0') : '—', caption: 'Chờ kết quả thanh toán mô phỏng', icon: Clock3, color: 'bg-surface-secondary text-content-secondary' },
+          { label: 'Thanh toán thử nghiệm thành công', value: ready ? money(summary.test) : '—', caption: 'Giao dịch thành công theo bộ lọc', icon: Wallet, color: 'bg-primary-light text-primary' },
+          { label: 'Giao dịch đang chờ', value: ready ? String(summary.pending).padStart(2, '0') : '—', caption: 'Chờ kết quả thanh toán ZaloPay', icon: Clock3, color: 'bg-surface-secondary text-content-secondary' },
           { label: 'Giao dịch cần chú ý', value: ready ? String(summary.attention).padStart(2, '0') : '—', caption: 'Thất bại hoặc sai số tiền đơn hàng', icon: CircleAlert, color: 'bg-amber-50 text-amber-900' },
         ].map(({ label, value, caption, icon: Icon, color }) => <div key={label} className="ticket p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-semibold leading-5 text-content-secondary">{label}</p><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-ticket border border-ink/15 ${color}`}><Icon size={18} aria-hidden="true" /></span></div><p className="price mt-4 text-3xl font-bold tracking-[-0.02em]">{value}</p><p className="mt-2 text-xs leading-5 text-content-secondary">{caption}</p></div>)}
       </div>
@@ -221,18 +219,18 @@ export default function PaymentManagementPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[850px] text-left text-sm">
-            <caption className="sr-only">Danh sách giao dịch thanh toán mô phỏng từ backend, thời gian theo GMT+7. Chọn Xem để mở chi tiết.</caption>
+            <caption className="sr-only">Danh sách giao dịch ZaloPay Sandbox từ backend, thời gian theo GMT+7. Chọn Xem để mở chi tiết.</caption>
             <thead className="border-b border-ink/15 bg-paper-deep/50 text-[11px] uppercase tracking-[0.12em] text-content-secondary"><tr>{['Giao dịch / Đơn hàng', 'Nguồn thanh toán', 'Số tiền', 'Trạng thái / Đối soát', 'Thời gian', 'Chi tiết'].map((label) => <th key={label} scope="col" className="whitespace-nowrap px-5 py-3 font-semibold">{label}</th>)}</tr></thead>
             <tbody className="divide-y divide-ink/10">
               {visible.map((payment) => <tr key={payment.id} className="transition-colors hover:bg-paper/60">
                 <td className="px-5 py-4"><p className="font-semibold">{payment.orderNumber === null ? 'Chưa khớp đơn' : `Đơn #${payment.orderNumber}`}</p><p className="mt-1 text-[11px] text-content-secondary">{payment.id}</p><p className="mt-1 text-xs text-content-secondary">{payment.customer}</p></td>
-                <td className="px-5 py-4"><div className="flex items-center gap-2"><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-ticket border border-ink/15 ${payment.source === 'BANK_TRANSFER' ? 'bg-success-light text-success' : payment.source === 'ZALOPAY_SANDBOX' ? 'bg-primary-light text-primary' : 'bg-paper text-ink'}`}><SourceIcon source={payment.source} /></span><span className="text-xs font-semibold">{sourceLabels[payment.source]}</span></div><p className="mt-1 pl-10 text-[11px] text-content-secondary">{payment.source === 'ZALOPAY_SANDBOX' ? 'Giao dịch sandbox đã lưu' : 'Thanh toán mô phỏng đã lưu'}</p></td>
+                <td className="px-5 py-4"><div className="flex items-center gap-2"><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-ticket border border-ink/15 ${payment.source === 'BANK_TRANSFER' ? 'bg-success-light text-success' : payment.source === 'ZALOPAY_SANDBOX' ? 'bg-primary-light text-primary' : 'bg-paper text-ink'}`}><SourceIcon source={payment.source} /></span><span className="text-xs font-semibold">{sourceLabels[payment.source]}</span></div><p className="mt-1 pl-10 text-[11px] text-content-secondary">{payment.source === 'ZALOPAY_SANDBOX' ? 'Giao dịch sandbox đã lưu' : payment.source === 'BANK_TRANSFER' ? 'Chuyển khoản ngân hàng' : 'Giao dịch mock lưu trữ'}</p></td>
                 <td className="whitespace-nowrap px-5 py-4 font-bold tabular-nums">{money(payment.amount)}</td>
                 <td className="px-5 py-4"><StatusBadge payment={payment} /><p className="mt-1.5 text-[11px] text-content-secondary">{reconciliationLabels[payment.reconciliation]}</p></td>
                 <td className="whitespace-nowrap px-5 py-4 text-xs tabular-nums text-content-secondary">{time(payment.createdAt)}</td>
                 <td className="px-5 py-4"><button type="button" disabled={detailLoading || detailCooldown.blocked} onClick={() => openPayment(payment.id)} aria-label={`Xem chi tiết ${payment.id}`} className="inline-flex min-h-11 items-center gap-1 rounded-ticket px-2 text-xs font-bold text-primary hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-40">{detailCooldown.label || 'Xem'} <ArrowRight size={15} aria-hidden="true" /></button></td>
               </tr>)}
-              {visible.length === 0 && <tr><td colSpan={6} className="px-5 py-12 text-center"><Search size={28} className="mx-auto text-primary" aria-hidden="true" /><p role="status" className="mt-3 font-bold">{invalidDates ? 'Khoảng ngày chưa hợp lệ' : loading ? 'Đang tải giao dịch…' : error ? 'Chưa tải được dữ liệu' : 'Không tìm thấy giao dịch'}</p><p className="mt-2 text-sm text-content-secondary">{invalidDates ? 'Điều chỉnh ngày bắt đầu và ngày kết thúc để xem dữ liệu.' : loading ? 'Vui lòng chờ.' : error ? 'Kiểm tra thông báo phía trên và chọn Làm mới để thử lại.' : filters.source === 'BANK_TRANSFER' ? 'Kênh thanh toán này chưa được kết nối.' : 'Thử thay đổi từ khóa hoặc xóa bộ lọc.'}</p></td></tr>}
+              {visible.length === 0 && <tr><td colSpan={6} className="px-5 py-12 text-center"><Search size={28} className="mx-auto text-primary" aria-hidden="true" /><p role="status" className="mt-3 font-bold">{invalidDates ? 'Khoảng ngày chưa hợp lệ' : loading ? 'Đang tải giao dịch…' : error ? 'Chưa tải được dữ liệu' : 'Không tìm thấy giao dịch'}</p><p className="mt-2 text-sm text-content-secondary">{invalidDates ? 'Điều chỉnh ngày bắt đầu và ngày kết thúc để xem dữ liệu.' : loading ? 'Vui lòng chờ.' : error ? 'Kiểm tra thông báo phía trên và chọn Làm mới để thử lại.' : 'Thử thay đổi từ khóa hoặc xóa bộ lọc.'}</p></td></tr>}
             </tbody>
           </table>
         </div>
@@ -245,9 +243,8 @@ export default function PaymentManagementPage() {
 
       <section aria-labelledby="connections-title" className="space-y-3">
         <div className="flex items-center gap-2"><SlidersHorizontal size={17} className="text-primary" aria-hidden="true" /><h2 id="connections-title" className="text-sm font-bold">Kênh thanh toán</h2></div>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {[
-            { title: 'Mock Payment', icon: FlaskConical, label: 'API đã tích hợp', description: 'Đọc giao dịch mô phỏng đã lưu trong hệ thống. Cần đăng nhập bằng tài khoản được cấp quyền quản trị.' },
             { title: 'ZaloPay Sandbox', icon: Wallet, label: sandboxConfigured ? 'Đã có cấu hình sandbox' : 'Chưa bật hoặc thiếu cấu hình', description: 'Hỗ trợ tạo thanh toán và đồng bộ trạng thái qua truy vấn. Cấu hình đầy đủ chưa đồng nghĩa kết nối đã được kiểm chứng.' },
             { title: 'Chuyển khoản ngân hàng', icon: Building2, label: 'Chưa liên kết', description: 'Cần liên kết ngân hàng và webhook để nhận thông báo tiền thật.' },
           ].map(({ title, icon: Icon, label, description }) => <article key={title} className="ticket p-5"><div className="flex items-center gap-2"><Icon size={18} className="shrink-0 text-primary" aria-hidden="true" /><h3 className="text-sm font-bold">{title}</h3></div><p className="mt-3 inline-flex rounded-ticket border border-ink/15 bg-paper px-2.5 py-1 text-[11px] font-semibold text-content-secondary">{label}</p><p className="mt-3 text-xs leading-5 text-content-secondary">{description}</p></article>)}

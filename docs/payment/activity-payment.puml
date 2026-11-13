@@ -1,5 +1,5 @@
 @startuml
-title SƠ ĐỒ HOẠT ĐỘNG - QUY TRÌNH THANH TOÁN (D1, D2, D8, D9)
+title SƠ ĐỒ HOẠT ĐỘNG - QUY TRÌNH THANH TOÁN ZALOPAY SANDBOX
 
 skinparam backgroundColor white
 skinparam activity {
@@ -16,9 +16,9 @@ skinparam ArrowColor black
 start
 
 :Khách hàng chọn đơn hàng (PENDING hoặc PAYMENT_FAILED);
-:Chọn phương thức thanh toán (ví điện tử / thẻ);
+:Chọn phương thức thanh toán (Ví ZaloPay / Thẻ nội địa);
 :Tạo Idempotency-Key mới (UUID v4);
-:Gửi yêu cầu POST /api/v1/payments\n(Kèm Header X-Mock-Outcome nếu ở môi trường dev/staging);
+:Gửi yêu cầu POST /api/v1/payments/zalopay;
 
 :Backend trích xuất user (req.user.sub)\nvà kiểm tra quyền sở hữu đơn hàng;
 
@@ -52,33 +52,49 @@ if (Khóa đã tồn tại trong CSDL?) then (Có)
 else (Không)
 endif
 
-:Tạo bản ghi Payment (status = PENDING);\n(Lưu requestHash và idempotencyKey);
-
-:Mô phỏng cục bộ SUCCESS/FAILED\nChỉ development/test và PAYMENT_DEMO_MODE=true\nMôi trường khác: 503, không ghi Payment;
-
-if (Kết quả thanh toán gateway?) then (Thành công)
-    :Cập nhật Payment status = SUCCESS;
-    :OrderService.transition(orderId, PAID);\n(Cập nhật paidAt = now(), version + 1);
-    :Ghi OrderStatusHistory (PENDING → PAID);
-    :Cộng điểm loyalty (+1 điểm / 1.000đ finalAmount);\n(Ghi nhận LoyaltyTransaction EARNED - Quyết định D9);
-    :Frontend xóa giỏ hàng (clearCart() và xóa pendingOrderId - Quyết định D2);
-    :Hiển thị màn hình Thanh toán thành công;
+if (Sandbox đã bật và đủ cấu hình?) then (Không)
+    :Trả về 503\nKhông tạo Payment, không đổi trạng thái đơn;
     stop
-else (Thất bại hoặc Gateway Timeout)
-    :Cập nhật Payment status = FAILED\n(failureReason = mã lỗi hoặc "Gateway timeout" - Quyết định D1);
-    :OrderService.transition(orderId, PAYMENT_FAILED);
-    :Ghi OrderStatusHistory (PENDING → PAYMENT_FAILED);
-    :Frontend giữ nguyên giỏ hàng trong LocalStorage (Quyết định D2);
-    :Hiển thị thông báo thanh toán thất bại kèm nút "Thử lại";
-
-    if (Khách hàng chọn Thử lại?) then (Có)
-        :Tạo Idempotency-Key mới;
-        :Gửi lại POST /api/v1/payments (Order PAYMENT_FAILED → PENDING);
-        stop
-    else (Hủy hoặc thoát)
-        :Đơn hàng giữ ở PAYMENT_FAILED\n(Khách có thể thử lại sau hoặc hủy đơn qua POST /orders/:id/cancel);
-        stop
-    endif
+else (Có)
 endif
+
+:Tạo bản ghi Payment (status = PENDING, source = ZALOPAY_SANDBOX);\nLưu requestHash, idempotencyKey, providerOrderId, expiresAt;
+
+:Backend ký HMAC-SHA256 và gọi API create của ZaloPay Sandbox;
+
+if (ZaloPay trả return_code = 1?) then (Không)
+    if (ZaloPay từ chối rõ ràng?) then (Có)
+        :Payment FAILED, Order PAYMENT_FAILED;
+    else (Không xác định / timeout)
+        :Giữ Payment PENDING kèm failureReason;\nTrả 503 và yêu cầu đồng bộ;
+    endif
+    stop
+else (Có)
+endif
+
+:Lưu paymentUrl và trả về cho Frontend;
+:Khách hoàn tất thanh toán trên trang ZaloPay;
+
+:ZaloPay gọi callback\nhoặc Frontend gọi POST /payments/zalopay/:id/sync;
+
+if (MAC và dữ liệu giao dịch hợp lệ?) then (Không)
+    :Trả return_code = -1 (callback)\nhoặc 503 (sync);\nKhông đổi dữ liệu;
+    stop
+else (Có)
+endif
+
+if (Số tiền khớp, mã giao dịch chưa trùng,\nđơn chưa hủy?) then (Không)
+    :Payment SUCCESS + reviewReason;\nOrder giữ nguyên để admin đối soát;
+    stop
+else (Có)
+endif
+
+:Cập nhật Payment status = SUCCESS;\nLưu transactionRef, providerAmount;
+:OrderService.transition(orderId, PAID);\n(Cập nhật paidAt, version + 1);
+:Ghi OrderStatusHistory (PENDING → PAID);
+:Cộng điểm loyalty (+1 điểm / 1.000đ finalAmount);\n(Ghi LoyaltyTransaction EARNED - Quyết định D9);
+:Frontend xóa giỏ hàng (clearCart() và xóa pendingOrderId - Quyết định D2);
+:Hiển thị màn hình Thanh toán thành công;
+stop
 
 @enduml

@@ -19,7 +19,7 @@ Hệ thống áp dụng mô hình Git Flow rút gọn:
   - `feat/auth-jwt` (Thành viên làm tính năng đăng ký/đăng nhập)
   - `feat/product-menu` (Thành viên làm hiển thị menu)
   - `feat/cart-state` (Thành viên làm giỏ hàng Zustand)
-  - `feat/mock-payment` (Thành viên làm thanh toán)
+  - `feat/zalopay-payment` (Thành viên làm thanh toán)
   - `fix/cart-total-price` (Sửa lỗi tính tiền giỏ hàng)
 
 ---

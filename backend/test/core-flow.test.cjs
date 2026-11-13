@@ -7,6 +7,8 @@ const { PrismaClient } = require('@prisma/client');
 
 if (!process.env.PAYMENT_TEST_DATABASE_URL) throw new Error('Set PAYMENT_TEST_DATABASE_URL to a disposable PostgreSQL schema');
 process.env.DATABASE_URL = process.env.PAYMENT_TEST_DATABASE_URL;
+process.env.NODE_ENV = 'test';
+process.env.REQUEST_LIMITS_ENABLED = 'false';
 process.env.JWT_SECRET = 'core-flow-test-only-secret';
 
 const { AppModule } = require('../src/app.module');

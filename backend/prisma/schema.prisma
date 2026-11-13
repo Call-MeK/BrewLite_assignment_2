@@ -309,7 +309,7 @@ model Payment {
   status                PaymentStatus @default(PENDING)
   failureReason         String?       @map("failure_reason")
   transactionRef        String?       @map("transaction_ref")
-  source                PaymentSource @default(MOCK)
+  source                PaymentSource @default(ZALOPAY_SANDBOX)
   providerOrderId       String?       @unique @map("provider_order_id")
   providerTransactionId String?       @unique @map("provider_transaction_id")
   paymentUrl            String?       @map("payment_url")

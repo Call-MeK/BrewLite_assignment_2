@@ -78,7 +78,7 @@ export default function OrderDetailPage() {
         <h1 className="price mt-2 text-3xl font-extrabold tracking-[-0.03em] text-ink sm:text-4xl">Đơn #{order.orderNumber}</h1>
         <p className="mt-2 text-sm text-content-secondary">{date(order.createdAt)}, {orderStatusLabel[order.status] ?? order.status}</p>
       </header>
-      {order.refundStatus === 'MANUAL_REQUIRED' && <p className="rounded-ticket border-l-4 border-accent bg-accent-soft p-4 text-ink">Đơn đã hủy và cần hoàn tiền thủ công. Giao dịch mock chỉ là tiền mô phỏng.</p>}
+      {order.refundStatus === 'MANUAL_REQUIRED' && <p className="rounded-ticket border-l-4 border-accent bg-accent-soft p-4 text-ink">Đơn đã hủy và cần hoàn tiền thủ công. Giao dịch ZaloPay Sandbox không phải tiền thật.</p>}
       {message && <p role="status" className="rounded-ticket border-l-4 border-success bg-success-light p-4 font-medium text-success">{message}</p>}
       {error && <p role="alert" className="rounded-ticket border-l-4 border-danger bg-danger-light p-4 font-medium text-danger">{error}</p>}
       <div className="grid gap-6 md:grid-cols-[1fr_280px]">
@@ -104,7 +104,7 @@ export default function OrderDetailPage() {
           </div>
           {order.status === 'CANCELLED' && order.pointsRedeemed > 0 && <p className="mt-3 text-sm text-success">{order.pointsRedeemed} điểm đã được hoàn vào tài khoản.</p>}
           {(order.status === 'PENDING' || order.status === 'PAYMENT_FAILED') && <div className="mt-6 border-t border-dashed border-ink/25 pt-5">
-            <p className="text-sm text-content-secondary">Chọn Mock Payment hoặc ZaloPay Sandbox để thanh toán thử nghiệm.</p>
+            <p className="text-sm text-content-secondary">Thanh toán thử nghiệm qua ZaloPay Sandbox.</p>
             <Link href={`/orders/${order.id}/payment`} className="btn-primary mt-4 w-full"><CreditCard size={18} aria-hidden="true" /> Đến cổng thanh toán</Link>
           </div>}
           {['PENDING', 'PAYMENT_FAILED', 'PAID'].includes(order.status) && <div className="mt-4">

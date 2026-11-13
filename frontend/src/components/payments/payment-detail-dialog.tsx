@@ -5,7 +5,7 @@ import { Check, Clock3, FileText, X } from 'lucide-react';
 import {
   formatPaymentMoney as money, formatPaymentTime as time, needsPaymentReview,
   reconciliationLabels, sourceLabels, statusLabels,
-} from '@/lib/payment-management-demo';
+} from '@/lib/payment-management-format';
 import type { ManagedPayment } from '@/types/payment-management';
 import { syncZaloPay } from '@/services/zalopay.service';
 import { getManagedPayment } from '@/services/payment-management.service';
@@ -102,7 +102,7 @@ export function PaymentDetailDialog({ payment, onClose, onUpdated }: {
             <li className="flex gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-ticket border border-ink/15 bg-white text-primary"><Check size={16} aria-hidden="true" /></span><div><p className="font-semibold">{review ? 'Cần kiểm tra số tiền' : statusLabels[payment.status]}</p><p className="mt-1 text-xs text-content-secondary">{payment.failureReason ?? 'Trạng thái hiện tại của giao dịch trong hệ thống.'}</p></div></li>
           </ol>
         </section>
-        <p className="rounded-ticket border border-dashed border-ink/25 bg-white/60 p-4 text-xs leading-relaxed text-content-secondary">Giao dịch mock và sandbox không thể hiện tiền thật đã nhận. Đồng bộ ZaloPay sẽ truy vấn nhà cung cấp và cập nhật trạng thái đã xác minh.</p>
+        <p className="rounded-ticket border border-dashed border-ink/25 bg-white/60 p-4 text-xs leading-relaxed text-content-secondary">Giao dịch ZaloPay Sandbox không thể hiện tiền thật đã nhận. Đồng bộ ZaloPay sẽ truy vấn nhà cung cấp và cập nhật trạng thái đã xác minh.</p>
       </div>
     </dialog>
   );

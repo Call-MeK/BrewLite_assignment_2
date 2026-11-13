@@ -52,11 +52,3 @@ export function getOrder(id: string) {
 export function cancelOrder(id: string) {
   return fetchApi<{ status: OrderStatus }>(`/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
 }
-
-export function payOrder(id: string, method: PaymentMethod, key: string, outcome: 'SUCCESS' | 'FAILED') {
-  return fetchApi<{ status: 'SUCCESS' | 'FAILED'; failureReason: string | null }>('/payments', {
-    method: 'POST',
-    headers: { 'Idempotency-Key': key, 'X-Mock-Outcome': outcome },
-    body: JSON.stringify({ orderId: id, method }),
-  });
-}

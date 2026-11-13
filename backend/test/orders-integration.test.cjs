@@ -17,7 +17,6 @@ if (!databaseUrl || !new URL(databaseUrl).searchParams.get('schema') || new URL(
 process.env.DATABASE_URL = databaseUrl;
 process.env.NODE_ENV = 'test';
 process.env.REQUEST_LIMITS_ENABLED = 'false';
-process.env.PAYMENT_DEMO_MODE = 'true';
 process.env.JWT_SECRET = 'orders-integration-test-only';
 const prisma = new PrismaClient();
 const owner = randomUUID(), admin = randomUUID(), outsider = randomUUID(), productId = randomUUID();
@@ -61,7 +60,18 @@ async function order(pointsToUse = 0) {
   return row;
 }
 async function pay(id) {
-  return request('/payments', owner, 'POST', { orderId: id, method: 'E_WALLET' }, { 'Idempotency-Key': randomUUID(), 'X-Mock-Outcome': 'SUCCESS' });
+  await prisma.$transaction(async (tx) => {
+    const row = await tx.order.findUniqueOrThrow({ where: { id } });
+    await tx.payment.create({
+      data: {
+        orderId: id, idempotencyKey: randomUUID(), requestHash: 'integration-test',
+        amount: row.finalAmount, method: 'E_WALLET', status: 'SUCCESS',
+        source: 'ZALOPAY_SANDBOX', transactionRef: `ZLP_TEST_${randomUUID()}`,
+      },
+    });
+    await service.transition(id, 'PAID', tx, owner, 'ZaloPay sandbox test payment');
+  });
+  return { code: 201 };
 }
 
 test('admin orders enforce authentication/role, owner scope, filtering and sequential preparation', async () => {
@@ -87,7 +97,7 @@ test('admin orders enforce authentication/role, owner scope, filtering and seque
   }
   const detail = await request(`/admin/orders/${row.id}`, admin);
   assert.equal(detail.body.data.customer.id, owner);
-  assert.equal(detail.body.data.payments[0].source, 'MOCK');
+  assert.equal(detail.body.data.payments[0].source, 'ZALOPAY_SANDBOX');
   assert.equal(detail.body.data.statusHistory.at(-1).toStatus, 'COMPLETED');
 });
 
