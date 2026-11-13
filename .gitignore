@@ -22,6 +22,9 @@ dist/
 .env.test.local
 .env.production.local
 
+# Deployment secrets (never commit)
+.deploy-secrets.env
+
 # Playwright MCP artifacts
 .playwright-mcp/
 
