@@ -11,16 +11,30 @@ CREATE TYPE "PaymentMethod" AS ENUM ('E_WALLET', 'BANK_CARD');
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
 
 -- CreateEnum
+CREATE TYPE "PaymentSource" AS ENUM ('MOCK', 'ZALOPAY_SANDBOX');
+
+-- CreateEnum
+CREATE TYPE "RefundStatus" AS ENUM ('NONE', 'MANUAL_REQUIRED');
+
+-- CreateEnum
 CREATE TYPE "ProductSize" AS ENUM ('S', 'M', 'L');
 
 -- CreateEnum
-CREATE TYPE "LoyaltyTransactionType" AS ENUM ('EARNED', 'SPENT', 'REFUNDED');
+CREATE TYPE "LoyaltyTransactionType" AS ENUM ('EARNED', 'SPENT', 'REFUNDED', 'REVERSED');
+
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('CUSTOMER', 'ADMIN');
+
+-- CreateEnum
+CREATE TYPE "IngredientUnit" AS ENUM ('G', 'ML', 'PIECE');
 
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
+    "token_version" INTEGER NOT NULL DEFAULT 0,
+    "role" "UserRole",
     "full_name" TEXT,
     "loyalty_points" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -48,8 +62,6 @@ CREATE TABLE "products" (
     "name" TEXT NOT NULL,
     "base_price" DECIMAL(12,0) NOT NULL,
     "image_url" TEXT,
-    "stock" INTEGER NOT NULL DEFAULT 0,
-    "version" INTEGER NOT NULL DEFAULT 0,
     "is_available" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -65,6 +77,56 @@ CREATE TABLE "product_size_prices" (
     "price_adjustment" DECIMAL(12,0) NOT NULL DEFAULT 0,
 
     CONSTRAINT "product_size_prices_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ingredients" (
+    "id" TEXT NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "name_key" TEXT NOT NULL,
+    "unit" "IngredientUnit" NOT NULL,
+    "stock" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "version" INTEGER NOT NULL DEFAULT 0,
+    "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ingredients_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "recipe_ingredients" (
+    "product_id" TEXT NOT NULL,
+    "size" "ProductSize" NOT NULL,
+    "ingredient_id" TEXT NOT NULL,
+    "quantity" DECIMAL(12,3) NOT NULL,
+
+    CONSTRAINT "recipe_ingredients_pkey" PRIMARY KEY ("product_id","size","ingredient_id")
+);
+
+-- CreateTable
+CREATE TABLE "stock_imports" (
+    "id" TEXT NOT NULL,
+    "import_number" SERIAL NOT NULL,
+    "supplier" VARCHAR(120),
+    "note" VARCHAR(500),
+    "total_amount" DECIMAL(14,0) NOT NULL DEFAULT 0,
+    "created_by" VARCHAR(160),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stock_imports_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stock_import_items" (
+    "id" TEXT NOT NULL,
+    "import_id" TEXT NOT NULL,
+    "ingredient_id" TEXT NOT NULL,
+    "quantity" DOUBLE PRECISION NOT NULL,
+    "unit_price" DOUBLE PRECISION NOT NULL,
+    "line_total" DECIMAL(14,0) NOT NULL,
+
+    CONSTRAINT "stock_import_items_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -105,6 +167,7 @@ CREATE TABLE "orders" (
     "user_id" TEXT NOT NULL,
     "promotion_id" TEXT,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "refund_status" "RefundStatus" NOT NULL DEFAULT 'NONE',
     "total_amount" DECIMAL(12,0) NOT NULL,
     "discount_amount" DECIMAL(12,0) NOT NULL DEFAULT 0,
     "final_amount" DECIMAL(12,0) NOT NULL,
@@ -115,6 +178,15 @@ CREATE TABLE "orders" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "order_ingredients" (
+    "order_id" TEXT NOT NULL,
+    "ingredient_id" TEXT NOT NULL,
+    "quantity" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "order_ingredients_pkey" PRIMARY KEY ("order_id","ingredient_id")
 );
 
 -- CreateTable
@@ -151,6 +223,13 @@ CREATE TABLE "payments" (
     "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "failure_reason" TEXT,
     "transaction_ref" TEXT,
+    "source" "PaymentSource" NOT NULL DEFAULT 'ZALOPAY_SANDBOX',
+    "provider_order_id" TEXT,
+    "provider_transaction_id" TEXT,
+    "payment_url" TEXT,
+    "provider_amount" DECIMAL(12,0),
+    "review_reason" TEXT,
+    "expires_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "payments_pkey" PRIMARY KEY ("id")
@@ -173,13 +252,37 @@ CREATE TABLE "loyalty_transactions" (
 CREATE TABLE "order_status_history" (
     "id" TEXT NOT NULL,
     "order_id" TEXT NOT NULL,
-    "from_status" "OrderStatus" NOT NULL,
+    "from_status" "OrderStatus",
     "to_status" "OrderStatus" NOT NULL,
     "changed_by" TEXT,
     "reason" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "order_status_history_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "carts" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "carts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "cart_items" (
+    "id" TEXT NOT NULL,
+    "cart_id" TEXT NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 1,
+    "size" "ProductSize" NOT NULL DEFAULT 'M',
+    "topping_ids" TEXT[],
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "cart_items_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -193,6 +296,24 @@ CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "product_size_prices_product_id_size_key" ON "product_size_prices"("product_id", "size");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ingredients_name_key_key" ON "ingredients"("name_key");
+
+-- CreateIndex
+CREATE INDEX "recipe_ingredients_ingredient_id_idx" ON "recipe_ingredients"("ingredient_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "stock_imports_import_number_key" ON "stock_imports"("import_number");
+
+-- CreateIndex
+CREATE INDEX "stock_imports_created_at_idx" ON "stock_imports"("created_at");
+
+-- CreateIndex
+CREATE INDEX "stock_import_items_import_id_idx" ON "stock_import_items"("import_id");
+
+-- CreateIndex
+CREATE INDEX "stock_import_items_ingredient_id_idx" ON "stock_import_items"("ingredient_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "toppings_name_key" ON "toppings"("name");
@@ -216,13 +337,25 @@ CREATE INDEX "order_items_order_id_idx" ON "order_items"("order_id");
 CREATE UNIQUE INDEX "payments_idempotency_key_key" ON "payments"("idempotency_key");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "payments_provider_order_id_key" ON "payments"("provider_order_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "payments_provider_transaction_id_key" ON "payments"("provider_transaction_id");
+
+-- CreateIndex
 CREATE INDEX "payments_order_id_idx" ON "payments"("order_id");
+
+-- CreateIndex
+CREATE INDEX "payments_source_created_at_idx" ON "payments"("source", "created_at");
 
 -- CreateIndex
 CREATE INDEX "loyalty_transactions_user_id_idx" ON "loyalty_transactions"("user_id");
 
 -- CreateIndex
 CREATE INDEX "order_status_history_order_id_idx" ON "order_status_history"("order_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "carts_user_id_key" ON "carts"("user_id");
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -231,10 +364,28 @@ ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("
 ALTER TABLE "product_size_prices" ADD CONSTRAINT "product_size_prices_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "recipe_ingredients" ADD CONSTRAINT "recipe_ingredients_product_id_size_fkey" FOREIGN KEY ("product_id", "size") REFERENCES "product_size_prices"("product_id", "size") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "recipe_ingredients" ADD CONSTRAINT "recipe_ingredients_ingredient_id_fkey" FOREIGN KEY ("ingredient_id") REFERENCES "ingredients"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_import_items" ADD CONSTRAINT "stock_import_items_import_id_fkey" FOREIGN KEY ("import_id") REFERENCES "stock_imports"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stock_import_items" ADD CONSTRAINT "stock_import_items_ingredient_id_fkey" FOREIGN KEY ("ingredient_id") REFERENCES "ingredients"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_promotion_id_fkey" FOREIGN KEY ("promotion_id") REFERENCES "promotions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "order_ingredients" ADD CONSTRAINT "order_ingredients_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "order_ingredients" ADD CONSTRAINT "order_ingredients_ingredient_id_fkey" FOREIGN KEY ("ingredient_id") REFERENCES "ingredients"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -260,3 +411,11 @@ ALTER TABLE "loyalty_transactions" ADD CONSTRAINT "loyalty_transactions_order_id
 -- AddForeignKey
 ALTER TABLE "order_status_history" ADD CONSTRAINT "order_status_history_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "carts" ADD CONSTRAINT "carts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cart_id_fkey" FOREIGN KEY ("cart_id") REFERENCES "carts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
