@@ -130,7 +130,7 @@ async function main() {
       imageUrl:
         "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600",
     },
-    ...additionalMenuItems.map(({ categorySlug, stock, ...item }) => ({
+    ...additionalMenuItems.map(({ categorySlug, ...item }) => ({
       ...item,
       categoryId: categorySlug === "ca-phe" ? catCoffee.id : catTea.id,
     })),
@@ -141,7 +141,6 @@ async function main() {
     const product = await prisma.product.create({
       data: {
         ...item,
-        stock: 100,
         sizePrices: {
           create: [
             { size: ProductSize.S, priceAdjustment: 0 },

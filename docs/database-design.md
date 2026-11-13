@@ -33,8 +33,6 @@ classDiagram
         +String name
         +Decimal basePrice
         +String imageUrl
-        +Int stock = 0
-        +Int version = 0 (OptimisticLock)
         +Boolean isAvailable = true
     }
 
@@ -180,9 +178,7 @@ classDiagram
 | `name` | `VARCHAR(150)` | **NOT NULL** | Tên món (Cà phê sữa đá, Americano, Cappuccino, Trà đào). |
 | `base_price` | `DECIMAL(12,0)`| **NOT NULL** | Giá gốc đồ uống (VNĐ). |
 | `image_url` | `VARCHAR(500)` | NULLABLE | Link ảnh món đồ uống. |
-| `stock` | `INTEGER` | **DEFAULT 0** | Số lượng ly/nguyên liệu còn lại trong kho. |
-| `version` | `INTEGER` | **DEFAULT 0** | **Cột Optimistic Lock:** Ngăn chặn overselling khi nhiều khách đặt cùng lúc. |
-| `is_available` | `BOOLEAN` | **DEFAULT TRUE** | Còn bán hay tạm hết. |
+| `is_available` | `BOOLEAN` | **DEFAULT TRUE** | Còn bán hay tạm hết. Tồn kho thật tính từ `ingredients` + `recipe_ingredients`. |
 
 ---
 

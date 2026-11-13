@@ -64,6 +64,8 @@ BrewLite/
 ---
 
 ## 📌 QUY ƯỚC LÀM VIỆC DÀNH CHO THÀNH VIÊN
+Mới vào dự án? Đọc [docs/README.md](docs/README.md) trước — bản đồ toàn bộ tài liệu, chọn đúng file cần đọc.
+
 Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành viên bắt buộc đọc qua các tài liệu trong thư mục `docs/`:
 1. [Quy chuẩn Git & Commit](docs/git-convention.md)
 2. [Quy chuẩn đặt tên API & Database](docs/naming-convention.md)

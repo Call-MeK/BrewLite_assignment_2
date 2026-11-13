@@ -71,8 +71,6 @@ class "Product (products)" as Product {
   + name : String
   + base_price : Decimal(12,0)
   + image_url : String?
-  + stock : Int = 0
-  + version : Int = 0 <<OptimisticLock>>
   + is_available : Boolean = true
   + created_at : DateTime
   + updated_at : DateTime
