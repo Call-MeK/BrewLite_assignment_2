@@ -61,6 +61,6 @@ mã nguồn và kiểm thử tương ứng.
 |---|---|---|
 | Chưa có E2E Playwright/Cypress | Luồng UI được kiểm thủ công | Bổ sung ở giai đoạn D (tái cấu trúc repo) |
 | Callback ZaloPay với app sandbox công khai (2554) | Có thể không nhận callback | Trang thanh toán tự `sync` mỗi 15 giây và có nút “Kiểm tra kết quả” |
-| Render Free ngủ sau ~15 phút | Callback/cron trễ, cold start 30–60 giây | Dùng UptimeRobot ping `/api/v1/health` mỗi 5 phút |
+| Render Free ngủ sau ~15 phút | Callback/cron trễ, cold start 30–60 giây | Workflow `.github/workflows/keepalive.yml` ping `/api/v1/health` mỗi 5 phút |
 | Backend dùng `@Cron` mỗi phút | Không chạy được trên serverless thuần | Triển khai backend dạng container/VM |
 | Tồn kho giữ chỗ cho đơn bỏ dở | Đơn `PENDING` giữ nguyên liệu đến khi hủy | Cron hủy đơn quá hạn đã có; có thể tinh chỉnh TTL |
