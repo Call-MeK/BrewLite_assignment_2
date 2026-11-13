@@ -8,8 +8,7 @@ import { finishPaidPendingOrder } from '@/lib/pending-order';
 import { getOrder, type OrderDetail } from '@/services/order.service';
 import { ZaloPaySandboxPanel } from '@/components/payments/zalopay-sandbox-panel';
 import type { ZaloPayPayment } from '@/services/zalopay.service';
-
-const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+import { money } from '@/lib/money';
 
 export default function PaymentGatewayPage() {
   const { id } = useParams<{ id: string }>();

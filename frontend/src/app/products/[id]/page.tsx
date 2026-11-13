@@ -10,9 +10,7 @@ import { getProductById } from '@/services/product.service';
 import { resolveProductImage } from '@/lib/local-product-images';
 import type { CartItemDraft, ProductDetail, ProductSize } from '@/types/product';
 import { useRequestCooldown } from '@/components/use-request-cooldown';
-
-const money = (value: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+import { money } from '@/lib/money';
 
 function isValidProduct(value: ProductDetail): boolean {
   return Boolean(

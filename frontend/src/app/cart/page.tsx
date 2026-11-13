@@ -3,13 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Coffee, Minus, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowLeft, Coffee, Minus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { resolveProductImageByName } from '@/lib/local-product-images';
 import type { CartItemDraft } from '@/types/product';
 import { ProductPurchaseModal } from '@/components/menu/product-purchase-modal';
-
-const money = (value: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+import { money } from '@/lib/money';
 
 export default function CartPage() {
   const router = useRouter();

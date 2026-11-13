@@ -10,8 +10,7 @@ import { ApiError, fetchApi } from '@/lib/api-client';
 import { reconcilePendingOrder, submitCheckoutOrder } from '@/lib/pending-order';
 import { cancelOrder, createOrder, getOrder } from '@/services/order.service';
 import type { CartItemDraft } from '@/types/product';
-
-const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+import { money } from '@/lib/money';
 type Promotion = { code: string; description: string | null; discountPercent: number | null; discountAmount: string | null; maxDiscount: string | null; minOrderAmount: string; endDate: string | null };
 
 export default function CheckoutPage() {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Eye, Plus, RefreshCw, Trash2, Truck, X } from "lucide-react";
 import { ApiError } from "@/lib/api-client";
+import { money } from "@/lib/money";
 import { ingredientsService, type Ingredient } from "@/services/ingredients.service";
 import {
   createStockImport,
@@ -16,8 +17,6 @@ import {
 
 type Row = { key: string; ingredientId: string; quantity: string; unitPrice: string };
 
-const money = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 const date = (value: string) =>
   new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 const unitOf = (unit: string) => stockUnitLabels[unit as IngredientUnit] ?? unit;

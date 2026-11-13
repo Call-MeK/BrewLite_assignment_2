@@ -10,9 +10,7 @@ import { resolveProductImage } from '@/lib/local-product-images';
 import { getProducts } from '@/services/product.service';
 import type { ProductSummary } from '@/types/product';
 import { ProductPurchaseModal } from '@/components/menu/product-purchase-modal';
-
-const money = (value: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+import { money } from '@/lib/money';
 
 export default function MenuPage() {
   const cooldown = useRequestCooldown('GET', '/products');
