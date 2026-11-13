@@ -1,0 +1,37 @@
+name: BrewLite Keep Alive
+
+# Render Free ngủ sau ~15 phút không có request.
+# Ping health mỗi 5 phút để API luôn thức khi demo.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keepalive-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    name: Ping Render health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping /api/v1/health
+        run: |
+          url="https://brewlite-api-u2jb.onrender.com/api/v1/health"
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o health.json -w "%{http_code}" --max-time 90 "$url" || true)
+            echo "attempt $attempt -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              cat health.json
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "Health check failed after 3 attempts"
+          exit 1
