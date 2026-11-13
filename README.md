@@ -44,8 +44,13 @@ BrewLite/
 │   │   ├── components/       # ui/ (dùng chung) & features/ (nghiệp vụ)
 │   │   └── lib/api-client.ts # Fetch wrapper chuẩn hóa
 ├── docs/                     # Quy chuẩn làm việc nhóm
+│   ├── requirements/         # Bối cảnh, phạm vi, SRS
+│   ├── architecture/adr/     # Quyết định kiến trúc
+│   ├── diagrams/             # Sequence diagram
 │   ├── git-convention.md     # Quy tắc nhánh & commit
 │   ├── naming-convention.md  # Tiêu chuẩn đặt tên API & DB
+│   ├── deployment.md         # Triển khai, CI, rollback
+│   ├── traceability-matrix.md
 │   └── checklist-review.md   # Tiêu chí review code trước khi merge
 ├── Bai_2_UML/                # Tổng hợp sơ đồ UML bài tập
 ├── docker-compose.yml        # PostgreSQL container
@@ -60,6 +65,30 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
 1. [Quy chuẩn Git & Commit](docs/git-convention.md)
 2. [Quy chuẩn đặt tên API & Database](docs/naming-convention.md)
 3. [Checklist review code trước khi merge](docs/checklist-review.md)
+
+## 📚 TÀI LIỆU ĐỒ ÁN
+
+| Tài liệu | Nội dung |
+|---|---|
+| [Bối cảnh và phạm vi](docs/requirements/context-and-scope.md) | Actor, mục tiêu, trong/ngoài phạm vi |
+| [SRS](docs/requirements/srs.md) | Yêu cầu chức năng FR-01 → FR-11, phi chức năng NFR |
+| [Ma trận truy vết](docs/traceability-matrix.md) | Yêu cầu → thiết kế → mã nguồn → kiểm thử |
+| [Kịch bản kiểm thử](docs/test-scenarios/test-scenarios.md) | Test case theo feature và E2E |
+| [Hợp đồng API Payment](docs/payment/api-contract-payment.md) | ZaloPay Sandbox, callback, idempotency |
+| [Triển khai và rollback](docs/deployment.md) | CI, môi trường, quy trình deploy, rollback |
+| [ADR-001](docs/architecture/adr/001-monorepo.md) | Vì sao dùng monorepo |
+| [ADR-002](docs/architecture/adr/002-payment-zalopay-sandbox.md) | Vì sao bỏ mock, chỉ dùng ZaloPay |
+| [Sequence checkout](docs/diagrams/sequence-checkout.puml) | Luồng đặt hàng và thanh toán |
+| [Sơ đồ triển khai](docs/architecture/deployment-diagram.puml) | Thành phần triển khai mục tiêu |
+
+## 🚀 CI VÀ TRIỂN KHAI
+
+- CI chạy trên nhánh `main` qua `.github/workflows/ci.yml`: PostgreSQL service → Prisma
+  generate/migrate → test backend → build backend/frontend.
+- Chạy local bằng Docker: `docker compose up --build -d`.
+- Quy trình deploy, biến môi trường và rollback: xem [docs/deployment.md](docs/deployment.md).
+- **Chưa có môi trường production công khai.** Thanh toán chỉ dùng ZaloPay Sandbox; mock
+  payment đã được gỡ (xem ADR-002).
 
 ## Tài khoản test
 
