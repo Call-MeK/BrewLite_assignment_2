@@ -16,6 +16,9 @@ docker compose up --build -d
 
 Mở http://localhost:3000; API ở http://localhost:4000/api/v1. Docker chạy cả frontend, backend và PostgreSQL; không cần chạy npm trên máy.
 
+Nếu chạy backend trực tiếp bằng npm (không qua Docker), Prisma chỉ đọc `backend/.env`:
+`Copy-Item .env.example backend/.env`.
+
 Các cổng 3000, 4000 và 5433 phải còn trống. Nếu 5433 đã được sử dụng, đổi `POSTGRES_PORT` trong `.env` sang cổng trống. Nếu 3000 hoặc 4000 đã được sử dụng, dừng ứng dụng đang chiếm cổng trước khi chạy.
 
 ```powershell

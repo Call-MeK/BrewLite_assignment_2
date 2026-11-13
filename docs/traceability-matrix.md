@@ -33,7 +33,7 @@ mã nguồn và kiểm thử tương ứng.
 | NFR-05 | Loading/empty/error, xác nhận thao tác | `frontend/src/app/` các trang admin/order/payment | TS-NFR-05 (thủ công) | Thủ công |
 | NFR-06 | Tài liệu API/DB/ADR, TypeScript strict | `docs/`; `docs/architecture/adr/`; `tsconfig.json` | `npm run build` (type check) | Tự động |
 | NFR-07 | Build + test trong CI | `.github/workflows/ci.yml` (nhánh `main`) | GitHub Actions run trên `main` | Tự động |
-| NFR-08 | Cấu hình qua biến môi trường, không commit secret | `.env.example`, `backend/.env.example`, `docker-compose.yml` | Kiểm tra `.gitignore` + review | Thủ công |
+| NFR-08 | Cấu hình qua biến môi trường, không commit secret | `.env.example`, `docker-compose.yml` | Kiểm tra `.gitignore` + review | Thủ công |
 
 ## 3. Bàn giao và triển khai
 
