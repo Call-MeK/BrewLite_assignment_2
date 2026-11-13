@@ -234,10 +234,11 @@ Lưu ý khi vận hành lại:
 - Project Vercel mặc định bật SSO Protection; tắt bằng
   `PATCH /v9/projects/{id}` với `{"ssoProtection": null}` nếu cần link công khai.
 - `prisma db seed` **xoá dữ liệu cũ** trước khi tạo lại; chỉ chạy trên database mới.
-- Service Render tạo qua API không có webhook GitHub, nên `autoDeploy=yes` vẫn không tự deploy
-  khi push. Trigger thủ công:
+- CD backend: sau khi cài **Render GitHub App** và nối repo `Call-MeK/BrewLite_assignment`
+  (branch `main`), Render tự deploy mỗi lần push — Deploy History ghi `trigger = new_commit`.
+  Nếu chưa nối, trigger thủ công:
   `POST https://api.render.com/v1/services/<service-id>/deploys` với header
-  `Authorization: Bearer <RENDER_API_KEY>`, hoặc cài Render GitHub App trong dashboard để tự động.
+  `Authorization: Bearer <RENDER_API_KEY>`.
 
 ## 7. Rollback
 
