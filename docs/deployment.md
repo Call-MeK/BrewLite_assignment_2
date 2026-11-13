@@ -197,7 +197,21 @@ Sau khi seed, lấy `users.id` của tài khoản admin và điền `PAYMENT_ADM
 ### 6.6. Giữ dịch vụ Free thức
 
 Render Free ngủ sau ~15 phút không có request, khiến cron hủy đơn và callback ZaloPay bị trễ.
-Tạo monitor **UptimeRobot** (hoặc tương đương) gọi `GET /api/v1/health` mỗi **5 phút**.
+Cách đang dùng: workflow **`.github/workflows/keepalive.yml`** chạy theo lịch
+`*/5 * * * *`, gọi `GET /api/v1/health` và retry 3 lần (mỗi lần chờ 20 giây) để chịu được
+cold start.
+
+Vì sao chọn GitHub Actions thay vì UptimeRobot: repo public nên số phút Actions không bị tính,
+không cần tạo thêm tài khoản dịch vụ nào.
+
+Lưu ý:
+
+- GitHub chỉ chạy `schedule` ở nhánh mặc định (`main`) và có thể trễ vài phút khi hệ thống tải;
+  chu kỳ 5 phút vẫn an toàn vì Render chỉ ngủ sau ~15 phút.
+- Workflow `schedule` tự bị GitHub tắt sau **60 ngày** repo không có commit; có thể bật lại bằng
+  **Run workflow** (trigger `workflow_dispatch`) hoặc chỉ cần push một commit mới.
+- Muốn dùng UptimeRobot thay thế: tạo monitor HTTP(s) trỏ `https://brewlite-api-u2jb.onrender.com/api/v1/health`,
+  interval **5 phút**, rồi xoá workflow.
 
 Lưu ý free tier:
 
