@@ -2,7 +2,8 @@
 
 > **Trạng thái:** đã triển khai demo công khai bằng **Vercel** (frontend) + **Render**
 > (backend Docker, Free, Singapore) + **Neon** (PostgreSQL, Singapore). CI chạy trên
-> nhánh `main`. ZaloPay Sandbox hiện tắt trên môi trường demo vì chưa cấu hình merchant key.
+> nhánh `main`. ZaloPay Sandbox đã bật trên môi trường demo với bộ key sandbox công khai
+> (`app_id=2554`); không dùng tiền thật.
 
 | Thành phần | URL |
 |---|---|
@@ -218,7 +219,9 @@ Lưu ý free tier:
 | Đăng nhập + `GET /orders/me` | `200`, thấy đơn đã tạo |
 | Tạo đơn qua API | `201`, `PENDING`, tổng tiền tính đúng |
 | Hủy đơn | `200`, `CANCELLED`, hoàn tồn kho |
-| `POST /payments/zalopay` | `503` (sandbox đang tắt, đúng fail-closed) |
+| `GET /payments/zalopay/config` | `200`, `{ enabled: true }` |
+| `POST /payments/zalopay` | `201`, có `paymentUrl` trỏ `qcgateway.zalopay.vn` |
+| Admin `/admin/payments` | Thấy giao dịch `ZALOPAY_SANDBOX`, `PENDING`, `reconciliation=WAITING` |
 | CORS | `Access-Control-Allow-Origin` trả đúng domain Vercel |
 | Vercel Deployment Protection | đã tắt SSO cho production để link demo mở công khai |
 

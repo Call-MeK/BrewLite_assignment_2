@@ -60,7 +60,7 @@ mã nguồn và kiểm thử tương ứng.
 | Khoảng trống | Ảnh hưởng | Hướng xử lý |
 |---|---|---|
 | Chưa có E2E Playwright/Cypress | Luồng UI được kiểm thủ công | Bổ sung ở giai đoạn D (tái cấu trúc repo) |
-| Chưa bật ZaloPay Sandbox trên môi trường demo | Tạo giao dịch trả `503` | Điền `ZALOPAY_APP_ID/KEY1/KEY2`, đặt `ZALOPAY_SANDBOX_ENABLED=true` và `ZALOPAY_ALLOW_PUBLIC_SANDBOX=true`, redeploy |
+| Callback ZaloPay với app sandbox công khai (2554) | Có thể không nhận callback | Trang thanh toán tự `sync` mỗi 15 giây và có nút “Kiểm tra kết quả” |
 | Render Free ngủ sau ~15 phút | Callback/cron trễ, cold start 30–60 giây | Dùng UptimeRobot ping `/api/v1/health` mỗi 5 phút |
 | Backend dùng `@Cron` mỗi phút | Không chạy được trên serverless thuần | Triển khai backend dạng container/VM |
 | Tồn kho giữ chỗ cho đơn bỏ dở | Đơn `PENDING` giữ nguyên liệu đến khi hủy | Cron hủy đơn quá hạn đã có; có thể tinh chỉnh TTL |

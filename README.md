@@ -92,8 +92,9 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
   - API: <https://brewlite-api-u2jb.onrender.com/api/v1> (health: `/health`)
   - Database: Neon PostgreSQL (Singapore), migrate + seed bằng Prisma.
 - Thanh toán chỉ dùng ZaloPay Sandbox; mock payment đã được gỡ (xem ADR-002). Trên môi trường
-  demo, sandbox đang **tắt** cho tới khi cấu hình `ZALOPAY_APP_ID`/`KEY1`/`KEY2`; API trả `503`
-  cho tạo giao dịch, các luồng khác hoạt động bình thường.
+  demo, sandbox đã bật bằng bộ key sandbox công khai (`app_id=2554`); giao dịch tạo được
+  `paymentUrl` và đối soát ở `/admin/payments`. Callback công khai có thể không được app demo
+  gọi tới, khi đó dùng nút “Kiểm tra kết quả” (`sync`).
 
 ## Tài khoản test
 
