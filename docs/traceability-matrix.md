@@ -17,7 +17,7 @@ mã nguồn và kiểm thử tương ứng.
 | FR-05 | Tạo đơn và thanh toán ZaloPay Sandbox | `docs/order/*`, `docs/payment/*`; `backend/src/modules/orders/orders.service.ts`, `backend/src/modules/payments/zalopay-sandbox.*`; `frontend/src/app/orders/[id]/payment/page.tsx` | `orders-integration.test.cjs`; `zalopay-change-method.test.cjs`; TS-FR-05-01 → 10 | Tự động + thủ công |
 | FR-06 | Xác nhận và lịch sử đơn | `docs/order-history/*`; `backend/src/modules/orders/orders.controller.ts`; `frontend/src/app/orders/` | `orders-integration.test.cjs` (owner/outsider, admin detail); TS-FR-06-01 → 08 | Tự động |
 | FR-07 | Order State Machine, hủy, hoàn kho/điểm | `docs/order/state-machine.md`; `backend/src/modules/orders/orders.service.ts` (`transition`, `cancel`) | `orders-integration.test.cjs` (cancel vs prepare/payment, expiry); TS-FR-07-01 → 09 | Tự động |
-| FR-08 | Thanh toán idempotent, callback, sync, cancel | `docs/payment/api-contract-payment.md`; `backend/src/modules/payments/` | `zalopay-change-method.test.cjs`; TS-FR-08-01 → 05 | Tự động + thủ công |
+| FR-08 | Thanh toán idempotent, callback, sync, cancel | `docs/payment/api-contract-payment.md`; `backend/src/modules/payments/` | `payment-idempotency.test.cjs`; `zalopay-change-method.test.cjs`; TS-FR-08-01 → 05 | Tự động + thủ công |
 | FR-09 | Kiểm soát tồn kho khi đặt đồng thời | `docs/database-design.md`; `backend/src/modules/orders/orders.service.ts` | `orders-integration.test.cjs` (stock restore); TS-FR-09-01, 03, 04; TS-E2E-STOCK-01 | Tự động |
 | FR-10 | Khuyến mãi và loyalty | `backend/src/modules/orders/`, `backend/src/modules/users/`; `frontend/src/app/checkout/page.tsx` | `frontend/tests/promotion-checkout.test.mjs`; `orders-integration.test.cjs` (points); TS-FR-10-01 → 06 | Tự động |
 | FR-11 | Quản trị sản phẩm, kho, đơn, thanh toán, người dùng | `backend/src/modules/{products,ingredients,recipes,stock-imports,payments,users}/`; `frontend/src/app/admin/` | Kiểm tra thủ công theo checklist admin; TS-FR-08-* cho đối soát thanh toán | Một phần |
@@ -49,7 +49,7 @@ mã nguồn và kiểm thử tương ứng.
 |---|---|---|---|
 | Task 4.4 | Đặc tả use case, activity, sequence | `docs/*/usecase-*.md`, `docs/*/activity-*.puml`, `docs/diagrams/sequence-checkout.puml` | Đạt |
 | Task 5.1 | Thanh toán không tiền mặt (Ví/Thẻ) | ZaloPay Sandbox: `zalopay-sandbox.controller.ts`, `frontend/src/components/payments/zalopay-sandbox-panel.tsx` | Đạt (sandbox; mock đã gỡ) |
-| Task 5.2 | Idempotency và chống trùng giao dịch | `zalopay-sandbox.service.ts`; `docs/payment/api-contract-payment.md` mục 7 | Đạt |
+| Task 5.2 | Idempotency và chống trùng giao dịch | `zalopay-sandbox.service.ts`; `docs/payment/api-contract-payment.md` mục 7; test `backend/test/payment-idempotency.test.cjs` (cùng key, khác payload, request đồng thời) | Đạt |
 | Task 5.3 | Callback/đồng bộ trạng thái thanh toán | `zalopay-sandbox.controller.ts` (`callback`, `sync`); `docs/payment/api-contract-payment.md` mục 4–5 | Đạt |
 | Task 5.4 | Đối soát và quản lý giao dịch | `payment-management.service.ts`; `frontend/src/app/admin/payments/page.tsx` | Đạt |
 | Task 8.1 | Kiểm thử và CI | `backend/test/`, `frontend/tests/`, `.github/workflows/ci.yml` | Đạt một phần (chưa có E2E trình duyệt tự động) |
