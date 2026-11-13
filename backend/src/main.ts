@@ -8,8 +8,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 1. Enable CORS cho Next.js Frontend
+  // FRONTEND_URL cho phép nhiều domain, phân tách bằng dấu phẩy (ví dụ domain Vercel + preview).
+  const allowedOrigins = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: '*',
+    origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     exposedHeaders: ['Retry-After'],
