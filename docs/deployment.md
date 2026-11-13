@@ -1,24 +1,25 @@
 # Triển khai và vận hành – BrewLite
 
-> **Trạng thái hiện tại:** dự án chạy được end-to-end bằng Docker ở môi trường local và có
-> CI trên nhánh `main`. **Chưa có môi trường production công khai** vì chưa có tài khoản
-> hosting/domain và bộ khoá ZaloPay merchant. Tài liệu này mô tả quy trình đã kiểm chứng ở
-> local, cấu hình CI thực tế, và quy trình triển khai/rollback mục tiêu để dùng khi có môi trường.
+> **Trạng thái:** local chạy end-to-end bằng Docker; CI chạy trên nhánh `main`.
+> Phương án production đã chốt: **Vercel** (frontend) + **Render** (backend Docker) +
+> **Neon** (PostgreSQL). Tài liệu ghi cấu hình thực tế của các dịch vụ này; URL công khai
+> được cập nhật sau khi tạo dịch vụ.
 
 ## 1. Môi trường
 
 | Môi trường | Frontend | Backend | Database | Thanh toán |
 |---|---|---|---|---|
 | Local | Next.js `:3000` | NestJS `:4000` | PostgreSQL Docker `:5433` | ZaloPay Sandbox (tuỳ chọn) |
-| CI (`main`) | Build tĩnh | Build + test | PostgreSQL 16 service | Không gọi mạng ZaloPay |
-| Production (mục tiêu) | Vercel/static host | Container (Railway/Render/VM) | PostgreSQL managed | ZaloPay merchant chính thức |
+| CI (`main`) | Build + test | Build + test | PostgreSQL 16 service | Không gọi mạng ZaloPay |
+| Production | Vercel | Render Web Service (Docker, Free) | Neon PostgreSQL (Free) | ZaloPay Sandbox (demo) |
 
 ## 2. Yêu cầu môi trường
 
 - Docker Desktop + Docker Compose v2 (local).
 - Node.js 22 và npm 10 (chạy test/build không dùng Docker).
 - PostgreSQL 16 nếu chạy backend ngoài Docker.
-- Tài khoản ZaloPay Sandbox với `app_id`, `key1`, `key2` nếu muốn thanh toán thật ở mức sandbox.
+- Tài khoản ZaloPay Sandbox với `app_id`, `key1`, `key2`.
+- Tài khoản Vercel, Render và Neon (gói free đủ dùng cho demo).
 
 ## 3. Chạy local bằng Docker
 
@@ -65,21 +66,26 @@ npm run dev
 
 | Biến | Bắt buộc | Mô tả |
 |---|---|---|
-| `DATABASE_URL` | Có | Chuỗi kết nối PostgreSQL |
+| `DATABASE_URL` | Có | Chuỗi kết nối PostgreSQL (Neon: thêm `sslmode=require`) |
 | `JWT_SECRET` | Có | Khoá ký JWT, tối thiểu 32 ký tự ở production |
 | `JWT_EXPIRATION` | Không | Mặc định `7d` |
 | `NODE_ENV` | Có | `development` / `test` / `production` |
-| `PORT` | Không | Mặc định `4000` |
+| `PORT` | Không | Render tự inject; local mặc định `4000` |
+| `FRONTEND_URL` | Nên có | Domain frontend cho CORS, phân tách bằng dấu phẩy; trống = cho phép mọi origin |
 | `PAYMENT_ADMIN_USER_IDS` | Không | Danh sách `users.id` được quản lý thanh toán, phân tách bằng dấu phẩy |
-| `ZALOPAY_SANDBOX_ENABLED` | Không | `true` mới bật sandbox; luôn bị từ chối ngoài `development`/`test` |
+| `ZALOPAY_SANDBOX_ENABLED` | Không | `true` mới bật sandbox |
+| `ZALOPAY_ALLOW_PUBLIC_SANDBOX` | Không | **Chỉ dùng cho demo**: cho phép sandbox khi `NODE_ENV` ngoài `development`/`test`. Mặc định `false` |
 | `ZALOPAY_APP_ID` | Khi bật sandbox | App ID sandbox |
 | `ZALOPAY_KEY1` | Khi bật sandbox | Khoá ký request |
 | `ZALOPAY_KEY2` | Khi bật sandbox | Khoá xác thực callback |
 | `ZALOPAY_CALLBACK_URL` | Không | URL HTTPS công khai tới `/api/v1/payments/zalopay/callback` |
 | `ZALOPAY_REDIRECT_URL` | Khi bật sandbox | Gốc frontend; backend thêm `/orders/:id/payment` |
-| `NEXT_PUBLIC_API_URL` | Frontend | Mặc định `http://localhost:4000/api/v1` |
+| `NEXT_PUBLIC_API_URL` | Frontend | URL API đầy đủ, ví dụ `https://<api>.onrender.com/api/v1` |
 
 Không commit `.env`. Chỉ commit `.env.example` với giá trị rỗng/giả.
+
+`ZALOPAY_ALLOW_PUBLIC_SANDBOX=true` không biến sandbox thành thanh toán thật, nhưng mở
+đường tạo giao dịch thử nghiệm cho bất kỳ ai có link. Tắt cờ này sau khi demo/chấm bài.
 
 ## 5. CI trên nhánh `main`
 
@@ -88,47 +94,82 @@ Không commit `.env`. Chỉ commit `.env.example` với giá trị rỗng/giả.
 1. Checkout mã nguồn, cài Node.js 22.
 2. Khởi động PostgreSQL 16 service với database `brewlite_test`.
 3. Backend: `npm ci` → `prisma generate` → `prisma migrate deploy` → `npm test` → `npm run build`.
-4. Frontend: `npm ci` → `npm run build` (bao gồm type check của Next.js).
+4. Frontend: `npm ci` → `npm run lint` → `npm test` → `npm run build`.
 
 Test backend dùng schema PostgreSQL riêng qua `PAYMENT_TEST_DATABASE_URL`; test không gọi
 mạng ZaloPay. Nếu CI đỏ, không merge vào `main`.
 
-## 6. Quy trình triển khai production (mục tiêu)
+## 6. Triển khai Vercel + Render
 
 ### 6.1. Chuẩn bị
 
-1. Tạo PostgreSQL managed; bật backup tự động và SSL.
-2. Tạo secret production: `DATABASE_URL`, `JWT_SECRET`, cấu hình ZaloPay.
-3. Chọn host backend **chạy tiến trình dài** (container/VM). Không dùng serverless thuần vì
-   `OrdersService` có `@Cron(EVERY_MINUTE)` hủy đơn quá hạn.
-4. Cấu hình `NEXT_PUBLIC_API_URL` trỏ tới domain API HTTPS.
+1. **Neon**: tạo project PostgreSQL, region gần Việt Nam (Singapore), lấy connection string
+   **direct/unpooled** dạng
+   `postgresql://user:pass@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`.
+   Không cần tạo bảng — backend tự chạy migration khi khởi động.
+2. Sinh `JWT_SECRET` mạnh (32+ ký tự) và lưu cùng các khoá ZaloPay trong secret manager
+   của Render, không gửi qua chat hay commit.
+3. Xác nhận nhánh triển khai là `main` và CI đang xanh.
 
-### 6.2. Triển khai backend
+### 6.2. Backend trên Render
+
+Tạo **Web Service** từ repo GitHub:
+
+| Thiết lập | Giá trị |
+|---|---|
+| Branch | `main` |
+| Runtime | Docker |
+| Dockerfile Path | `backend/Dockerfile` |
+| Docker Build Context | `backend` |
+| Health Check Path | `/api/v1/health` |
+| Plan | Free (demo) |
+| Region | Singapore |
+
+`backend/Dockerfile` tự chạy `npm ci`, `prisma generate`, `nest build`, rồi
+`prisma migrate deploy` trước khi start `node dist/src/main`. Render inject `PORT`, ứng dụng
+đã đọc biến này.
+
+**Environment variables** (Render → Environment):
+
+```
+DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
+JWT_SECRET=<32+ ký tự>
+JWT_EXPIRATION=7d
+NODE_ENV=production
+FRONTEND_URL=https://<vercel-domain>
+PAYMENT_ADMIN_USER_IDS=<users.id của admin>
+ZALOPAY_SANDBOX_ENABLED=true
+ZALOPAY_ALLOW_PUBLIC_SANDBOX=true
+ZALOPAY_APP_ID=<sandbox app id>
+ZALOPAY_KEY1=<key1>
+ZALOPAY_KEY2=<key2>
+ZALOPAY_CALLBACK_URL=https://<render-domain>/api/v1/payments/zalopay/callback
+ZALOPAY_REDIRECT_URL=https://<vercel-domain>
+```
+
+Seed dữ liệu (chạy một lần, từ máy local trỏ vào Neon hoặc qua Render Shell):
 
 ```powershell
 cd backend
-npm ci
-npx prisma generate
+$env:DATABASE_URL='postgresql://...neon.tech/neondb?sslmode=require'
 npx prisma migrate deploy
-npm run build
-npm run start:prod        # hoặc build Docker image và deploy
+npx prisma db seed
 ```
 
-Kiểm tra `GET /api/v1/health` trả `200` trước khi chuyển traffic.
+Sau khi seed, lấy `users.id` của tài khoản admin và điền `PAYMENT_ADMIN_USER_IDS`, rồi restart.
 
-### 6.3. Triển khai frontend
+### 6.3. Frontend trên Vercel
 
-```powershell
-cd frontend
-npm ci
-npm run build
-npm run start             # hoặc deploy lên Vercel/static host
-```
+1. Import repo, **Root Directory** = `frontend`, framework Next.js.
+2. Environment variable cho **Production + Preview**:
+   `NEXT_PUBLIC_API_URL=https://<render-domain>/api/v1`.
+3. Deploy. Biến `NEXT_PUBLIC_*` được nhúng lúc build, nên đổi API URL phải **Redeploy**.
+4. Quay lại Render cập nhật `FRONTEND_URL` và `ZALOPAY_REDIRECT_URL` bằng domain Vercel thật.
 
 ### 6.4. Cấu hình callback ZaloPay
 
-- `ZALOPAY_CALLBACK_URL=https://<api-domain>/api/v1/payments/zalopay/callback`
-- `ZALOPAY_REDIRECT_URL=https://<web-domain>`
+- `ZALOPAY_CALLBACK_URL=https://<render-domain>/api/v1/payments/zalopay/callback`
+- `ZALOPAY_REDIRECT_URL=https://<vercel-domain>`
 - Callback phải là HTTPS, không có port lạ, không chứa query/hash.
 - Nếu chưa có URL công khai, để trống callback và dựa vào polling `sync` từ frontend.
 
@@ -136,37 +177,49 @@ npm run start             # hoặc deploy lên Vercel/static host
 
 | Bước | Kỳ vọng |
 |---|---|
-| `GET /api/v1/health` | `200`, `status: ok` |
-| Đăng nhập tài khoản seed | Nhận JWT, vào được `/menu` |
+| `GET https://<render-domain>/api/v1/health` | `200`, `data.status = ok` |
+| `GET /payments/zalopay/config` bằng JWT | `{ enabled: true }` |
+| Đăng nhập tài khoản seed trên Vercel | Nhận JWT, vào được `/menu` |
 | Tạo đơn từ menu | Đơn `PENDING`, tồn kho giảm |
 | Tạo giao dịch ZaloPay | `201`, có `paymentUrl` |
 | Hoàn tất thanh toán sandbox | `sync`/callback → đơn `PAID`, điểm cộng một lần |
-| Admin `/admin/payments` | Thấy giao dịch, đồng bộ được trạng thái |
+| Admin `/admin/payments` | Thấy giao dịch `ZALOPAY_SANDBOX`, đồng bộ được trạng thái |
 | Hủy đơn chưa thanh toán | `CANCELLED`, tồn kho và điểm hoàn đúng |
+
+### 6.6. Giữ dịch vụ Free thức
+
+Render Free ngủ sau ~15 phút không có request, khiến cron hủy đơn và callback ZaloPay bị trễ.
+Tạo monitor **UptimeRobot** (hoặc tương đương) gọi `GET /api/v1/health` mỗi **5 phút**.
+
+Lưu ý free tier:
+
+- Render Free có 750 giờ/tháng cho mỗi workspace; một service chạy liên tục đã dùng ~744 giờ.
+- Neon Free tự suspend sau vài phút không hoạt động; request đầu tiên chậm hơn ~1 giây.
+- Không scale backend lên nhiều instance khi còn dùng `@Cron` trong tiến trình (cron sẽ chạy trùng).
 
 ## 7. Rollback
 
 ### 7.1. Ứng dụng
 
-- **Frontend (Vercel/static):** dùng “Instant Rollback” về deployment trước, hoặc deploy lại
-  commit/tag ổn định gần nhất.
-- **Backend (container):** giữ image theo tag commit (`brewlite-api:<sha>`); rollback bằng cách
-  deploy lại tag trước. Không build đè tag cũ.
+- **Frontend (Vercel):** “Instant Rollback” về deployment trước, hoặc deploy lại commit ổn định.
+- **Backend (Render):** chọn deploy trước trong Deploy History và rollback; hoặc revert commit
+  trên `main` để Render tự deploy lại. Không sửa tay image đang chạy.
 - **VM:** giữ bản release trước trong thư mục riêng và symlink `current`; đổi symlink rồi
   restart service.
 
 ### 7.2. Cơ sở dữ liệu
 
-- Migration được viết **forward-only** và phải tương thích ngược một phiên bản.
-- Trước migration production: tạo snapshot/backup.
+- Migration **forward-only** và tương thích ngược một phiên bản.
+- Trước migration production: tạo snapshot/backup (Neon có branch/restore).
 - Nếu migration gây lỗi: rollback ứng dụng trước, xác minh dữ liệu, rồi viết migration sửa
   tiếp theo. Chỉ restore backup khi mất toàn vẹn dữ liệu và đã chấp nhận mất giao dịch phát sinh.
 
 ### 7.3. Cấu hình
 
-- Giữ bản sao biến môi trường của release trước (secret manager/versioned config).
-- Khi tắt thanh toán khẩn cấp: đặt `ZALOPAY_SANDBOX_ENABLED=false`; API tạo giao dịch trả `503`,
-  dữ liệu cũ không đổi.
+- Giữ bản sao biến môi trường của release trước (Render Environment → có thể copy).
+- Tắt thanh toán khẩn cấp: `ZALOPAY_SANDBOX_ENABLED=false` (hoặc
+  `ZALOPAY_ALLOW_PUBLIC_SANDBOX=false` khi `NODE_ENV=production`); API trả `503`, dữ liệu cũ
+  không đổi.
 
 ## 8. Giám sát và vận hành
 
@@ -178,7 +231,8 @@ npm run start             # hoặc deploy lên Vercel/static host
 
 ## 9. Hạn chế đã biết
 
-- Chưa có môi trường production thực tế; mục 6 là quy trình mục tiêu đã đối chiếu với mã nguồn.
 - ZaloPay Sandbox không đại diện đầy đủ hợp đồng merchant production (hạn mức, đối soát, hoàn tiền).
+- `ZALOPAY_ALLOW_PUBLIC_SANDBOX=true` chỉ phù hợp demo; phải tắt khi không cần.
 - Chưa có E2E trình duyệt tự động; smoke test mục 6.5 đang thực hiện thủ công.
 - Tồn kho của đơn bỏ dở chỉ được giải phóng khi cron hủy hoặc khách hủy.
+- Render Free ngủ khi không có traffic; UptimeRobot chỉ giảm thiểu, không đảm bảo SLA.

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Payment } from '@prisma/client';
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -26,6 +26,8 @@ function parseResponse(text: string): Record<string, any> {
 
 @Injectable()
 export class ZaloPaySandboxGateway {
+  private warnedPublicDemo = false;
+
   constructor(private readonly config: ConfigService) {}
 
   isConfigured(): boolean {
@@ -135,9 +137,13 @@ export class ZaloPaySandboxGateway {
     const appId = this.config.get<string>('ZALOPAY_APP_ID') || '';
     const key1 = this.config.get<string>('ZALOPAY_KEY1') || '';
     const key2 = this.config.get<string>('ZALOPAY_KEY2') || '';
+    const nodeEnv = this.config.get<string>('NODE_ENV');
+    // Sandbox is for development/test. A production deployment must opt in explicitly for a
+    // public demo; the flag is demo-only and never turns sandbox payments into real money.
+    const publicDemo = this.config.get<string>('ZALOPAY_ALLOW_PUBLIC_SANDBOX') === 'true';
     try {
       if (this.config.get<string>('ZALOPAY_SANDBOX_ENABLED') !== 'true'
-        || !['development', 'test'].includes(this.config.get<string>('NODE_ENV'))
+        || (!['development', 'test'].includes(nodeEnv) && !publicDemo)
         || !/^[1-9]\d{0,9}$/.test(appId) || !key1.trim() || !key2.trim()) throw new Error();
       const rawCallback = (this.config.get<string>('ZALOPAY_CALLBACK_URL') || '').trim();
       let callback: string | null = null;
@@ -150,6 +156,12 @@ export class ZaloPaySandboxGateway {
       const redirect = new URL(this.config.get<string>('ZALOPAY_REDIRECT_URL'));
       if (!['http:', 'https:'].includes(redirect.protocol) || redirect.username || redirect.password
         || redirect.search || redirect.hash) throw new Error();
+      if (publicDemo && !['development', 'test'].includes(nodeEnv) && !this.warnedPublicDemo) {
+        this.warnedPublicDemo = true;
+        new Logger(ZaloPaySandboxGateway.name).warn(
+          'ZALOPAY_ALLOW_PUBLIC_SANDBOX=true: ZaloPay Sandbox đang bật ngoài development/test. Chỉ dùng cho demo, không phát sinh tiền thật.',
+        );
+      }
       return { appId, key1, key2, callback, redirect: redirect.href };
     } catch {
       throw new ServiceUnavailableException('ZaloPay Sandbox chưa được bật hoặc cấu hình chưa đầy đủ');
