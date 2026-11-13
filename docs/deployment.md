@@ -1,9 +1,16 @@
 # Triển khai và vận hành – BrewLite
 
-> **Trạng thái:** local chạy end-to-end bằng Docker; CI chạy trên nhánh `main`.
-> Phương án production đã chốt: **Vercel** (frontend) + **Render** (backend Docker) +
-> **Neon** (PostgreSQL). Tài liệu ghi cấu hình thực tế của các dịch vụ này; URL công khai
-> được cập nhật sau khi tạo dịch vụ.
+> **Trạng thái:** đã triển khai demo công khai bằng **Vercel** (frontend) + **Render**
+> (backend Docker, Free, Singapore) + **Neon** (PostgreSQL, Singapore). CI chạy trên
+> nhánh `main`. ZaloPay Sandbox hiện tắt trên môi trường demo vì chưa cấu hình merchant key.
+
+| Thành phần | URL |
+|---|---|
+| Frontend | <https://brewlite-acme-1b6f1.vercel.app> |
+| API | <https://brewlite-api-u2jb.onrender.com/api/v1> |
+| Health check | <https://brewlite-api-u2jb.onrender.com/api/v1/health> |
+| Render service | `srv-dbre87c9v7es73cb98u0` (workspace `tea-dbre3c5ckfvc73e0s500`) |
+| Vercel project | `prj_Rqb03eNemvWHYK1hD5s0VJzcELX3` (root `frontend`) |
 
 ## 1. Môi trường
 
@@ -196,6 +203,34 @@ Lưu ý free tier:
 - Render Free có 750 giờ/tháng cho mỗi workspace; một service chạy liên tục đã dùng ~744 giờ.
 - Neon Free tự suspend sau vài phút không hoạt động; request đầu tiên chậm hơn ~1 giây.
 - Không scale backend lên nhiều instance khi còn dùng `@Cron` trong tiến trình (cron sẽ chạy trùng).
+
+### 6.7. Kết quả triển khai (13/11/2026)
+
+Đã tạo bằng Render API + Vercel MCP, không cần thao tác dashboard:
+
+| Bước | Kết quả |
+|---|---|
+| Neon migrate | `prisma migrate deploy` áp dụng đủ migration |
+| Neon seed | 2 user, 8 sản phẩm, 24 nguyên liệu, 105 dòng công thức, 2 voucher |
+| Render build | Docker (`backend/Dockerfile`), health check `/api/v1/health` → `live` |
+| Vercel build | Next.js 15.5.27, alias production `brewlite-acme-1b6f1.vercel.app` |
+| `GET /health` | `200`, `data.status = ok` |
+| Đăng nhập + `GET /orders/me` | `200`, thấy đơn đã tạo |
+| Tạo đơn qua API | `201`, `PENDING`, tổng tiền tính đúng |
+| Hủy đơn | `200`, `CANCELLED`, hoàn tồn kho |
+| `POST /payments/zalopay` | `503` (sandbox đang tắt, đúng fail-closed) |
+| CORS | `Access-Control-Allow-Origin` trả đúng domain Vercel |
+| Vercel Deployment Protection | đã tắt SSO cho production để link demo mở công khai |
+
+Lưu ý khi vận hành lại:
+
+- **Đổi biến môi trường trên Render cần trigger deploy mới** thì process mới đọc giá trị;
+  riêng lần đầu, env cập nhật trong lúc build chưa được áp dụng cho container đã start.
+- `next/font` có thể lỗi tạm thời khi build trên Vercel (`Cannot read properties of null`);
+  deploy lại là được. Nếu lặp lại nhiều lần, chuyển font sang `next/font/local`.
+- Project Vercel mặc định bật SSO Protection; tắt bằng
+  `PATCH /v9/projects/{id}` với `{"ssoProtection": null}` nếu cần link công khai.
+- `prisma db seed` **xoá dữ liệu cũ** trước khi tạo lại; chỉ chạy trên database mới.
 
 ## 7. Rollback
 

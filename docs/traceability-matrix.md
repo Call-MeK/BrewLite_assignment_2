@@ -40,7 +40,7 @@ mã nguồn và kiểm thử tương ứng.
 | Mã yêu cầu | Mô tả | Thiết kế / mã nguồn | Kiểm thử | Trạng thái |
 |---|---|---|---|---|
 | DEL-01 | Hướng dẫn chạy, tài khoản demo, dữ liệu seed | `README.md`; `backend/prisma/seed.ts`; `docker-compose.yml` | Chạy `docker compose up --build` từ máy sạch | Thủ công |
-| DEL-02 | Quy trình triển khai và rollback | `docs/deployment.md`; `docs/architecture/deployment-diagram.puml` | Checklist smoke test sau deploy | Chưa có môi trường production |
+| DEL-02 | Quy trình triển khai và rollback | `docs/deployment.md`; `docs/architecture/deployment-diagram.puml` | Checklist smoke test sau deploy | Đã triển khai demo: <https://brewlite-acme-1b6f1.vercel.app> + <https://brewlite-api-u2jb.onrender.com/api/v1> |
 | DEL-03 | CI trên nhánh `main` | `.github/workflows/ci.yml` | GitHub Actions | Tự động |
 
 ## 4. Truy vết theo yêu cầu đồ án (Assignment 2)
@@ -53,13 +53,14 @@ mã nguồn và kiểm thử tương ứng.
 | Task 5.3 | Callback/đồng bộ trạng thái thanh toán | `zalopay-sandbox.controller.ts` (`callback`, `sync`); `docs/payment/api-contract-payment.md` mục 4–5 | Đạt |
 | Task 5.4 | Đối soát và quản lý giao dịch | `payment-management.service.ts`; `frontend/src/app/admin/payments/page.tsx` | Đạt |
 | Task 8.1 | Kiểm thử và CI | `backend/test/`, `frontend/tests/`, `.github/workflows/ci.yml` | Đạt một phần (chưa có E2E trình duyệt tự động) |
-| Task 9 | Bàn giao, hướng dẫn chạy, demo | `README.md`, `docs/deployment.md`, tài khoản seed | Đạt một phần (chưa deploy production) |
+| Task 9 | Bàn giao, hướng dẫn chạy, demo | `README.md`, `docs/deployment.md`, tài khoản seed | Đạt (đã deploy demo Vercel + Render + Neon) |
 
 ## 5. Khoảng trống đã biết
 
 | Khoảng trống | Ảnh hưởng | Hướng xử lý |
 |---|---|---|
 | Chưa có E2E Playwright/Cypress | Luồng UI được kiểm thủ công | Bổ sung ở giai đoạn D (tái cấu trúc repo) |
-| Chưa deploy production | Chỉ có hướng dẫn trong `docs/deployment.md` | Cần tài khoản hosting + domain + secret ZaloPay thật |
+| Chưa bật ZaloPay Sandbox trên môi trường demo | Tạo giao dịch trả `503` | Điền `ZALOPAY_APP_ID/KEY1/KEY2`, đặt `ZALOPAY_SANDBOX_ENABLED=true` và `ZALOPAY_ALLOW_PUBLIC_SANDBOX=true`, redeploy |
+| Render Free ngủ sau ~15 phút | Callback/cron trễ, cold start 30–60 giây | Dùng UptimeRobot ping `/api/v1/health` mỗi 5 phút |
 | Backend dùng `@Cron` mỗi phút | Không chạy được trên serverless thuần | Triển khai backend dạng container/VM |
 | Tồn kho giữ chỗ cho đơn bỏ dở | Đơn `PENDING` giữ nguyên liệu đến khi hủy | Cron hủy đơn quá hạn đã có; có thể tinh chỉnh TTL |

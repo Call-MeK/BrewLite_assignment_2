@@ -87,8 +87,13 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
   generate/migrate → test backend → build backend/frontend.
 - Chạy local bằng Docker: `docker compose up --build -d`.
 - Quy trình deploy, biến môi trường và rollback: xem [docs/deployment.md](docs/deployment.md).
-- **Chưa có môi trường production công khai.** Thanh toán chỉ dùng ZaloPay Sandbox; mock
-  payment đã được gỡ (xem ADR-002).
+- **Môi trường demo công khai:**
+  - Frontend: <https://brewlite-acme-1b6f1.vercel.app>
+  - API: <https://brewlite-api-u2jb.onrender.com/api/v1> (health: `/health`)
+  - Database: Neon PostgreSQL (Singapore), migrate + seed bằng Prisma.
+- Thanh toán chỉ dùng ZaloPay Sandbox; mock payment đã được gỡ (xem ADR-002). Trên môi trường
+  demo, sandbox đang **tắt** cho tới khi cấu hình `ZALOPAY_APP_ID`/`KEY1`/`KEY2`; API trả `503`
+  cho tạo giao dịch, các luồng khác hoạt động bình thường.
 
 ## Tài khoản test
 
