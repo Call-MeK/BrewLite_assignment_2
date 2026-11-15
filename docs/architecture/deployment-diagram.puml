@@ -1,21 +1,21 @@
 @startuml BrewLite-Deployment
-title BrewLite – Sơ đồ triển khai mục tiêu
+title BrewLite – Sơ đồ triển khai production (Vercel + Render + Neon)
 
-node "Trình duyệt khách hàng" as Browser {
-  [Next.js App] as WebApp
+node "Thiết bị người dùng\n(trình duyệt / mobile)" as Browser {
+  [Next.js UI\nmobile-first] as WebApp
 }
 
-node "Frontend Host\n(Vercel / static host)" as FE {
-  [Next.js build\nNEXT_PUBLIC_API_URL] as FEApp
+node "Vercel\n(CDN + Edge, HTTPS)" as Vercel {
+  [Next.js App Router\nbuild tĩnh/SSR] as FE
 }
 
-node "Backend Host\n(Container / VM, chạy dài)" as BE {
+node "Render (Free, Singapore)\nDocker container từ apps/api/Dockerfile" as Render {
   [NestJS API\n/api/v1] as API
-  [Cron mỗi phút\nhủy đơn quá hạn] as Cron
+  [Cron hủy đơn quá hạn\n@nestjs/schedule] as Cron
   [Prisma Client] as Prisma
 }
 
-database "PostgreSQL managed\n(SSL + backup)" as DB
+database "Neon PostgreSQL\n(Singapore, SSL, không public)" as DB
 
 cloud "ZaloPay Sandbox" as ZLP {
   [Create / Query / Cancel API] as ZLPAPI
@@ -23,29 +23,39 @@ cloud "ZaloPay Sandbox" as ZLP {
 }
 
 cloud "GitHub" as GH {
-  [Repository] as Repo
-  [GitHub Actions\nCI trên main] as CI
+  [Repository\nmain] as Repo
+  [GitHub Actions\nCI: lint, test, build] as CI
 }
 
-Browser --> FEApp : HTTPS
-FEApp --> API : HTTPS JSON + JWT
+Browser --> FE : HTTPS
+FE --> API : HTTPS JSON + JWT\nNEXT_PUBLIC_API_URL
 API --> Prisma
-Prisma --> DB : TCP 5432 / SSL
-API --> ZLPAPI : HTTPS form-urlencoded\nHMAC-SHA256
-ZLPCB --> API : POST /payments/zalopay/callback\n(verify MAC key2)
+Prisma --> DB : TCP 5432 + SSL
+API --> ZLPAPI : HTTPS\nHMAC-SHA256
+ZLPCB --> API : POST /api/v1/payments/zalopay/callback\n(verify MAC key2)
 Cron --> DB
 
 Repo --> CI : push / pull_request (main)
-CI --> Repo : build + test + artifact
+CI --> Repo : kết quả quality gate
+Repo --> Render : auto-deploy khi main thay đổi\n(Render GitHub App, build Docker)
+Repo --> Vercel : auto-deploy khi main thay đổi\n(Vercel Git integration)
 
-note right of BE
-  Không dùng serverless thuần vì @Cron.
-  Rollback = deploy lại image tag trước.
+note right of Render
+  Biến môi trường đặt trong Render Dashboard
+  (DATABASE_URL, JWT_SECRET, ZALOPAY_KEY*).
+  Không có secret trong repository hay log CI.
+  Health check: GET /api/v1/health.
 end note
 
 note bottom of DB
   Migration: prisma migrate deploy (forward-only).
-  Backup trước mỗi lần migration production.
+  Backup: Neon point-in-time recovery.
+  Rollback ứng dụng: redeploy commit/tag trước trên Render/Vercel.
+end note
+
+note top of CI
+  Ranh giới: local (Docker Compose) – CI (PostgreSQL service) – production.
+  CI dùng database tạm, không gọi mạng ZaloPay.
 end note
 
 @enduml

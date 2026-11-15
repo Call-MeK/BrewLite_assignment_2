@@ -1,0 +1,191 @@
+﻿% =====================================================================
+%  BrewLite -- shared preamble for the Assignment reports
+%  Compile with pdfLaTeX (TeX Live 2026, vntex + T5 for Vietnamese)
+% =====================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{vntex}
+
+\usepackage[margin=2.2cm,top=2.4cm,bottom=2.2cm,headheight=15pt,footskip=12mm]{geometry}
+
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{amsmath,amssymb}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric,calc,backgrounds}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{microtype}
+\usepackage{needspace}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------------
+%  Palette
+% ---------------------------------------------------------------------
+\definecolor{coffee}{HTML}{6F4E37}
+\definecolor{latte}{HTML}{C08552}
+\definecolor{cream}{HTML}{F6F1E7}
+\definecolor{ink}{HTML}{2B2118}
+\definecolor{mint}{HTML}{2F6B4F}
+\definecolor{brick}{HTML}{9B2C2C}
+
+% ---------------------------------------------------------------------
+%  Layout
+% ---------------------------------------------------------------------
+\setstretch{1.10}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3.5pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{5.5pt}
+\setlist{nosep,leftmargin=1.2em,topsep=3pt}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+
+\captionsetup{font=small,labelfont={bf,color=coffee},justification=centering,
+  skip=5pt,width=0.94\textwidth}
+\captionsetup[table]{position=top,skip=4pt}
+
+% ---------------------------------------------------------------------
+%  Headings
+% ---------------------------------------------------------------------
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{coffee}}
+  {\thesection.}{0.5em}{}
+  [\vspace{-6pt}{\color{latte}\rule{\textwidth}{1pt}}]
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{ink}}
+  {\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+
+% ---------------------------------------------------------------------
+%  Header / footer
+% ---------------------------------------------------------------------
+\newcommand{\RunningHead}{BrewLite}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{\footnotesize\color{coffee}\RunningHead}
+\fancyhead[R]{\footnotesize\color{coffee}\thepage\,/\,\pageref{LastPage}}
+\fancyfoot[C]{\footnotesize\color{coffee!70}Khoa Công nghệ Thông tin -- Trường Đại học Sài Gòn}
+
+% ---------------------------------------------------------------------
+%  Listings (code is ASCII only -- Vietnamese stays in prose)
+% ---------------------------------------------------------------------
+\lstdefinestyle{bl}{
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{coffee}\bfseries,
+  commentstyle=\color{mint}\itshape,
+  stringstyle=\color{brick},
+  numbers=left, numberstyle=\tiny\color{latte}, numbersep=6pt,
+  frame=single, rulecolor=\color{latte!60},
+  backgroundcolor=\color{cream},
+  breaklines=true, showstringspaces=false,
+  xleftmargin=14pt, framexleftmargin=12pt,
+  aboveskip=4pt, belowskip=3pt, columns=fullflexible
+}
+
+% ---------------------------------------------------------------------
+%  Small helpers
+% ---------------------------------------------------------------------
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\file}[1]{\texttt{\footnotesize #1}}
+\newcommand{\good}[1]{\textcolor{mint}{\textbf{#1}}}
+\newcommand{\bad}[1]{\textcolor{brick}{\textbf{#1}}}
+\newcommand{\figref}[1]{Hình~\ref{#1}}
+\newcommand{\tabref}[1]{Bảng~\ref{#1}}
+
+% Callout box: \begin{note} ... \end{note}
+\newtcolorbox{note}[1][Ghi chú]{
+  colback=cream, colframe=latte!70, boxrule=0.6pt, arc=2pt,
+  left=7pt, right=7pt, top=5pt, bottom=5pt,
+  fonttitle=\footnotesize\bfseries, coltitle=coffee,
+  title={#1}, fontupper=\footnotesize, before skip=5pt, after skip=5pt
+}
+
+% Compact verdict badge used in the NFR table
+\newcommand{\pass}{\textcolor{mint}{\textbf{Đạt}}}
+\newcommand{\partialok}{\textcolor{latte}{\textbf{Đạt một phần}}}
+
+% ---------------------------------------------------------------------
+%  Cover (fields are overridable from each report)
+% ---------------------------------------------------------------------
+\newcommand{\ReportKind}{Assignment 1}
+\newcommand{\ReportTitle}{BrewLite}
+\newcommand{\ReportSubtitle}{Nền tảng đặt cà phê trực tuyến\\ thanh toán không dùng tiền mặt}
+\newcommand{\CourseName}{Phát triển ứng dụng Web}
+\newcommand{\LecturerName}{Từ Lãng Phiêu}
+\newcommand{\GroupName}{05}
+\newcommand{\AcademicTerm}{Học kỳ 1, năm học 2026--2027}
+\newcommand{\CoverCity}{TP. Hồ Chí Minh, tháng 11 năm 2026}
+
+\newcommand{\makecover}{%
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+{\large BỘ GIÁO DỤC VÀ ĐÀO TẠO}\\[3pt]
+{\Large\bfseries TRƯỜNG ĐẠI HỌC SÀI GÒN}\\[4pt]
+{\small KHOA CÔNG NGHỆ THÔNG TIN}\\[10pt]
+{\color{latte}\rule{\textwidth}{1.4pt}}\\[16pt]
+
+\begin{tikzpicture}[scale=1.05]
+  % saucer (behind the cup)
+  \draw[coffee,line width=1.4pt,fill=cream] (0,-0.70) ellipse (1.08 and 0.15);
+  % cup body: narrower at the bottom
+  \draw[coffee,line width=1.7pt,fill=white]
+     (-0.76,0.60) -- (-0.54,-0.48)
+     .. controls (-0.50,-0.66) and (0.50,-0.66) .. (0.54,-0.48)
+     -- (0.76,0.60) -- cycle;
+  % handle
+  \draw[coffee,line width=1.7pt] (0.74,0.36)
+     .. controls (1.34,0.34) and (1.30,-0.16) .. (0.56,-0.10);
+  % rim and coffee surface
+  \draw[coffee,line width=1.7pt,fill=white] (0,0.60) ellipse (0.76 and 0.13);
+  \fill[latte!45] (0,0.60) ellipse (0.66 and 0.09);
+  % steam
+  \draw[latte,line width=1.2pt] (-0.40,0.86) .. controls (-0.20,1.06) and (-0.58,1.16) .. (-0.38,1.38);
+  \draw[latte,line width=1.2pt] (0.00,0.86) .. controls (0.20,1.06) and (-0.18,1.16) .. (0.02,1.38);
+  \draw[latte,line width=1.2pt] (0.40,0.86) .. controls (0.60,1.06) and (0.22,1.16) .. (0.42,1.38);
+\end{tikzpicture}\\[14pt]
+
+{\small\itshape BÁO CÁO BÀI TẬP NHÓM}\\[3pt]
+{\color{latte}\rule{0.42\textwidth}{0.8pt}}\\[10pt]
+
+{\Huge\bfseries\color{coffee}\ReportTitle}\\[8pt]
+{\Large\ReportSubtitle}\\[16pt]
+
+{\large\bfseries\ReportKind}\\[22pt]
+
+\begin{tabular}{@{}r@{\hspace{10pt}}l@{}}
+  \small Môn học:      & \small\textbf{\CourseName} \\[3pt]
+  \small Giảng viên:    & \small\LecturerName \\[3pt]
+  \small Nhóm:         & \small\GroupName \\[3pt]
+  \small Học kỳ:       & \small\AcademicTerm \\
+\end{tabular}
+
+\vfill
+{\small\color{coffee}\CoverCity}\\[4pt]
+{\color{latte}\rule{\textwidth}{1pt}}
+\end{titlepage}}
+
+% ---------------------------------------------------------------------
+%  Member / contribution helper table row
+% ---------------------------------------------------------------------
+\newcommand{\memberrow}[3]{#1 & #2 & #3\\}
+
+
+

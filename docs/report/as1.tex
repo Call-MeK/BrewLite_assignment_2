@@ -1,0 +1,252 @@
+﻿\documentclass[12pt,a4paper]{article}
+\input{preamble}
+
+\renewcommand{\ReportKind}{Assignment 1}
+\renewcommand{\ReportSubtitle}{Nền tảng đặt cà phê trực tuyến\\ thanh toán không dùng tiền mặt}
+\renewcommand{\RunningHead}{BrewLite -- Assignment 1: Use case, User story \& Kiến trúc}
+
+% --- TikZ ERD styles -------------------------------------------------
+\tikzset{
+  ent/.style={draw=coffee,fill=cream,rounded corners=2pt,inner sep=4.5pt,
+              font=\scriptsize,align=left,text width=2.95cm},
+  lnk/.style={draw=coffee!85,thick},
+  card/.style={font=\scriptsize\bfseries,text=coffee,fill=white,inner sep=1pt},
+  note/.style={font=\scriptsize\itshape,text=coffee!85,align=center},
+}
+
+\begin{document}
+\makecover
+
+\section{Giới thiệu}
+
+\subsection{Bối cảnh và vấn đề}
+BrewLite là kênh đặt cà phê trực tuyến cho một quán quy mô nhỏ. Trước khi có hệ thống, quán nhận
+đơn qua tin nhắn, ghi tay vào sổ và đối soát chuyển khoản vào cuối ngày: khách không biết món nào
+còn, nhân viên phải kiểm kho thủ công, và quán không có nguồn dữ liệu duy nhất cho doanh thu. Bài
+toán cốt lõi vì vậy không phải là ``làm một trang bán hàng'', mà là \textbf{giữ cho số lượng bán ra
+luôn khớp với nguyên liệu thật trong kho} trong khi khách thanh toán trực tuyến.
+
+\subsection{Mục tiêu}
+\begin{itemize}
+  \item Số hoá trọn luồng \emph{chọn món $\rightarrow$ tuỳ chọn size/topping $\rightarrow$ đặt trước
+        $\rightarrow$ thanh toán $\rightarrow$ nhận tại quầy}.
+  \item Quản lý tồn kho theo \textbf{nguyên liệu và công thức} thay vì theo từng sản phẩm, để hai món
+        dùng chung một nguyên liệu không thể bán vượt kho.
+  \item Thanh toán không dùng tiền mặt qua ZaloPay Sandbox, có chống tạo giao dịch trùng, có đường lui
+        khi cổng thanh toán lỗi và giữ phản hồi API dưới 500 ms (NFR-01).
+\end{itemize}
+
+\subsection{Phạm vi}
+\textbf{Trong phạm vi:} thực đơn và tuỳ chọn, giỏ hàng, đăng ký/đăng nhập, đặt đơn, thanh toán
+ZaloPay Sandbox, theo dõi và huỷ đơn, quản trị thực đơn -- kho -- công thức -- đơn hàng -- thanh toán.
+\textbf{Ngoài phạm vi:} giao hàng tận nơi, POS tại quầy, đa chi nhánh, hoá đơn điện tử, ứng dụng di
+động native và tích hợp máy in bếp.
+
+\section{Tác nhân và mô hình use case}
+
+Hệ thống có năm tác nhân. \textbf{Khách vãng lai} xem thực đơn, tìm kiếm và xem chi tiết món.
+\textbf{Khách hàng} đăng nhập, quản lý giỏ, đặt và thanh toán đơn, theo dõi hoặc huỷ đơn.
+\textbf{Quản trị viên} quản lý thực đơn, kho, công thức, đơn hàng và thanh toán. \textbf{ZaloPay
+Sandbox} là hệ thống ngoài tạo giao dịch và gửi callback xác nhận. \textbf{Cron scheduler} là tiến
+trình nền huỷ đơn quá hạn và hoàn lại tồn kho đã giữ.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.76\textwidth]{../figures/diagrams/BrewLite-UseCase-Overall.png}
+\caption{Sơ đồ use case tổng quan, ánh xạ 12 use case tới các yêu cầu chức năng FR-01--FR-11}
+\label{fig:usecase}
+\end{figure}
+
+\figref{fig:usecase} nhóm 12 use case thành bốn cụm: \emph{khám phá thực đơn} (UC-01--UC-03),
+\emph{mua hàng} (UC-04--UC-08), \emph{vận hành đơn} (UC-09) và \emph{quản trị dữ liệu}
+(UC-10--UC-12). Ba quan hệ \texttt{include} thể hiện ràng buộc bắt buộc: đặt đơn phải đăng nhập và đã
+chọn size, luôn kéo theo giữ tồn kho, và thanh toán là bước nối tiếp. Ba use case chịu rủi ro cao nhất
+là UC-06, UC-07 và UC-08, nên được đặc tả chi tiết dưới đây.
+
+\needspace{13\baselineskip}
+\section{Đặc tả use case: Đặt đơn hàng và thanh toán (UC-06)}
+
+\begin{table}[htbp]
+\centering\small
+\caption{Đặc tả use case UC-06}
+\label{tab:uc06}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.5cm} X@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Nội dung} \\
+\midrule
+Mã -- Tên & UC-06 -- Đặt đơn hàng và thanh toán trực tuyến \\
+Tác nhân chính & Khách hàng đã đăng nhập \\
+Tác nhân phụ & ZaloPay Sandbox (cổng thanh toán) \\
+Tiên quyết & JWT hợp lệ; giỏ hàng có ít nhất một món; các món còn đủ nguyên liệu. \\
+Kích hoạt & Khách bấm \emph{Đặt hàng và thanh toán} tại trang \code{/checkout}. \\
+Hậu quyết & Đơn ở trạng thái \code{PENDING} hoặc \code{PAID}; tồn kho đã bị giữ; có bản ghi lịch sử
+             trạng thái và bản ghi thanh toán. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Luồng chính.}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.6em]
+  \item Hệ thống xác thực JWT và lấy \code{userId}; trả 401 nếu token hết hạn.
+  \item Client gửi danh sách món gồm mã sản phẩm, size, topping và số lượng.
+  \item Server đọc bảng giá size và giá topping từ cơ sở dữ liệu, \textbf{tính lại toàn bộ đơn giá và
+        tổng tiền}; giá do client gửi lên không được sử dụng.
+  \item Hệ thống áp mã khuyến mãi và điểm tích luỹ (nếu có), kiểm tra hạn mức sử dụng điểm.
+  \item Với từng nguyên liệu trong công thức của món theo size, hệ thống trừ kho bằng câu lệnh cập
+        nhật có điều kiện trên \code{version} (xem Mục~\ref{sec:model}).
+  \item Trong một transaction, hệ thống tạo \code{Order}, \code{OrderItem}, các dòng
+        \code{OrderIngredient} (ảnh chụp định lượng đã trừ) và \code{OrderStatusHistory}.
+  \item Hệ thống tạo bản ghi thanh toán \code{PENDING}, gọi API tạo giao dịch của ZaloPay và trả về
+        \code{paymentUrl}; client chuyển sang trang thanh toán.
+  \item Khi ZaloPay gọi callback, hệ thống kiểm tra chữ ký HMAC-SHA256 bằng \code{key2} theo cách so
+        sánh an toàn thời gian, cập nhật đơn sang \code{PAID} và ghi lịch sử.
+\end{enumerate}
+
+\textbf{Luồng phụ và ngoại lệ.}
+\begin{itemize}
+  \item \textbf{A1 -- Thiếu nguyên liệu:} bước 5 thất bại, toàn bộ transaction được rollback và API
+        trả 409 kèm tên nguyên liệu không đủ; không có đơn nào được tạo.
+  \item \textbf{A2 -- Cổng thanh toán lỗi hoặc timeout:} đơn giữ nguyên \code{PENDING}; khách được
+        phép \emph{đổi phương thức thanh toán} hoặc thử lại trên \textbf{cùng} đơn, không sinh đơn mới.
+  \item \textbf{A3 -- Callback đến trễ hoặc không đến:} trang thanh toán tự cập nhật mỗi 15 giây;
+        server chủ động truy vấn trạng thái từ ZaloPay; cron huỷ đơn quá hạn và hoàn kho.
+  \item \textbf{A4 -- Huỷ đơn:} chỉ cho phép ở \code{PENDING}, \code{PAYMENT\_FAILED} và \code{PAID};
+        kho được hoàn theo đúng các dòng \code{OrderIngredient} đã lưu, điểm được trả lại.
+  \item \textbf{E1 -- Trùng yêu cầu:} bấm hai lần hoặc callback lặp đều không tạo giao dịch thứ hai,
+        nhờ khoá idempotency và ràng buộc duy nhất trên bản ghi thanh toán.
+  \item \textbf{E2 -- Hai khách tranh nhau phần nguyên liệu cuối:} một yêu cầu thành công, yêu cầu
+        còn lại nhận 409; cơ sở dữ liệu không bao giờ ghi nhận tồn kho âm.
+\end{itemize}
+
+\section{User story và tiêu chí chấp nhận}
+
+Mười user story dưới đây bao phủ FR-01--FR-11 và được viết theo góc nhìn người dùng cuối. Cột
+\emph{Tiêu chí chấp nhận} chỉ giữ những điều kiện kiểm chứng được, tương ứng với các kiểm thử tự
+động trình bày trong báo cáo Assignment~2.
+
+\begingroup\footnotesize
+\begin{longtable}{@{}p{0.95cm} p{1.5cm} p{5.0cm} p{6.4cm} p{1.2cm}@{}}
+\caption{Danh sách user story và tiêu chí chấp nhận}\label{tab:us}\\
+\toprule
+\textbf{ID} & \textbf{Vai trò} & \textbf{User story} & \textbf{Tiêu chí chấp nhận} & \textbf{Ưu tiên} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Vai trò} & \textbf{User story} & \textbf{Tiêu chí chấp nhận} & \textbf{Ưu tiên} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+US-01 & Khách & Tôi muốn xem thực đơn kèm ảnh và giá theo size để chọn nhanh món mình thích. &
+Tám món hiển thị đầy đủ; lọc theo danh mục; có trạng thái loading và empty; ảnh có thuộc tính thay thế. & Must \\
+US-02 & Khách & Tôi muốn tìm món bằng từ khoá không dấu để không phải gõ đúng chính tả. &
+Gõ ``ca phe'' khớp ``Cà phê sữa đá''; không phân biệt hoa thường; lọc ngay khi gõ. & Must \\
+US-03 & Khách & Tôi muốn chọn size và topping và thấy giá đổi ngay để biết mình sẽ trả bao nhiêu. &
+Size S/M/L đổi đơn giá; topping cộng dồn đúng; tổng tiền khớp với số tiền server tính. & Must \\
+US-04 & Khách & Tôi muốn giỏ hàng còn nguyên khi tải lại trang để không phải chọn lại. &
+Giỏ lưu cục bộ; sửa và xoá được từng dòng; tổng số ly và tổng tiền cập nhật tức thì. & Must \\
+US-05 & Khách & Tôi muốn đăng nhập một lần để đặt đơn mà không phải nhập lại thông tin. &
+Đăng nhập trả JWT; sai mật khẩu báo lỗi rõ; vào \code{/checkout} khi chưa đăng nhập thì bị chuyển
+tới trang đăng nhập kèm tham số quay lại. & Must \\
+US-06 & Khách & Tôi muốn trả tiền online để không cần chuẩn bị tiền mặt. &
+Đơn được tạo ở trạng thái chờ thanh toán; chuyển được sang ZaloPay Sandbox; quay lại thì trạng thái
+đơn phản ánh đúng kết quả. & Must \\
+US-07 & Khách & Tôi muốn theo dõi đơn đã đặt để biết khi nào có thể nhận. &
+Bảy trạng thái hiển thị thành dòng thời gian; tự cập nhật mỗi 15 giây; có liên kết tiếp tục thanh
+toán khi đơn còn chờ. & Should \\
+US-08 & Khách & Tôi muốn huỷ đơn trước khi trả tiền và được hoàn điểm, hoàn kho. &
+Huỷ được ở trạng thái cho phép; điểm tích luỹ trở về; kho tăng lại đúng định lượng đã trừ. & Should \\
+US-09 & Admin & Tôi muốn đổi trạng thái đơn theo đúng quy trình để tránh nhảy cóc. &
+Chỉ chấp nhận chuyển trạng thái hợp lệ; chuyển sai trả 409; mọi thay đổi được ghi vào lịch sử. & Must \\
+US-10 & Admin & Tôi muốn quản lý kho, công thức và thực đơn để vận hành hằng ngày. &
+Thêm/sửa/xoá nguyên liệu và công thức theo size; cảnh báo khi tồn dưới định mức; nhập kho ghi phiếu. & Must \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\section{Kiến trúc hệ thống}
+
+\subsection{Kiến trúc tổng quan}
+BrewLite là monorepo gồm hai ứng dụng triển khai độc lập, giao tiếp qua HTTPS/JSON: \textbf{ứng dụng
+web} (Next.js~15, App Router, React~19, Tailwind, mobile-first) và \textbf{API nghiệp vụ} (NestJS~11,
+TypeScript strict). API chia theo miền nghiệp vụ thành chín module: \code{auth}, \code{products},
+\code{cart}, \code{orders}, \code{payments}, \code{ingredients}, \code{recipes},
+\code{stock-imports}, \code{users}. Tầng dữ liệu là PostgreSQL truy cập qua Prisma~6 với 18 model và
+migration chỉ tiến. Mọi endpoint nằm dưới tiền tố \code{/api/v1}; xác thực bằng JWT, phân quyền theo
+vai trò ở guard, kiểm tra dữ liệu vào bằng DTO. Phía hạ tầng: web trên Vercel, API trong Docker trên
+Render, dữ liệu trên Neon, và GitHub Actions chạy kiểm thử cùng build trên mỗi thay đổi của nhánh
+\code{main}.
+
+\subsection{Mô hình dữ liệu kho nguyên liệu và công thức}
+\label{sec:model}
+
+Đây là quyết định thiết kế quan trọng nhất của hệ thống. BrewLite \textbf{không lưu tồn kho trên sản
+phẩm}. Tồn kho thuộc về \code{Ingredient} (kèm \code{stock}, \code{minStock} và \code{version}),
+còn \code{RecipeIngredient} mô tả một sản phẩm ở một size cần bao nhiêu đơn vị của mỗi nguyên liệu.
+Khi đặt hàng, hệ thống duyệt công thức để trừ kho; khi huỷ, hệ thống hoàn kho theo ảnh chụp
+\code{OrderIngredient} đã lưu.
+
+Lý do: một ly dùng nhiều nguyên liệu và một nguyên liệu phục vụ nhiều món. Cappuccino size S cần
+18\,g cà phê hạt Arabica, 120\,ml sữa tươi và 30\,ml kem sữa béo; Americano size S cũng cần đúng
+18\,g cà phê Arabica đó. Nếu mỗi sản phẩm giữ một cột tồn kho riêng, hai món sẽ trừ hai cột khác
+nhau trong khi kho thật chỉ có một bao cà phê --- và không cột nào phản ánh được việc bán ly này làm
+giảm khả năng bán ly kia. Với mô hình công thức, câu hỏi ``còn bán được bao nhiêu ly?'' trả lời được
+bằng $\min_i (\text{stock}_i / \text{quantity}_i)$ trên toàn bộ nguyên liệu của món.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+  \node[ent] (product) at (-5.45,0)
+    {\textbf{Product}\\[1pt]\rule{2.85cm}{0.4pt}\\[1pt]
+     id, name\\ categoryId\\ isAvailable};
+  \node[ent] (recipe) at (0,0)
+    {\textbf{RecipeIngredient}\\[1pt]\rule{2.85cm}{0.4pt}\\[1pt]
+     productId, size\\ ingredientId, quantity\\ \emph{(khoá ghép)}};
+  \node[ent] (ing) at (5.45,0)
+    {\textbf{Ingredient}\\[1pt]\rule{2.85cm}{0.4pt}\\[1pt]
+     id, name, unit\\ stock, minStock\\ version};
+
+  \draw[lnk] (product.east) -- node[above,card]{1} node[below,card]{N} (recipe.west);
+  \draw[lnk] (recipe.east) -- node[above,card]{N} node[below,card]{1} (ing.west);
+
+  \node[note,text width=13.4cm,anchor=north] at (0,-1.35)
+    {Giá theo size nằm ở \texttt{ProductSizePrice}; khi đặt hàng, mỗi dòng công thức sinh một dòng
+     \texttt{OrderIngredient} lưu ảnh chụp định lượng đã trừ.};
+\end{tikzpicture}
+\caption{Lược đồ rút gọn: sản phẩm -- công thức -- nguyên liệu}
+\label{fig:erd}
+\end{figure}
+
+Vì tồn kho là tài nguyên dùng chung, thao tác trừ kho phải an toàn khi nhiều đơn đến cùng lúc.
+BrewLite dùng \emph{optimistic locking}: mỗi nguyên liệu có cột \code{version}, và lệnh cập nhật chỉ
+khớp khi \code{version} chưa đổi \textbf{và} \code{stock} vẫn đủ cho lượng cần trừ; khi đó hệ thống
+giảm \code{stock}, tăng \code{version} và kiểm tra số dòng bị ảnh hưởng. Nếu hai transaction cùng đọc
+một \code{version}, chỉ một lệnh khớp điều kiện; lệnh còn lại nhận \code{count = 0} và bị biến thành
+lỗi 409 thay vì ghi đè. Toàn bộ việc tạo đơn chạy trong transaction mức \code{Serializable}, nên đơn,
+chi tiết đơn, ảnh chụp nguyên liệu và lịch sử trạng thái hoặc cùng tồn tại, hoặc cùng biến mất.
+
+\subsection{Các quyết định thiết kế then chốt}
+\begin{itemize}
+  \item \textbf{Giá tính ở server, định lượng lưu bằng ảnh chụp.} Client chỉ gửi mã món, size, topping
+        và số lượng; đơn giá lấy từ cơ sở dữ liệu nên sửa giá trên trình duyệt không làm đổi số tiền
+        phải trả. \code{OrderIngredient} lưu lại đúng lượng đã trừ, nhờ vậy nếu công thức thay đổi sau
+        đó thì việc huỷ đơn vẫn hoàn kho đúng như lúc đặt.
+  \item \textbf{Máy trạng thái đơn hữu hạn.} Bảy trạng thái (\code{PENDING}, \code{PAYMENT\_FAILED},
+        \code{PAID}, \code{PREPARING}, \code{READY}, \code{COMPLETED}, \code{CANCELLED}) với bảng
+        chuyển đổi tường minh; mọi bước chuyển đều ghi lịch sử.
+  \item \textbf{Thanh toán idempotent và biên giới tin cậy.} Mỗi giao dịch gắn với một mã duy nhất
+        và một ràng buộc duy nhất trong cơ sở dữ liệu, nên callback lặp lại hay bấm hai lần đều không
+        tạo giao dịch thứ hai. Dữ liệu từ ZaloPay chỉ được chấp nhận sau khi xác thực chữ ký; khoá bí
+        mật chỉ nằm trong biến môi trường, không có trong mã nguồn hay log.
+\end{itemize}
+
+\section{Kết luận}
+Báo cáo đã xác lập 12 use case, 10 user story kèm tiêu chí chấp nhận và kiến trúc ba lớp. Điểm khác
+biệt nằm ở mô hình dữ liệu: tồn kho gắn với \textbf{nguyên liệu và công thức} và được bảo vệ bằng
+optimistic locking cùng transaction khả tuần tự, nên hai món dùng chung nguyên liệu không thể cùng
+bán vượt kho. Đây là nền cho các bước tiếp theo --- đo hiệu năng, kiểm thử tự động toàn bộ luồng đặt,
+thanh toán, huỷ đơn và hoàn thiện triển khai --- trình bày trong báo cáo Assignment~2.
+
+\end{document}
+
+
