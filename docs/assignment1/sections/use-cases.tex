@@ -1,0 +1,539 @@
+\section{Phân tích Use Case}
+\label{sec:use-cases}
+
+\subsection{Phạm vi và tác nhân}
+
+BrewLite hỗ trợ khách hàng chọn đồ uống, tùy chỉnh món, quản lý giỏ hàng,
+đăng nhập, tạo đơn và thanh toán không dùng tiền mặt để nhận tại quầy.
+Phần này trình bày mô hình ca sử dụng của Assignment~1. Các đặc tả tập trung
+vào hành vi quan sát được và điều kiện chấp nhận; việc có mã nguồn tương ứng
+không đồng nghĩa mọi điều kiện đã được kiểm thử hoặc hệ thống đã sẵn sàng
+vận hành thanh toán thật.
+
+Luồng khách hàng UC-01--UC-07 là trọng tâm MVP. Quản trị đơn hàng ở UC-08,
+quản lý nguyên liệu theo công thức và tích hợp ZaloPay Sandbox được ghi nhận
+là phần mở rộng hiện có trong mã nguồn. Chúng giúp làm rõ cách thực thi
+quy tắc nghiệp vụ, không thay thế phạm vi MVP bằng một hệ thống quản trị đầy đủ.
+
+\begin{longtable}{|p{3.0cm}|p{11.6cm}|}
+\caption{Tác nhân và trách nhiệm trong mô hình Use Case}
+\label{tab:uc-actors}\\ \hline
+\textbf{Tác nhân} & \textbf{Vai trò} \\ \hline
+\endfirsthead
+\hline \textbf{Tác nhân} & \textbf{Vai trò} \\ \hline
+\endhead
+Khách hàng & Xem menu khi chưa đăng nhập; chọn món và lưu giỏ trong trình
+duyệt; xác thực trước khi tạo đơn, thanh toán hoặc xem dữ liệu đơn cá nhân. \\ \hline
+Quản trị viên & Tác nhân của phần mở rộng: xem đơn của cửa hàng, cập nhật
+tiến độ pha chế và hủy đơn còn đủ điều kiện. Phải được xác thực và có quyền
+quản trị; không phải mọi khách hàng đã đăng nhập đều có quyền này. \\ \hline
+Cổng thanh toán & Hệ thống bên ngoài cung cấp kết quả thanh toán. Trong
+MVP, cổng giả lập đóng vai trò mô phỏng phụ thuộc này; phần mở rộng sử dụng
+ZaloPay Sandbox. Không có giao dịch tiền thật trong luồng thử nghiệm. \\ \hline
+\end{longtable}
+
+Backend, cơ sở dữ liệu, bộ xác thực JWT và tác vụ định kỳ là thành phần
+nội bộ của BrewLite, không được mô hình hóa thành tác nhân bên ngoài.
+
+\subsection{Sơ đồ Use Case tổng quát}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  x=1cm,y=1cm,font=\small,
+  uc/.style={ellipse,draw,align=center,text width=5.5cm,
+    minimum height=0.96cm,inner sep=3pt},
+  actorlabel/.style={align=center,text width=2.5cm,font=\small}
+]
+  \draw[rounded corners=2pt] (2.1,0.9) rectangle (10.8,-11.8);
+  \node[font=\bfseries] at (6.45,0.5) {Hệ thống BrewLite};
+  \node[uc] (uc01) at (6.45,-0.5) {UC-01: Xem và tìm món};
+  \node[uc] (uc02) at (6.45,-2.0) {UC-02: Xem chi tiết, chọn tùy chọn};
+  \node[uc] (uc03) at (6.45,-3.5) {UC-03: Quản lý giỏ hàng};
+  \node[uc] (uc04) at (6.45,-5.0) {UC-04: Đăng ký, đăng nhập};
+  \node[uc] (uc05) at (6.45,-6.5) {UC-05: Tạo đơn hàng};
+  \node[uc] (uc06) at (6.45,-8.0) {UC-06: Thanh toán đơn hàng};
+  \node[uc] (uc07) at (6.45,-9.5) {UC-07: Xem xác nhận và lịch sử};
+  \node[uc,dashed] (uc08) at (6.45,-11.0) {UC-08: Xử lý trạng thái đơn\\(mở rộng quản trị)};
+  % UML actors are drawn directly to keep the report self-contained.
+  \draw (0.8,-4.1) circle (0.18);
+  \draw (0.8,-4.28)--(0.8,-4.95);
+  \draw (0.35,-4.55)--(1.25,-4.55);
+  \draw (0.8,-4.95)--(0.4,-5.45) (0.8,-4.95)--(1.2,-5.45);
+  \node[actorlabel] at (0.8,-5.8) {Khách hàng};
+  \coordinate (customer) at (1.3,-4.55);
+  \foreach \target in {uc01,uc02,uc03,uc04,uc05,uc06,uc07}
+    \draw (customer)--(\target.west);
+  \draw (12.0,-7.1) circle (0.18);
+  \draw (12.0,-7.28)--(12.0,-7.95);
+  \draw (11.55,-7.55)--(12.45,-7.55);
+  \draw (12.0,-7.95)--(11.6,-8.45) (12.0,-7.95)--(12.4,-8.45);
+  \node[actorlabel] at (12.0,-8.9) {Cổng thanh toán};
+  \draw (11.55,-7.55)--(uc06.east);
+  \draw (12.0,-9.8) circle (0.18);
+  \draw (12.0,-9.98)--(12.0,-10.65);
+  \draw (11.55,-10.25)--(12.45,-10.25);
+  \draw (12.0,-10.65)--(11.6,-11.15) (12.0,-10.65)--(12.4,-11.15);
+  \node[actorlabel] at (12.0,-11.65) {Quản trị viên};
+  \draw (11.55,-10.25)--(uc08.east);
+\end{tikzpicture}
+\caption{Các mục tiêu sử dụng BrewLite và ranh giới hệ thống}
+\label{fig:overall-use-case}
+\end{figure}
+
+Đường nối trong Hình~\ref{fig:overall-use-case} biểu diễn sự tham gia của
+tác nhân, không biểu diễn thứ tự thao tác. Xác thực là tiền điều kiện của
+các ca sử dụng được bảo vệ; khách hàng có phiên hợp lệ không cần thực hiện
+lại UC-04 mỗi khi tạo đơn. Quy tắc trạng thái được dùng chung trong
+UC-05--UC-08; UC-08 thể hiện riêng mục tiêu vận hành của quản trị viên.
+
+\subsection{Danh mục và truy vết yêu cầu}
+
+\begin{longtable}{|p{1.3cm}|p{3.6cm}|p{6.3cm}|p{2.7cm}|}
+\caption{Danh mục Use Case và liên kết yêu cầu chức năng}
+\label{tab:uc-catalog}\\ \hline
+\textbf{Mã} & \textbf{Tên} & \textbf{Kết quả mong muốn} & \textbf{Yêu cầu} \\ \hline
+\endfirsthead
+\hline \textbf{Mã} & \textbf{Tên} & \textbf{Kết quả mong muốn} & \textbf{Yêu cầu} \\ \hline
+\endhead
+UC-01 & Xem và tìm món & Có danh sách món, giá, ảnh, danh mục và tình trạng
+phục vụ; tìm kiếm, lọc theo danh mục. & FR-01 \\ \hline
+UC-02 & Chi tiết và tùy chọn & Chọn size, topping được hỗ trợ, số lượng và
+xem giá tạm tính trước khi thêm giỏ. & FR-02 \\ \hline
+UC-03 & Quản lý giỏ hàng & Xem, sửa, xóa món; cập nhật tổng tạm tính và
+chuyển sang đặt hàng. & FR-03 \\ \hline
+UC-04 & Đăng ký, đăng nhập & Nhận phiên xác thực để thực hiện giao dịch và
+truy cập dữ liệu cá nhân. & FR-04 \\ \hline
+UC-05 & Tạo đơn hàng & Có mã đơn, giá đã xác nhận và trạng thái chờ thanh
+toán; giữ tồn kho, áp dụng ưu đãi hợp lệ. & FR-05, FR-07, FR-09, FR-10 \\ \hline
+UC-06 & Thanh toán đơn hàng & Ghi nhận kết quả thanh toán nhất quán,
+không tạo giao dịch trùng khi gửi lại cùng yêu cầu. & FR-05, FR-07, FR-08, FR-10 \\ \hline
+UC-07 & Xác nhận và lịch sử & Xem mã nhận món, nội dung đơn, tổng tiền,
+trạng thái và lịch sử đơn của bản thân. & FR-06, FR-07 \\ \hline
+UC-08 & Xử lý trạng thái đơn & Quản trị viên cập nhật tiến độ hợp lệ và có
+dấu vết thay đổi; hủy đơn theo quy tắc. & FR-07, FR-09, FR-10; mở rộng \\ \hline
+\end{longtable}
+
+Trong bảng trên, FR-07 là máy trạng thái đơn; FR-08 là tính lũy đẳng
+thanh toán; FR-09 là xử lý tồn kho khi có truy cập đồng thời; FR-10 là
+khuyến mãi và tích điểm. Các yêu cầu này là quy tắc xuyên suốt nhiều ca
+sử dụng, không buộc khách hàng phải thao tác với một màn hình riêng.
+
+\subsection{Đặc tả UC-01: Xem và tìm món}
+\label{uc:01}
+\label{uc01}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Khách hàng mở trang menu hoặc thay đổi từ khóa,
+danh mục. \\ \hline
+Tiền điều kiện & Truy cập được ứng dụng; không bắt buộc đăng nhập. \\ \hline
+Hậu điều kiện & Hiển thị danh sách phù hợp hoặc trạng thái rỗng/lỗi rõ
+ràng; chưa tạo đơn hay thay đổi tồn kho. \\ \hline
+Liên kết & FR-01; chuyển sang UC-02 khi chọn món. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính}
+\begin{enumerate}[nosep]
+  \item Khách hàng mở \path{/menu}; hệ thống hiển thị trạng thái đang tải.
+  \item Hệ thống lấy danh sách qua \path{GET /api/v1/products} và hiển thị
+  tên, ảnh, giá cơ bản, danh mục, tình trạng phục vụ.
+  \item Khách hàng nhập từ khóa hoặc chọn danh mục.
+  \item Giao diện lọc kết hợp hai điều kiện trên danh sách đã tải; khách
+  hàng chọn món để xem chi tiết hoặc mở hộp chọn tùy chọn.
+\end{enumerate}
+
+\textbf{Thay thế và ngoại lệ.} Danh sách chưa có món được hiển thị bằng
+trạng thái rỗng. Không có kết quả tìm kiếm/lọc được thông báo riêng. Khi
+lỗi mạng, giao diện báo lỗi và cho phép thử lại. Món không khả dụng vẫn
+có thể xuất hiện với nhãn hết hàng và nút mua bị khóa; không suy diễn rằng
+mọi món hiển thị đều chắc chắn còn nguyên liệu tại thời điểm đặt đơn.
+
+\textbf{Điều kiện chấp nhận.} Kết quả kết hợp đúng từ khóa và danh mục;
+tìm tên không phân biệt hoa/thường và bỏ khoảng trắng đầu/cuối. Mã hiện
+tại chưa chuẩn hóa dấu tiếng Việt, vì vậy tìm không dấu chưa được coi là
+tiêu chí đã đáp ứng. Nút mua không hoạt động với món hết hàng hoặc chưa có
+size khả dụng.
+
+\subsection{Đặc tả UC-02: Xem chi tiết và chọn tùy chọn}
+\label{uc:02}
+\label{uc02}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Khách hàng chọn một món trong menu hoặc mở trang
+chi tiết món. \\ \hline
+Tiền điều kiện & Có định danh sản phẩm hợp lệ; để thêm giỏ, món và size
+phải đang khả dụng. \\ \hline
+Hậu điều kiện & Dòng món với cấu hình đã chọn được lưu vào giỏ của trình
+duyệt; nếu thao tác thất bại, không thêm dòng không hợp lệ. \\ \hline
+Liên kết & FR-02; dữ liệu được dùng tiếp bởi UC-03 và xác minh lại tại UC-05. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính}
+\begin{enumerate}[nosep]
+  \item Hệ thống lấy chi tiết qua \path{GET /api/v1/products/:id}.
+  \item Khách hàng xem thông tin món và chọn size trong các size được hỗ trợ.
+  \item Với đồ uống ngoài nhóm cà phê, khách hàng có thể chọn tối đa ba
+  loại topping khả dụng, không trùng lặp. Cà phê chỉ chọn size, không dùng topping.
+  \item Khách hàng chọn số lượng từ 1 đến 99; giao diện cập nhật giá tạm tính.
+  \item Khách hàng xác nhận; hệ thống thêm cấu hình vào giỏ và thông báo kết quả.
+\end{enumerate}
+
+\textbf{Thay thế và ngoại lệ.} Khi sửa một dòng trong giỏ, cấu hình mới
+thay thế dòng được chọn. Không có topping khả dụng thì khách hàng vẫn có
+thể mua món không topping. Món không tồn tại, lỗi tải, size hết hàng hoặc
+dữ liệu giá không hợp lệ phải được thông báo; không cho thêm món khi chưa
+có cấu hình hợp lệ. Nếu nguyên liệu thay đổi sau lúc xem chi tiết, kết
+quả cuối cùng được quyết định tại UC-05.
+
+\textbf{Điều kiện chấp nhận.} Giá hiển thị cho một dòng bằng số lượng
+nhân với tổng giá cơ bản, phụ thu size và giá topping. Cấu hình cà phê
+không chứa topping; các giới hạn số lượng và topping được kiểm tra lại ở
+backend khi tạo đơn. Giá trong trình duyệt là ước tính, không phải giá
+được backend tin cậy.
+
+\subsection{Đặc tả UC-03: Quản lý giỏ hàng}
+\label{uc:03}
+\label{uc03}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Khách hàng mở giỏ, sửa cấu hình, tăng/giảm số lượng
+hoặc xóa một món. \\ \hline
+Tiền điều kiện & Có thể mở giỏ khi chưa đăng nhập; có dòng món nếu muốn
+sửa, xóa hoặc tiếp tục đặt hàng. \\ \hline
+Hậu điều kiện & Giỏ trong trình duyệt và tổng tạm tính được cập nhật;
+chưa trừ tồn kho và chưa ghi nhận thanh toán. \\ \hline
+Liên kết & FR-03; UC-04 nếu cần đăng nhập, sau đó UC-05. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính}
+\begin{enumerate}[nosep]
+  \item Khách hàng mở \path{/cart}; hệ thống nạp giỏ đã lưu trong trình duyệt.
+  \item Hệ thống trình bày tên món, size, topping, số lượng và thành tiền tạm tính.
+  \item Khách hàng chỉnh số lượng hoặc cấu hình; các dòng cùng sản phẩm,
+  size và cùng tập topping được gộp theo quy tắc của giỏ.
+  \item Hệ thống lưu thay đổi và tính lại tổng tiền.
+  \item Khách hàng xác nhận các món để chuyển sang bước đặt hàng.
+\end{enumerate}
+
+\textbf{Thay thế và ngoại lệ.} Khách hàng xóa dòng không còn cần; xóa hết
+thì hiển thị giỏ rỗng và không tiếp tục checkout. Số lượng ngoài giới hạn
+không được chấp nhận. Nếu chưa đăng nhập, khách hàng được yêu cầu xác
+thực trước khi đặt hàng. Giỏ hiện tại của giao diện khách hàng dùng
+\texttt{localStorage}; các API Cart có trong backend không phải bằng
+chứng về đồng bộ giỏ đa thiết bị của giao diện này.
+
+\textbf{Điều kiện chấp nhận.} Sửa/xóa cập nhật ngay giỏ và tổng tiền; hai
+cấu hình khác size hoặc khác tập topping không bị gộp nhầm. Không cho gửi
+đơn với giỏ rỗng; backend giới hạn tối đa 50 dòng trong một yêu cầu tạo đơn.
+
+\subsection{Đặc tả UC-04: Đăng ký và đăng nhập}
+\label{uc:04}
+\label{uc04}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Khách hàng chọn đăng ký/đăng nhập hoặc cần thực hiện
+một thao tác được bảo vệ. \\ \hline
+Tiền điều kiện & Chưa có phiên hợp lệ; để đăng nhập cần tài khoản đã tồn tại. \\ \hline
+Hậu điều kiện & Thành công: có JWT và thông tin người dùng. Thất bại:
+không cấp phiên cho thông tin sai hoặc dữ liệu không hợp lệ. \\ \hline
+Liên kết & FR-04; tiền điều kiện của UC-05--UC-07 và truy cập quản trị. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính: đăng nhập}
+\begin{enumerate}[nosep]
+  \item Khách hàng mở biểu mẫu, nhập email và mật khẩu.
+  \item Giao diện gửi \path{POST /api/v1/auth/login}.
+  \item Backend kiểm tra dữ liệu, đối chiếu mật khẩu với giá trị đã băm.
+  \item Hệ thống cấp JWT, trả thông tin tài khoản; giao diện cập nhật phiên.
+  \item Khách hàng tiếp tục thao tác cần xác thực.
+\end{enumerate}
+
+\textbf{Luồng thay thế: đăng ký.} Khách hàng nhập họ tên, email, mật khẩu
+và xác nhận mật khẩu. Giao diện gửi \path{POST /api/v1/auth/register};
+backend kiểm tra dữ liệu và email duy nhất, lưu mật khẩu đã băm rồi cấp
+phiên cho tài khoản mới. Điểm tích lũy ban đầu bằng không.
+
+\textbf{Ngoại lệ.} Email đã dùng được báo xung đột; dữ liệu sai định dạng
+được báo để sửa. Khi đăng nhập sai, hệ thống trả thông báo chung về thông
+tin đăng nhập. JWT thiếu, hết hạn hoặc không hợp lệ không được truy cập
+API bảo vệ; giao diện cần yêu cầu đăng nhập lại.
+
+\textbf{Điều kiện chấp nhận.} Không trả mật khẩu hay giá trị băm cho client.
+Đơn hàng cá nhân luôn gắn với người dùng được xác thực, không nhận danh
+tính chủ đơn tùy ý từ trình duyệt. Có phiên đăng nhập không tự động cấp
+quyền quản trị.
+
+\subsection{Đặc tả UC-05: Tạo đơn hàng}
+\label{uc:05}
+\label{uc05}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Khách hàng xác nhận đặt hàng tại trang checkout. \\ \hline
+Tiền điều kiện & Phiên đăng nhập hợp lệ; giỏ từ 1 đến 50 dòng; mỗi dòng
+chứa sản phẩm, size, topping và số lượng hợp lệ. \\ \hline
+Hậu điều kiện & Thành công: có đơn \texttt{PENDING}, mã đơn, chi tiết và
+giá đã xác nhận; nguyên liệu/topping được giữ bằng cách trừ kho, điểm sử
+dụng được ghi nhận. Thất bại: giao dịch rollback, không lưu đơn dở dang
+hoặc trừ kho/điểm một phần. \\ \hline
+Liên kết & FR-05, FR-07, FR-09, FR-10; tiếp tục UC-06. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính}
+\begin{enumerate}[nosep]
+  \item Khách hàng xem món đã chọn, có thể nhập mã khuyến mãi và số điểm muốn dùng.
+  \item Giao diện kiểm tra đơn đang chờ gắn với giỏ hiện tại để có thể tiếp
+  tục đơn trước đó, sau đó gửi \path{POST /api/v1/orders} khi cần tạo đơn mới.
+  Yêu cầu chỉ chứa cấu hình món và lựa chọn ưu đãi, không chứa giá được tin cậy.
+  \item Backend xác thực người dùng, kiểm tra sản phẩm đang bán, size hỗ
+  trợ, topping cho phép và tính lại toàn bộ giá từ cơ sở dữ liệu.
+  \item Backend cộng nhu cầu nguyên liệu từ công thức theo sản phẩm, size
+  và số lượng; kiểm tra và trừ nguyên liệu cùng topping trong giao dịch.
+  \item Backend kiểm tra hiệu lực, điều kiện mã khuyến mãi và số dư điểm;
+  tính số tiền cuối cùng, tạo đơn \texttt{PENDING}, lưu chi tiết và lịch sử trạng thái.
+  \item Hệ thống trả mã đơn và số tiền đã xác nhận; giao diện lưu tham
+  chiếu đơn đang chờ rồi chuyển đến trang thanh toán.
+\end{enumerate}
+
+\textbf{Luồng thay thế}
+\begin{itemize}[nosep]
+  \item Giỏ chưa thay đổi và đã có đơn \texttt{PENDING} hoặc
+  \texttt{PAYMENT\_FAILED}: giao diện tiếp tục đơn đó. Nếu giỏ đã sửa, giao
+  diện xử lý hủy đơn chờ cũ trước khi tạo đơn mới theo cơ chế hiện có.
+  \item Không nhập mã hay không dùng điểm: tính đơn theo giá thông thường.
+  Mã hợp lệ được áp dụng trước phần giảm bằng điểm.
+  \item Điểm sử dụng là bội số của 10, mỗi điểm giảm 100~đồng; không vượt
+  số dư và số tiền sau khuyến mãi. Điều kiện này được xác minh tại backend.
+\end{itemize}
+
+\textbf{Ngoại lệ.} Từ chối giỏ rỗng, sản phẩm không bán, size không có
+công thức, topping không hợp lệ, mã ưu đãi không đủ điều kiện hoặc điểm
+không đủ. Khi thiếu nguyên liệu hoặc dữ liệu tồn kho thay đổi đồng thời,
+trả thông báo để khách tải lại/thử lại; không âm kho và không ghi đơn một phần.
+
+\textbf{Điều kiện chấp nhận.} Tổng tiền do backend quyết định. Tồn kho
+đồ uống được tính từ nguyên liệu của công thức theo size, không mô tả
+bằng một trường tồn kho sản phẩm độc lập. Cập nhật nguyên liệu kiểm tra
+\texttt{version} và số dư, kết hợp giao dịch \texttt{Serializable}; topping
+được trừ có điều kiện đủ kho. Khi hai khách tranh lượng nguyên liệu cuối,
+chỉ yêu cầu đáp ứng đủ điều kiện mới thành công, yêu cầu còn lại nhận lỗi
+có thể xử lý. Cơ chế tiếp tục đơn ở giao diện không được suy rộng thành
+cam kết lũy đẳng cho mọi yêu cầu tạo đơn từ client bất kỳ.
+
+\subsection{Đặc tả UC-06: Thanh toán đơn hàng}
+\label{uc:06}
+\label{uc06}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Khách hàng chọn phương thức và xác nhận thanh toán;
+cổng thanh toán cung cấp kết quả. \\ \hline
+Tiền điều kiện & JWT hợp lệ; đơn thuộc khách hàng, đang ở
+\texttt{PENDING} hoặc \texttt{PAYMENT\_FAILED}; không có giao dịch thành
+công hoặc giao dịch đang xử lý khác chặn lần thanh toán này. \\ \hline
+Hậu điều kiện & Thành công: Payment là \texttt{SUCCESS}, đơn là
+\texttt{PAID}, điểm thưởng và lịch sử được ghi nhất quán. Thất bại:
+Payment là \texttt{FAILED}, đơn là \texttt{PAYMENT\_FAILED}; có thể thử
+lại bằng yêu cầu mới theo quy tắc. \\ \hline
+Liên kết & FR-05, FR-07, FR-08, FR-10; kết quả được xem tại UC-07. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính của thanh toán giả lập trong MVP}
+\begin{enumerate}[nosep]
+  \item Hệ thống nạp đơn từ backend, hiển thị số tiền đã xác nhận; khách
+  hàng chọn ví điện tử hoặc thẻ nội địa trong luồng mô phỏng.
+  \item Giao diện gửi \path{POST /api/v1/payments} với mã đơn, phương thức
+  và header \texttt{Idempotency-Key} cho lần thanh toán.
+  \item Backend kiểm tra quyền sở hữu, trạng thái đơn, khóa lũy đẳng và
+  dấu vân tay nội dung yêu cầu; số tiền lấy từ đơn trong cơ sở dữ liệu.
+  \item Backend tuần tự hóa các lần thanh toán của cùng đơn bằng khóa
+  hàng, tạo giao dịch và nhận kết quả từ cổng giả lập.
+  \item Với kết quả thành công, backend cập nhật giao dịch và chuyển đơn
+  sang \texttt{PAID} trong cùng giao dịch dữ liệu; ghi lịch sử và cộng
+  $\lfloor\text{số tiền cuối cùng}/1000\rfloor$ điểm thưởng.
+  \item Giao diện hiển thị kết quả. Chỉ xóa giỏ tương ứng với đơn đang
+  chờ khi giỏ hiện tại còn khớp bản đã đặt, tránh xóa các món vừa sửa.
+\end{enumerate}
+
+\textbf{Luồng thay thế và ngoại lệ}
+\begin{itemize}[nosep]
+  \item Cổng giả lập trả thất bại: lưu \texttt{FAILED}, chuyển đơn sang
+  \texttt{PAYMENT\_FAILED}; giữ thông tin để khách thử lại hoặc hủy đơn.
+  Lần thử mới dùng khóa mới; khi thử lại đơn chuyển về \texttt{PENDING}.
+  \item Gửi lại cùng khóa và cùng nội dung sau khi đã hoàn tất: trả kết
+  quả đã lưu, không tạo Payment và không cộng điểm lần nữa. Khóa trùng
+  nhưng nội dung khác bị từ chối với xung đột.
+  \item Mất phản hồi hoặc còn đang xử lý: client giữ khóa của lần gửi
+  đó để kiểm tra/gửi lại, không suy ra thất bại chỉ vì chưa thấy kết quả.
+  Giao dịch cùng khóa còn \texttt{PENDING} có thể trả xung đột yêu cầu thử lại.
+  \item Sai chủ đơn, đơn đã hủy/đã thanh toán hoặc có giao dịch khác đang
+  xử lý: từ chối, không tạo lần thu tiền mới.
+\end{itemize}
+
+\textbf{Điều kiện chấp nhận.} Gửi lặp hoặc gửi đồng thời không ghi nhận
+hai lần thanh toán thành công cho một đơn. Giao dịch và trạng thái đơn
+không mâu thuẫn; điểm chỉ được thưởng khi chuyển hợp lệ sang
+\texttt{PAID}. ZaloPay Sandbox chỉ hoạt động khi \texttt{NODE\_ENV} là
+\texttt{development}/\texttt{test}, \texttt{ZALOPAY\_SANDBOX\_ENABLED=true}
+và có đủ bộ khoá sandbox; không dùng tiền thật.
+
+\textbf{Luồng ZaloPay Sandbox.} Mã nguồn có luồng tạo yêu cầu
+\path{POST /api/v1/payments/zalopay}, nhận callback và đồng bộ kết quả.
+Luồng này có trạng thái chờ bất đồng bộ; callback phải được kiểm tra
+chữ ký và dữ liệu giao dịch trước khi cập nhật đơn. Giao diện kiểm tra
+giao dịch Sandbox đang chờ trước khi cho tạo lượt mới. Cấu hình sandbox,
+khả năng nhận callback và kiểm thử tích hợp là điều kiện triển khai riêng;
+báo cáo không coi đây là thanh toán thật đã nghiệm thu.
+
+\subsection{Đặc tả UC-07: Xem xác nhận và lịch sử đơn}
+\label{uc:07}
+\label{uc07}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Khách hàng xem kết quả sau thanh toán, mở danh sách
+đơn hoặc chọn một đơn cụ thể. \\ \hline
+Tiền điều kiện & Phiên hợp lệ; đơn cần xem thuộc khách hàng hiện tại. \\ \hline
+Hậu điều kiện & Hiển thị dữ liệu đơn được backend xác nhận; việc xem
+không tự đổi trạng thái hoặc tạo giao dịch mới. \\ \hline
+Liên kết & FR-06, FR-07; có thể quay lại UC-06 nếu đơn còn được thanh toán. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính}
+\begin{enumerate}[nosep]
+  \item Khách hàng mở \path{/orders}; hệ thống gọi \path{GET /api/v1/orders/me}.
+  \item Hệ thống hiển thị danh sách đơn cá nhân, mã đơn, thời gian, số
+  lượng món, tổng tiền và trạng thái; hỗ trợ phân trang và lọc trạng thái.
+  \item Khách hàng chọn đơn; hệ thống gọi \path{GET /api/v1/orders/:id}.
+  \item Giao diện trình bày món và tùy chọn, các khoản tiền, kết quả
+  thanh toán, lịch sử trạng thái và mã đơn dùng khi nhận tại quầy.
+\end{enumerate}
+
+\textbf{Thay thế và ngoại lệ.} Chưa có đơn thì hiển thị lịch sử rỗng.
+Đơn chưa thanh toán có thể tiếp tục UC-06. Đơn đủ điều kiện có thể được
+khách hàng hủy bằng \path{POST /api/v1/orders/:id/cancel}; quy tắc hoàn
+kho, điểm và hoàn tiền theo UC-08. Phiên hết hạn yêu cầu đăng nhập lại;
+đơn không tồn tại hoặc không thuộc khách được báo không tìm thấy, không
+trả dữ liệu đơn người khác. Lỗi tải có thông báo và khả năng thử lại.
+
+\textbf{Điều kiện chấp nhận.} Danh sách và chi tiết chỉ chứa đơn thuộc
+người được xác thực. Nhãn thành công dựa trên trạng thái do backend trả
+về, không dựa riêng vào trang chuyển hướng của cổng thanh toán. Không
+khẳng định có hóa đơn email, mã QR nhận món hay thông báo đẩy nếu chưa
+có luồng tương ứng trong phạm vi.
+
+\subsection{Đặc tả UC-08: Xử lý trạng thái đơn hàng (mở rộng)}
+\label{uc:08}
+\label{uc08}
+
+\begin{longtable}{|p{3.1cm}|p{11.5cm}|}
+\hline \textbf{Thuộc tính} & \textbf{Nội dung} \\ \hline
+Tác nhân, kích hoạt & Quản trị viên mở danh sách đơn và xác nhận tiến độ
+thực tế tại quầy. \\ \hline
+Tiền điều kiện & Phiên hợp lệ, có quyền quản trị; đơn tồn tại và chuyển
+trạng thái được phép. \\ \hline
+Hậu điều kiện & Trạng thái, phiên bản và lịch sử đơn được cập nhật nhất
+quán; thay đổi sai quy tắc bị từ chối. Khi hủy, hoàn kho/điểm theo quy tắc. \\ \hline
+Liên kết & FR-07, FR-09, FR-10; phần quản trị là mở rộng của MVP. \\ \hline
+\end{longtable}
+
+\textbf{Luồng chính}
+\begin{enumerate}[nosep]
+  \item Quản trị viên mở danh sách/chi tiết đơn qua các API
+  \path{/api/v1/admin/orders} được bảo vệ bằng JWT và quyền quản trị.
+  \item Quản trị viên chọn hành động tương ứng với công việc đã thực hiện.
+  \item Hệ thống kiểm tra trạng thái và phiên bản hiện tại, chỉ chấp nhận
+  các bước \texttt{PAID} $\rightarrow$ \texttt{PREPARING}
+  $\rightarrow$ \texttt{READY} $\rightarrow$ \texttt{COMPLETED}.
+  \item Hệ thống lưu trạng thái mới cùng người thay đổi, thời điểm và lý
+  do; giao diện khách hàng có thể đọc trạng thái mới khi tải lại dữ liệu.
+\end{enumerate}
+
+\textbf{Luồng thay thế: hủy đơn.} Khách hàng sở hữu đơn hoặc quản trị
+viên được hủy khi đơn ở \texttt{PENDING}, \texttt{PAYMENT\_FAILED} hoặc
+\texttt{PAID}, trước khi bắt đầu pha chế. Hệ thống chuyển sang
+\texttt{CANCELLED}, hoàn đúng lượng nguyên liệu đã ghi với đơn, hoàn
+topping và điểm đã sử dụng. Với đơn đã trả tiền, thu hồi điểm đã thưởng
+và ghi \texttt{MANUAL\_REQUIRED}: tiền cần được hoàn thủ công, không có
+cam kết hoàn tiền tự động. Gọi hủy lại đơn đã hủy không được hoàn kho/điểm lần hai.
+
+\textbf{Tác vụ nội bộ hiện có.} Scheduler mỗi phút tìm đơn
+\texttt{PENDING} được tạo hơn 15 phút để gọi cơ chế hủy và hoàn kho.
+Quy tắc hiện tại không tự áp dụng cho \texttt{PAYMENT\_FAILED}; không
+diễn giải thành việc hủy mọi đơn sau 15 phút, hay giữ món 15 phút sau thanh toán.
+
+\textbf{Ngoại lệ và điều kiện chấp nhận.} Từ chối tài khoản không có
+quyền, bỏ bước pha chế, quay lui trạng thái kết thúc hoặc hủy khi đã
+\texttt{PREPARING}. Khi có cập nhật đồng thời, điều kiện phiên bản phải
+ngăn ghi đè; người dùng nhận thông báo tải lại. Hủy phải qua nghiệp vụ
+hủy có hoàn kho/điểm, không chỉ gán trực tiếp trạng thái.
+
+\subsection{Quy tắc trạng thái và kiểm chứng chấp nhận}
+
+\begin{longtable}{|p{3.1cm}|p{5.8cm}|p{5.2cm}|}
+\caption{Các chuyển trạng thái được phép}
+\label{tab:order-transitions}\\ \hline
+\textbf{Trạng thái nguồn} & \textbf{Trạng thái đích} & \textbf{Sự kiện} \\ \hline
+\endfirsthead
+\hline \textbf{Trạng thái nguồn} & \textbf{Trạng thái đích} & \textbf{Sự kiện} \\ \hline
+\endhead
+Chưa có đơn & \texttt{PENDING} & Tạo đơn hợp lệ. \\ \hline
+\texttt{PENDING} & \texttt{PAID}, \texttt{PAYMENT\_FAILED},
+\texttt{CANCELLED} & Thanh toán thành công, thất bại hoặc hủy hợp lệ. \\ \hline
+\texttt{PAYMENT\_FAILED} & \texttt{PENDING}, \texttt{CANCELLED} & Thử
+thanh toán lại hoặc hủy. \\ \hline
+\texttt{PAID} & \texttt{PREPARING}, \texttt{CANCELLED} & Bắt đầu pha
+chế hoặc hủy trước pha chế; hủy cần hoàn tiền thủ công. \\ \hline
+\texttt{PREPARING} & \texttt{READY} & Pha chế xong. \\ \hline
+\texttt{READY} & \texttt{COMPLETED} & Đã giao đồ uống tại quầy. \\ \hline
+\texttt{COMPLETED}, \texttt{CANCELLED} & Không có & Trạng thái kết thúc. \\ \hline
+\end{longtable}
+
+Những tình huống sau là cơ sở thiết kế kiểm thử và nghiệm thu, không phải
+báo cáo kết quả chạy kiểm thử:
+\begin{enumerate}[nosep]
+  \item \textbf{Luồng mua hoàn chỉnh:} xem menu, chọn size/topping hợp
+  lệ, thêm giỏ, đăng nhập, tạo đơn, thanh toán thành công và xem lại đúng
+  đơn trong lịch sử (UC-01--UC-07; FR-01--FR-06).
+  \item \textbf{Chuyển trạng thái sai:} thử chuyển
+  \texttt{PAID} thẳng sang \texttt{READY}; hệ thống từ chối và giữ lịch
+  sử nhất quán (UC-08; FR-07).
+  \item \textbf{Thanh toán lặp:} gửi đồng thời cùng khóa/cùng nội dung;
+  chỉ có một kết quả nghiệp vụ. Thử lại khóa đó với nội dung khác phải
+  bị từ chối (UC-06; FR-08).
+  \item \textbf{Tranh tồn kho:} hai khách cùng đặt lượng nguyên liệu
+  cuối; kiểm tra không âm kho, đơn lỗi không để lại dữ liệu một phần và
+  thông báo cho phép xử lý tiếp (UC-05; FR-09).
+  \item \textbf{Ưu đãi và điểm:} mã hết hạn, chưa đạt mức tối thiểu,
+  điểm vượt số dư hoặc không là bội số của 10 đều bị từ chối. Thanh toán
+  lặp không thưởng điểm hai lần; hủy lặp không hoàn điểm hai lần
+  (UC-05, UC-06, UC-08; FR-10).
+  \item \textbf{Quyền truy cập:} khách A không xem/thanh toán đơn của
+  khách B; tài khoản khách không cập nhật trạng thái qua API quản trị
+  (UC-04, UC-06--UC-08).
+\end{enumerate}
+
+\subsection{Căn cứ và giới hạn của đặc tả}
+
+Các ca sử dụng được tổng hợp từ đề Assignment~1
+\path{BrewLite-CongNghePhanMem.pdf}, tài liệu các phân hệ trong
+\path{docs/product-catalog}, \path{docs/product-detail}, \path{docs/cart},
+\path{docs/auth}, \path{docs/order}, \path{docs/payment} và
+\path{docs/order-history}. Hành vi cụ thể được đối chiếu với
+\path{backend/src/modules/orders/orders.service.ts},
+\path{backend/src/modules/orders/order-state.ts},
+\path{backend/src/modules/products/products.service.ts},
+\path{backend/src/modules/payments/zalopay-sandbox.service.ts},
+\path{backend/src/modules/payments/zalopay-sandbox.gateway.ts},
+\path{frontend/src/lib/pending-order.ts} và các trang giao diện liên quan.
+
+Một số tài liệu phân hệ phản ánh thiết kế ở thời điểm cũ, ví dụ chỉ hiển
+thị món còn hàng, tìm không dấu hoặc chưa có tác vụ hết hạn đơn. Khi mô
+tả hiện trạng, phần này dùng hành vi trong mã nguồn đã đối chiếu và nêu
+rõ phần mở rộng. Việc nghiệm thu cần thực thi các tình huống chấp nhận
+trong môi trường cấu hình tương ứng, đặc biệt với xử lý đồng thời,
+callback Sandbox và hoàn tiền thủ công.

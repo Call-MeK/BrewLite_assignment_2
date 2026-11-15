@@ -1,0 +1,181 @@
+\section{User Stories và yêu cầu nghiệm thu}
+\label{sec:user-stories}
+
+\subsection{Bối cảnh và phạm vi}
+BrewLite là ứng dụng web giúp khách hàng chọn đồ uống, tùy chỉnh món, đặt hàng và thanh toán không dùng tiền mặt. Khách hàng là người dùng chính; quản lý cửa hàng/Product Owner ưu tiên backlog và nghiệm thu increment; nhân viên quầy/barista cập nhật trạng thái pha chế ở phần mở rộng; đơn vị thanh toán được mô phỏng bằng cổng ví/thẻ. Phạm vi MVP đi từ menu đến thanh toán và xác nhận đơn. Các yêu cầu FR-07--FR-10 là nghiệp vụ backend bổ sung trong Task 10 của đề Assignment 1.
+
+Các story dưới đây mô tả yêu cầu và tiêu chí nghiệm thu, không phải báo cáo kết quả kiểm thử. Snapshot mã nguồn hiện có các module/API hoặc thành phần giao diện cho menu, chi tiết sản phẩm, giỏ hàng, xác thực, đơn hàng, thanh toán, lịch sử, state machine, idempotency, kiểm soát nguyên liệu, khuyến mãi và loyalty. Giỏ hàng hiện dùng localStorage/React state; đề bài nêu Zustand/Context như lựa chọn triển khai. Product Backlog và phân bổ Sprint bên dưới là kế hoạch đề xuất theo đề bài; chúng không khẳng định task đã hoàn tất, các sự kiện Scrum đã diễn ra, hay velocity thực tế đã được đo.
+
+\subsection{Product Backlog yêu cầu}
+Mỗi yêu cầu chức năng được liên kết với story và use case (UC) tương ứng. UC IDs được dùng theo danh mục use case của tài liệu.
+
+\begin{longtable}{@{}p{1.3cm}p{1.9cm}p{2.2cm}p{2.1cm}p{6.8cm}@{}}
+\caption{Ánh xạ yêu cầu, user story và use case}\label{tab:story-traceability}\\
+\toprule
+FR & Feature & User Story & Use Case & Phạm vi nghiệm thu chính \\
+\midrule
+\endfirsthead
+\toprule FR & Feature & User Story & Use Case & Phạm vi nghiệm thu chính \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+FR-01 & Menu & US-01 & \hyperref[uc01]{UC-01} & Danh sách đồ uống và thông tin cơ bản \\
+FR-02 & Chi tiết & US-02 & \hyperref[uc02]{UC-02} & Chi tiết món, size, topping và giá \\
+FR-03 & Giỏ hàng & US-03 & \hyperref[uc03]{UC-03} & Thêm, sửa, xóa món và tính tổng \\
+FR-04 & Xác thực & US-04 & \hyperref[uc04]{UC-04} & Đăng ký, đăng nhập và bảo vệ thao tác đặt hàng \\
+FR-05 & Đặt hàng, thanh toán & US-05, US-06 & \hyperref[uc06]{UC-06}; \hyperref[uc05]{UC-05} & Thanh toán không tiền mặt và tạo đơn \\
+FR-06 & Xác nhận, lịch sử & US-07 & \hyperref[uc07]{UC-07} & Xác nhận sau thanh toán và xem lịch sử của khách \\
+FR-07 & Vòng đời đơn & US-08 & \hyperref[uc08]{UC-08} & Chuyển trạng thái hợp lệ và từ chối chuyển sai \\
+FR-08 & Chống lặp & US-09 & \hyperref[uc06]{UC-06} & Yêu cầu thanh toán lặp không tạo tác động lặp \\
+FR-09 & Tồn kho nguyên liệu & US-10 & \hyperref[uc05]{UC-05} & Đặt đồng thời không bán vượt tồn kho \\
+FR-10 & Khuyến mãi, loyalty & US-11 & \hyperref[uc05]{UC-05}; \hyperref[uc06]{UC-06} & Tính giảm giá và cộng điểm sau khi thanh toán \\
+\end{longtable}
+
+\subsection{User Stories và Acceptance Criteria}
+
+\paragraph{US-01 -- Xem menu (FR-01).}
+Là khách hàng, tôi muốn xem danh sách đồ uống kèm hình ảnh, tên và giá để chọn món phù hợp. Use case: \hyperref[uc01]{UC-01}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi mở menu, hệ thống hiển thị các món đang bán với hình, tên và giá.
+  \item Khi dữ liệu đang tải hoặc danh sách rỗng, giao diện hiển thị trạng thái tải hoặc thông báo chưa có món.
+  \item Khi tải menu thất bại, giao diện báo lỗi và cho phép khách thử tải lại.
+\end{enumerate}
+
+\paragraph{US-02 -- Xem và tùy chỉnh món (FR-02).}
+Là khách hàng, tôi muốn xem chi tiết đồ uống và chọn size/topping để biết giá món theo lựa chọn. Use case: \hyperref[uc02]{UC-02}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi mở một món hợp lệ, hệ thống hiển thị thông tin và các lựa chọn size/topping được hỗ trợ.
+  \item Khi thay đổi lựa chọn, giá đơn vị được tính lại bằng giá cơ bản, phụ thu size và giá topping đã chọn.
+  \item Khi món không tồn tại hoặc lựa chọn không được hỗ trợ, hệ thống từ chối lựa chọn và thông báo lỗi.
+\end{enumerate}
+
+\paragraph{US-03 -- Quản lý giỏ hàng (FR-03).}
+Là khách hàng, tôi muốn thêm, sửa hoặc xóa món trong giỏ để xem đúng các món và tổng tiền trước khi đặt. Use case: \hyperref[uc03]{UC-03}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi thêm món, giỏ lưu sản phẩm, size, topping và số lượng; dòng có cùng sản phẩm và tùy chọn được gộp.
+  \item Khi tăng/giảm số lượng hoặc xóa món, số lượng, badge giỏ hàng và tổng tiền được cập nhật; dòng được bỏ khi bị xóa.
+  \item Khi giỏ rỗng, giao diện hiển thị trạng thái giỏ rỗng và không cho bắt đầu thanh toán.
+\end{enumerate}
+
+\paragraph{US-04 -- Đăng ký và đăng nhập (FR-04).}
+Là khách hàng, tôi muốn tạo tài khoản và đăng nhập để đặt hàng gắn với tài khoản của mình. Use case: \hyperref[uc04]{UC-04}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi gửi thông tin hợp lệ để đăng ký, hệ thống tạo tài khoản và không lưu mật khẩu dạng rõ.
+  \item Khi đăng nhập thành công, hệ thống cấp JWT; dữ liệu sai hoặc không hợp lệ bị từ chối.
+  \item Khi khách chưa xác thực gọi thao tác cần đăng nhập như đặt đơn, hệ thống từ chối yêu cầu.
+\end{enumerate}
+
+\paragraph{US-05 -- Thanh toán không tiền mặt (FR-05).}
+Là khách hàng, tôi muốn thanh toán đơn bằng ví điện tử hoặc thẻ để không cần dùng tiền mặt. Use case: \hyperref[uc06]{UC-06}. Story này theo US-05 mẫu trong đề Assignment 1.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi giỏ có ít nhất một món, thao tác thanh toán hiển thị tổng tiền; khách có thể chọn Ví hoặc Thẻ.
+  \item Khi cổng thanh toán báo lỗi, giao dịch ghi nhận thất bại, đơn ở trạng thái PAYMENT\_FAILED và giỏ hàng được giữ nguyên.
+  \item Khi cổng thanh toán báo thành công, đơn chuyển sang PAID và giao diện hiển thị mã đơn cùng xác nhận. Giỏ tương ứng được xóa nếu vẫn khớp với đơn đã trả tiền; không xóa giỏ đã được khách sửa sau đó.
+  \item Khi khách thử lại sau một lần thanh toán thất bại, yêu cầu mới dùng Idempotency-Key mới.
+\end{enumerate}
+
+\paragraph{US-06 -- Tạo đơn hàng (FR-05).}
+Là khách hàng đã đăng nhập, tôi muốn tạo đơn từ giỏ hàng để hệ thống ghi nhận món và trả mã đơn. Use case: \hyperref[uc05]{UC-05}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi gửi giỏ hợp lệ, hệ thống tự tính lại giá từ dữ liệu sản phẩm, lưu đơn ở trạng thái PENDING và trả mã đơn.
+  \item Khi giỏ rỗng hoặc dữ liệu món, size, số lượng không hợp lệ, hệ thống từ chối và không tạo đơn.
+  \item Đơn được gắn với tài khoản từ phiên xác thực; hệ thống không tin user ID hay giá do trình duyệt gửi lên.
+\end{enumerate}
+
+\paragraph{US-07 -- Xem xác nhận và lịch sử đơn (FR-06).}
+Là khách hàng, tôi muốn xem xác nhận sau khi thanh toán và tra cứu các đơn trước đó để theo dõi giao dịch. Use case: \hyperref[uc07]{UC-07}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Sau khi thanh toán thành công, màn hình xác nhận hiển thị mã đơn, trạng thái PAID và số tiền cuối cùng.
+  \item Khi xem lịch sử, hệ thống chỉ trả các đơn thuộc tài khoản đang đăng nhập.
+\end{enumerate}
+
+\paragraph{US-08 -- Theo dõi vòng đời đơn (FR-07).}
+Là quản lý cửa hàng, tôi muốn hệ thống chỉ cho phép các chuyển trạng thái hợp lệ để bảo toàn tiến trình đơn hàng. Use case: \hyperref[uc08]{UC-08}. Giao diện quản trị cập nhật trạng thái là phần mở rộng; phạm vi Assignment 1 yêu cầu nghiệp vụ state machine.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Hệ thống chấp nhận chuỗi PENDING $\rightarrow$ PAID $\rightarrow$ PREPARING $\rightarrow$ READY $\rightarrow$ COMPLETED; PAYMENT\_FAILED có thể trở lại PENDING để thử thanh toán lại.
+  \item Khi yêu cầu chuyển trạng thái không có trong sơ đồ, hệ thống từ chối và giữ nguyên trạng thái hiện tại.
+  \item COMPLETED và CANCELLED là trạng thái kết thúc, không chuyển tiếp sang trạng thái khác.
+\end{enumerate}
+
+\paragraph{US-09 -- Xử lý thanh toán lặp an toàn (FR-08).}
+Là khách hàng, tôi muốn gửi lại yêu cầu khi mạng lỗi mà không bị tính tiền hoặc xử lý đơn hai lần. Use case: \hyperref[uc06]{UC-06}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi cùng Idempotency-Key và cùng nội dung được gửi lại sau khi giao dịch hoàn tất, hệ thống trả kết quả đã lưu và chỉ ghi nhận một lần xử lý thanh toán.
+  \item Khi cùng key được dùng với nội dung khác, hệ thống từ chối yêu cầu xung đột.
+  \item Hai yêu cầu đồng thời cùng key không tạo xử lý thứ hai. Yêu cầu còn lại nhận kết quả đã hoàn tất; nếu giao dịch còn PENDING, hệ thống có thể trả 409 và yêu cầu thử lại với cùng key.
+\end{enumerate}
+
+\paragraph{US-10 -- Ngăn bán vượt tồn kho (FR-09).}
+Là quản lý cửa hàng, tôi muốn việc đặt đồng thời được kiểm soát theo tồn kho nguyên liệu để không nhận đơn vượt khả năng phục vụ. Use case: \hyperref[uc05]{UC-05}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi nhiều đơn đồng thời cần nguyên liệu chỉ còn đủ cho một đơn, tối đa một đơn được tạo thành công; các đơn còn lại bị từ chối do thiếu tồn.
+  \item Sau các yêu cầu đồng thời, tồn kho không âm và chỉ thay đổi cùng giao dịch tạo đơn thành công.
+\end{enumerate}
+
+\paragraph{US-11 -- Dùng khuyến mãi và tích điểm (FR-10).}
+Là khách hàng, tôi muốn áp mã giảm giá hợp lệ và nhận điểm sau khi thanh toán để được hưởng quyền lợi thành viên. Use case: \hyperref[uc05]{UC-05} và \hyperref[uc06]{UC-06}.
+\begin{enumerate}[label=\textbf{AC\arabic*:},leftmargin=*]
+  \item Khi mã còn hiệu lực và đơn đạt giá trị tối thiểu, hệ thống tính discount và số tiền cuối; mã không tồn tại, hết hạn hoặc không đủ điều kiện bị từ chối.
+  \item Khi đơn chuyển sang PAID, khách nhận 1 điểm cho mỗi 1.000 đồng số tiền cuối, làm tròn xuống; mỗi đơn chỉ được cộng điểm một lần.
+  \item Đơn chưa PAID hoặc thanh toán thất bại không được cộng điểm.
+\end{enumerate}
+
+\subsection{Yêu cầu phi chức năng}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Hiệu năng:} với dữ liệu mẫu, thời gian phản hồi API mục tiêu nhỏ hơn 500 ms cho menu, chi tiết sản phẩm, tạo đơn, thanh toán, lịch sử và xác thực. Đây là tiêu chí cần đo khi kiểm thử, không phải kết quả đã đo.
+  \item \textbf{Bảo mật:} mật khẩu phải được băm; route đặt hàng cần JWT hợp lệ; dữ liệu đầu vào phải được kiểm tra và response không làm lộ password hash.
+  \item \textbf{Tương thích:} luồng MVP phải hoạt động trên các trình duyệt web phổ biến đã thống nhất trong kế hoạch kiểm thử.
+\end{itemize}
+
+\subsection{Definition of Done}
+Một task chỉ được xem là đạt Definition of Done khi thỏa các điều kiện trong Assignment 1:
+\begin{itemize}[leftmargin=*]
+  \item Mã nguồn chạy được, không lỗi build và đáp ứng tiêu chí chấp nhận của task.
+  \item Có commit với thông điệp rõ ràng và được review trong nhóm.
+  \item API kiểm tra dữ liệu đầu vào; giao diện xử lý tối thiểu trạng thái loading và lỗi.
+  \item README có hướng dẫn thiết lập và chạy dự án.
+\end{itemize}
+Đây là tiêu chí nghiệm thu đề xuất; mục này không khẳng định task nào đã hoàn tất.
+
+\subsection{Product Backlog và kế hoạch Sprint đề xuất}
+Đề Assignment 1 quy định 10 task, mỗi task 1 điểm, tổng 10 điểm. Bảng dưới giữ nguyên phạm vi task; cách diễn đạt được rút gọn để truy vết với các story ở trên.
+
+\begin{longtable}{@{}p{0.55cm}p{3.15cm}p{9.9cm}p{1.05cm}@{}}
+\caption{Product Backlog Assignment 1}\label{tab:a1-product-backlog}\\
+\toprule
+\# & Task & Tiêu chí đầu ra & Điểm \\
+\midrule
+\endfirsthead
+\toprule \# & Task & Tiêu chí đầu ra & Điểm \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & Khởi tạo dự án và cấu trúc & Tạo monorepo hoặc cấu trúc gồm frontend Next.js và backend NestJS chạy được; có Git, README và tệp cấu hình môi trường mẫu. & 1 \\
+2 & API danh sách sản phẩm & API menu trả về ID, tên, giá và ảnh từ dữ liệu mẫu hoặc cơ sở dữ liệu. & 1 \\
+3 & Trang Menu & Frontend gọi API sản phẩm, hiển thị danh sách cùng trạng thái tải và danh sách rỗng. & 1 \\
+4 & Chi tiết và tùy chọn sản phẩm & Hiển thị chi tiết; chọn size/topping và tính giá theo lựa chọn. & 1 \\
+5 & Giỏ hàng & Thêm, sửa số lượng, xóa; lưu trạng thái giỏ, tính tổng và hiển thị badge số lượng. & 1 \\
+6 & API tạo đơn hàng & API kiểm tra dữ liệu, lưu đơn PENDING và trả mã đơn. & 1 \\
+7 & Đăng ký/đăng nhập (JWT) & Đăng ký, đăng nhập, băm mật khẩu, cấp JWT và bảo vệ route đặt đơn. & 1 \\
+8 & Thanh toán không tiền mặt & Chọn Ví/Thẻ; tích hợp ZaloPay Sandbox; đơn chuyển PAID khi thành công, PAYMENT\_FAILED khi lỗi. & 1 \\
+9 & Xác nhận, lịch sử và bàn giao & Màn hình xác nhận, API lịch sử; Docker Compose chạy frontend/backend/database; README và demo end-to-end. & 1 \\
+10 & Nghiệp vụ backend & State machine, idempotency, chống bán vượt tồn kho khi đặt đồng thời, khuyến mãi và loyalty; có kiểm thử unit/integration cho tiêu chí Task 10. & 1 \\
+\end{longtable}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}p{1.5cm}p{3.1cm}X@{}}
+\toprule
+Sprint đề xuất & Mục tiêu & Task \\
+\midrule
+Sprint 1 & Nền tảng và menu & Task 1, 2, 3, 4 \\
+Sprint 2 & Giỏ hàng, đặt đơn và đăng nhập & Task 5, 6, 7 \\
+Sprint 3 & Thanh toán, bàn giao và nghiệp vụ nâng cao & Task 8, 9, 10 \\
+\bottomrule
+\end{tabularx}
+\caption{Phân bổ ba Sprint được đề xuất trong Assignment 1. Đây là kế hoạch tham khảo, không phải lịch sử Sprint đã thực hiện.}
+\label{tab:a1-sprint-plan}
+\end{table}

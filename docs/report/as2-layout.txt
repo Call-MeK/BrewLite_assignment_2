@@ -1,0 +1,593 @@
+    BỘ GIÁO DỤC VÀ ĐÀO TẠO
+TRƯỜNG ĐẠI HỌC SÀI GÒN
+      KHOA CÔNG NGHỆ THÔNG TIN
+
+
+
+
+         BÁO CÁO BÀI TẬP NHÓM
+
+
+
+           BrewLite
+Kiểm thử, đo hiệu năng và triển khai
+    trên môi trường production
+             Assignment 2
+
+    Môn học: Phát triển ứng dụng Web
+   Giảng viên: Từ Lãng Phiêu
+       Nhóm: 05
+      Học kỳ: Học kỳ 1, năm học 2026–2027
+
+
+
+
+     TP. Hồ Chí Minh, tháng 11 năm 2026
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                     1 / 16
+
+
+
+Mục lục
+
+
+1 Tổng quan                                                                                        2
+   1.1   Mục tiêu của báo cáo . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      2
+   1.2   Môi trường triển khai . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     2
+   1.3 Tài khoản dùng để kiểm thử . . . . . . . . . . . . . . . . . . . . . . . . . . . .          2
+   1.4   Cách tái lập . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    2
+
+2 Yêu cầu chức năng                                                                                3
+
+3 Yêu cầu phi chức năng                                                                            4
+
+4 Kiến trúc triển khai                                                                             4
+
+5 Giao diện                                                                                        5
+   5.1   Khách hàng: xem thực đơn và chọn món . . . . . . . . . . . . . . . . . . . . .            6
+   5.2   Khách hàng: đăng nhập, đặt hàng và thanh toán          . . . . . . . . . . . . . . . .    7
+   5.3   Quản trị . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    9
+   5.4   Giao diện máy tính để bàn . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+
+6 Kiểm thử và chất lượng mã nguồn                                                                 12
+   6.1   Kiểm thử tự động . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+   6.2 Tích hợp liên tục . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+   6.3   Kiểm tra giao diện và lỗi hiển thị . . . . . . . . . . . . . . . . . . . . . . . . . 13
+
+7 Đo hiệu năng                                                                                    14
+   7.1   Phương pháp . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+   7.2   Khởi động nguội . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+
+8 Quy trình phát triển và đóng góp                                                                14
+   8.1   Các sprint . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
+   8.2   Phân công theo module . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+   8.3   Quy trình làm việc . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+
+9 Hạn chế và hướng phát triển                                                                     15
+
+Tài liệu tham khảo                                                                                16
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                     2 / 16
+
+
+
+1. Tổng quan
+
+1.1 Mục tiêu của báo cáo
+Assignment 1 đã chốt use case, user story và kiến trúc. Báo cáo này trả lời ba câu hỏi còn lại:
+(i) sản phẩm có chạy thật trên môi trường production hay không; (ii) các yêu cầu chức năng
+và phi chức năng đã được đáp ứng tới đâu, kèm bằng chứng; (iii) hiệu năng và chất lượng mã
+nguồn có đạt ngưỡng đã cam kết hay không. Mọi số liệu trong báo cáo đều được đo trên hệ
+thống đang chạy, không phải số liệu giả định.
+
+1.2 Môi trường triển khai
+
+                 Bảng 1: Thành phần của hệ thống trên môi trường production
+
+Thành phần           Nền tảng                       Địa chỉ / ghi chú
+
+Ứng dụng web         Vercel                         https://brewlite-acme-1b6f1.vercel.app
+API                  Render (Docker, Singapore)     https://brewlite-api-u2jb.onrender.com/
+                                                    api/v1
+Kiểm tra sức khoẻ    Render                         GET /api/v1/health
+Cơ sở dữ liệu        Neon PostgreSQL                Nhánh main, bật SSL, không mở công khai
+Thanh toán           ZaloPay Sandbox                Tạo giao dịch, callback và truy vấn trạng thái
+Mã nguồn & CI        GitHub                         Nhánh main, workflow ci.yml
+
+
+
+1.3 Tài khoản dùng để kiểm thử
+Hai tài khoản được tạo bởi script seed, dùng cho việc đánh giá và trình diễn: khách hàng
+demo@brewlite.test / Demo@12345 và quản trị viên admin@brewlite.test / Admin@12345.
+Đây là tài khoản mẫu trên môi trường Sandbox, không phải thông tin đăng nhập của người
+dùng thật.
+
+1.4 Cách tái lập
+ 1. Cài phụ thuộc: npm install trong apps/api và apps/web.
+ 2. Khởi động cơ sở dữ liệu cục bộ bằng Docker Compose, sau đó chạy npx prisma migrate
+    deploy.
+ 3. Nạp dữ liệu mẫu bằng npm run prisma:seed (lưu ý: script này xoá toàn bộ dữ liệu cũ
+    trước khi nạp lại).
+ 4. Chạy API bằng npm run start:dev và web bằng npm run dev; web đọc địa chỉ API từ
+    biến NEXT_PUBLIC_API_URL.
+
+2. Yêu cầu chức năng
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                            3 / 16
+
+
+
+
+Bảng 2 đối chiếu 11 yêu cầu chức năng với trạng thái thực tế và bằng chứng kiểm chứng. Cột
+Bằng chứng trỏ tới hình ảnh trong Mục 5 hoặc tệp kiểm thử tương ứng.
+
+                       Bảng 2: Đối chiếu yêu cầu chức năng với hiện trạng
+
+Mã        Chức năng               Mô tả và bằng chứng                                          Kết quả
+
+FR-01     Menu sản phẩm         Hiển thị 8 món kèm ảnh, giá theo size, lọc theo danh mục và    Đạt
+                                tìm kiếm không dấu. Hình 2, kiểm thử products.test.cjs,
+                                menu-filter.test.mjs.
+FR-02     Chi tiết và tuỳ chọn  Trang chi tiết chọn size S/M/L và topping; giá cập nhật tức    Đạt
+                                thì trước khi thêm vào giỏ. Hình 2 (giữa).
+FR-03     Giỏ hàng              Giỏ lưu cục bộ, sửa và xoá từng dòng, tổng tiền và số ly cập   Đạt
+                                nhật ngay. Hình 2 (phải), cart.test.cjs.
+FR-04     Xác thực, phân quyền Đăng ký, đăng nhập trả JWT; guard phân biệt khách               Đạt
+                                và quản trị viên; chặn truy cập trang quản trị.
+                                auth-profile.test.cjs, product-access.test.cjs.
+FR-05     Tạo đơn và thanh toán Tạo đơn, tính tiền ở server, chuyển sang ZaloPay Sandbox.      Đạt
+                                Hình 3–4, orders.test.cjs, core-flow.test.cjs.
+FR-06     Xác nhận và lịch sử   Danh sách đơn, chi tiết đơn, dòng thời gian trạng thái, tự     Đạt
+                                cập nhật mỗi 15 giây. Hình 4 (giữa).
+FR-07     Máy trạng thái đơn    Bảy trạng thái với bảng chuyển đổi tường minh; chuyển sai      Đạt
+                                trả 409; mọi thay đổi ghi lịch sử. admin-flow.test.cjs.
+FR-08     Thanh toán idempo- Ràng buộc duy nhất trên bản ghi thanh toán; callback lặp          Đạt
+          tent                  lại không tạo giao dịch mới; xác thực chữ ký bằng so sánh
+                                an toàn thời gian. payment-idempotency.test.cjs.
+FR-09     Kiểm soát tồn kho     Trừ kho theo công thức bằng optimistic lock-                   Đạt
+                                ing, ghi ảnh chụp định lượng, hoàn kho khi huỷ.
+                                ingredient-reservation.test.cjs.
+FR-10     Khuyến mãi và điểm      Áp voucher, dùng điểm tích luỹ có hạn mức, hoàn điểm khi     Đạt
+                                  huỷ đơn. Hình 3, promotions.test.cjs.
+FR-11     Quản trị                Quản lý thực đơn, kho nguyên liệu, công thức, đơn hàng và    Đạt
+                                  đối soát thanh toán. Hình 5–9.
+
+
+
+3. Yêu cầu phi chức năng
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                              4 / 16
+
+
+
+
+            Bảng 3: Đối chiếu yêu cầu phi chức năng với cách kiểm chứng và kết quả
+
+Mã         Thuộc tính           Cách kiểm chứng và kết quả                                       Kết luận
+
+NFR-01     Hiệu năng            Đo 5 lần mỗi endpoint trên production (Mục 7): trung vị 96–182   Đạt
+                                ms, lớn nhất 194 ms, đều dưới ngưỡng 500 ms.
+NFR-02     Bảo mật              JWT có thời hạn, mật khẩu băm bcrypt, guard theo vai trò,        Đạt
+                                DTO validation, không lộ chi tiết lỗi nội bộ; chữ ký ZaloPay
+                                so sánh bằng timingSafeEqual.
+NFR-03     Tương thích          Kiểm tra trên Chromium ở 390×844 và 1440×900; không có           Đạt
+                                cuộn ngang ở 8 tuyến đường chính.
+NFR-04     Toàn vẹn dữ liệu     Transaction Serializable cho tạo đơn, cập nhật kho có điều       Đạt
+                                kiện, ràng buộc duy nhất chống trùng thanh toán; kiểm thử
+                                tranh chấp kho chạy song song.
+NFR-05     Khả dụng             Có trạng thái loading, empty và error; thao tác nguy hiểm (huỷ   Đạt
+                                đơn, xoá món) yêu cầu xác nhận.
+NFR-06     Bảo trì              TypeScript strict, 9 module theo miền nghiệp vụ, tài liệu API,   Đạt
+                                thiết kế cơ sở dữ liệu và quyết định kiến trúc trong docs/.
+NFR-07     Kiểm thử             49 kiểm thử backend và 10 kiểm thử frontend đều đạt; build       Đạt
+                                và lint chạy trong CI trên main.
+NFR-08     Cấu hình             Không có bí mật trong mã nguồn hay lịch sử Git; toàn bộ cấu      Đạt
+                                hình qua biến môi trường, có tệp .env.example.
+
+
+
+4. Kiến trúc triển khai
+
+Hệ thống gồm ba dịch vụ độc lập. Ứng dụng web được Vercel build và phân phối qua CDN;
+API NestJS đóng gói trong Docker và chạy trên Render; cơ sở dữ liệu PostgreSQL đặt trên
+Neon và chỉ nhận kết nối có SSL từ API. ZaloPay Sandbox gọi ngược về API qua callback
+HTTPS. Mỗi lần main thay đổi, Vercel và Render tự động build lại từ mã nguồn; GitHub
+Actions chạy kiểm thử và build trước đó như một cổng chất lượng.
+
+                               Bảng 4: Chín module nghiệp vụ của API
+
+Module               Trách nhiệm
+
+auth                 Đăng ký, đăng nhập, cấp và kiểm tra JWT, chiến lược xác thực.
+users                Hồ sơ người dùng, vai trò, danh sách khách hàng cho quản trị.
+products             Thực đơn, danh mục, giá theo size, tìm kiếm và lọc.
+cart                 Giỏ hàng phía máy chủ và kiểm tra tồn kho trước khi đặt.
+orders               Tạo đơn, máy trạng thái, huỷ đơn, lịch sử trạng thái.
+payments             Tạo giao dịch ZaloPay, callback, truy vấn, đối soát, idempotency.
+ingredients          Nguyên liệu, tồn kho, cảnh báo dưới định mức.
+recipes              Định lượng nguyên liệu cho từng sản phẩm theo size.
+stock-imports        Phiếu nhập kho và cập nhật tồn theo lô.
+
+
+
+                           Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                5 / 16
+
+
+
+
+    Hình 1: Sơ đồ triển khai: Vercel (web) – Render (API) – Neon (cơ sở dữ liệu) – ZaloPay
+                                           Sandbox
+
+
+5. Giao diện
+
+Toàn bộ ảnh dưới đây được chụp trực tiếp trên bản production ngày 15/11/2026, ở hai kích
+thước: 390×844 (điện thoại) và 1440×900 (máy tính để bàn).
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                           6 / 16
+
+
+
+5.1 Khách hàng: xem thực đơn và chọn món
+
+
+
+
+Thực đơn, 8 món đang phục vụ                   Chọn size và topping                Giỏ hàng, bước 1/3
+
+      Hình 2: Luồng chọn món trên điện thoại: thực đơn, tuỳ chọn size/topping và giỏ hàng
+
+
+Thực đơn hiển thị đủ 8 món kèm ảnh, nhãn danh mục và giá khởi điểm; ô tìm kiếm lọc ngay
+khi gõ và chấp nhận từ khoá không dấu. Hộp thoại chọn món cho phép đổi size, thêm topping
+và cập nhật tổng tiền trước khi thêm vào giỏ. Giỏ hàng giữ nguyên khi tải lại trang nhờ lưu
+cục bộ, đồng thời hiển thị bước hiện tại trong quy trình ba bước để người dùng biết mình
+đang ở đâu.
+
+
+
+
+                               Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                     7 / 16
+
+
+
+5.2 Khách hàng: đăng nhập, đặt hàng và thanh toán
+
+
+
+
+        Đăng nhập                        Điểm và mã khuyến mãi               Chọn ZaloPay Sandbox
+
+          Hình 3: Đăng nhập, áp dụng điểm tích luỹ và chọn phương thức thanh toán
+
+
+Khi khách chưa đăng nhập mà bấm Tiến hành thanh toán, hệ thống chuyển tới trang đăng
+nhập kèm tham số quay lại, thay vì báo lỗi. Trang thanh toán cho thấy số điểm hiện có (120
+điểm), hạn mức sử dụng và số tiền dự kiến trước khi chuyển sang cổng thanh toán. Bước 3/3
+ghi rõ đây là giao dịch thử nghiệm, không dùng tiền thật.
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                            8 / 16
+
+
+
+
+   Liên kết sang ZaloPay                       Lịch sử đơn                     Chi tiết và trạng thái đơn
+
+      Hình 4: Giao dịch được tạo thật trên ZaloPay Sandbox, lịch sử và chi tiết đơn hàng
+
+
+Sau khi bấm tạo thanh toán, API gọi ZaloPay và nhận về liên kết openinapp thật; trạng thái
+đơn chuyển sang Chờ thanh toán và trang tự cập nhật mỗi 15 giây. Lịch sử đơn hiển thị mã
+đơn, thời điểm, số món, trạng thái và tổng tiền, kèm lối tắt tiếp tục thanh toán cho đơn còn
+chờ.
+
+
+
+
+                           Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                      9 / 16
+
+
+
+5.3 Quản trị
+
+
+
+
+        Tổng quan                              Đơn hàng                      Kho nguyên liệu
+
+               Hình 5: Khu vực quản trị: tổng quan, đơn hàng và kho nguyên liệu
+
+
+Trang tổng quan gom số đơn, số đơn đã thanh toán, số sản phẩm đang bán và cảnh báo tồn
+kho dưới định mức. Danh sách đơn cho phép chuyển trạng thái theo đúng quy trình. Trang
+kho hiển thị từng nguyên liệu với tồn hiện tại, định mức tối thiểu và đơn vị tính.
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                        10 / 16
+
+
+
+
+       Hình 6: Trang công thức: định lượng nguyên liệu cho một sản phẩm theo từng size
+
+
+  Điểm đáng chú ý
+
+  Mỗi dòng công thức gắn một nguyên liệu với một định lượng cụ thể cho từng size. Khi lưu, hệ thống
+  kiểm tra trùng nguyên liệu và chặn định lượng không hợp lệ; nhờ vậy cùng một sản phẩm có thể có định
+  lượng khác nhau ở size S, M và L mà vẫn giữ đúng một dòng cho mỗi cặp (sản phẩm, nguyên liệu, size).
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                               11 / 16
+
+
+
+5.4 Giao diện máy tính để bàn
+
+
+
+
+   Hình 7: Thực đơn ở kích thước 1440×900: bố cục lưới nhiều cột, giữ nguyên thứ tự ưu tiên
+
+
+
+
+    Hình 8: Quản lý đơn hàng trên máy tính: bảng đơn, bộ lọc trạng thái và thao tác chuyển
+                                           bước
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                    12 / 16
+
+
+
+
+           Hình 9: Đối soát thanh toán: mã giao dịch, phương thức, trạng thái và số tiền
+
+
+
+6. Kiểm thử và chất lượng mã nguồn
+
+6.1 Kiểm thử tự động
+Backend dùng node:test của Node.js (không dùng Jest hay Supertest) với 15 tệp kiểm thử;
+frontend dùng cùng bộ chạy với 5 tệp. Các bài kiểm thử tích hợp chạy trên một schema
+PostgreSQL dùng một lần, được tạo và xoá trong quá trình chạy, nên không phụ thuộc dữ
+liệu của môi trường phát triển.
+
+                       Bảng 5: Nhóm kiểm thử backend và phạm vi bao phủ
+
+Nhóm                          Nội dung kiểm chứng                                           Số tệp
+
+Thực đơn và quyền truy cập    Danh sách sản phẩm, chi tiết, lọc, chặn truy cập trái phép.     2
+Xác thực và hồ sơ             Đăng ký, đăng nhập, token hết hạn, cập nhật hồ sơ.              1
+Giỏ hàng                      Thêm, sửa, xoá, kiểm tra tồn kho trước khi đặt.                 1
+Đơn hàng                      Tạo đơn, máy trạng thái, huỷ đơn, phân quyền quản trị.          3
+Tồn kho và công thức          Trừ kho theo công thức, tranh chấp đồng thời, hoàn kho          3
+                              theo ảnh chụp.
+Thanh toán                    Tạo giao dịch, callback, idempotency, đổi phương thức thanh     2
+                              toán.
+Khuyến mãi và giới hạn        Voucher, điểm tích luỹ, giới hạn tần suất yêu cầu.              2
+Luồng tích hợp                Luồng đặt – thanh toán – huỷ xuyên nhiều module.                1
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                   13 / 16
+
+
+                     Bảng 6: Kết quả chạy kiểm thử và kiểm tra chất lượng
+
+Hạng mục             Lệnh                                            Kết quả
+
+Kiểm thử backend     npm test (trong apps/api)                       49/49 đạt, 85,8 giây
+Kiểm thử frontend    npm test (trong apps/web)                       10/10 đạt
+Build backend        npm run build                                   Thành công
+Build frontend       npm run build                                   Thành công, 21 tuyến đường
+Lint frontend        npm run lint                                    0 lỗi, 5 cảnh báo
+
+
+Năm cảnh báo lint đều là cảnh báo nhẹ về phụ thuộc trong hook và biến chưa dùng; không có
+lỗi chặn build. Backend chưa cấu hình ESLint riêng mà dựa vào trình biên dịch TypeScript
+strict và nest build để phát hiện lỗi kiểu.
+
+6.2 Tích hợp liên tục
+Workflow .github/workflows/ci.yml chạy trên mỗi thay đổi của main và trên pull request: cài
+phụ thuộc, sinh Prisma Client, chạy kiểm thử backend với PostgreSQL service, build và lint
+frontend. Tính đến 15/11/2026, workflow đã chạy 16 lần trên main: 13 thành công và 3 thất
+bại trong giai đoạn phát triển; lần chạy gần nhất thành công. Dự án chưa có workflow
+triển khai tự động (CD): việc phát hành dựa trên tích hợp Git của Vercel và Render, kích
+hoạt khi main thay đổi. Đây là khoảng trống được ghi nhận ở Mục 9.
+
+6.3 Kiểm tra giao diện và lỗi hiển thị
+Mỗi màn hình được kiểm tra trên trình duyệt thật: tải lại trang, đăng nhập và đăng xuất,
+thêm món vào giỏ, tạo giao dịch, chuyển trạng thái đơn ở trang quản trị. Kết quả:
+
+                               Bảng 7: Kết quả kiểm tra giao diện
+
+Hạng mục                     Kết quả                                                     Đánh giá
+
+Cuộn ngang ở 390 px          Kiểm tra 8 tuyến đường (/menu, /cart, /login, /orders, Đạt
+                             /checkout, /admin, /admin/recipes, /admin/orders):
+                             không có tràn ngang.
+Cuộn ngang ở 1440 px         Kiểm tra 5 tuyến đường: không có tràn ngang.                Đạt
+Ảnh và biểu tượng            Không có ảnh vỡ; ảnh sản phẩm tải từ Unsplash có thuộc      Đạt
+                             tính thay thế.
+Trạng thái rỗng và lỗi       Giỏ rỗng, đơn rỗng, kho rỗng đều có thông điệp hướng dẫn    Đạt
+                             thay vì màn hình trắng.
+Lỗi console                  Còn hai lỗi: favicon.ico trả 404 và /auth/me trả 401 khi    Đạt một
+                             chưa đăng nhập.                                             phần
+
+
+Hai lỗi console nêu trên không ảnh hưởng tới chức năng nhưng vẫn là điểm cần sửa: thiếu tệp
+biểu tượng ở thư mục công khai, và lời gọi kiểm tra phiên chạy ngay cả khi người dùng chưa
+đăng nhập. Cả hai đã được ghi vào danh sách việc cần làm kèm cách khắc phục cụ thể.
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                          14 / 16
+
+
+
+7. Đo hiệu năng
+
+7.1 Phương pháp
+Ba endpoint đọc dữ liệu mẫu được gọi 5 lần liên tiếp, cách nhau 300 ms, từ một máy khách
+tại Việt Nam tới API trên Render (Singapore) qua HTTPS. Thời gian đo là thời gian phản
+hồi đầy đủ của yêu cầu HTTP, bao gồm cả độ trễ mạng. Trước khi đo, API đã được đánh
+thức để loại bỏ ảnh hưởng của cơ chế ngủ đông.
+
+                    Bảng 8: Kết quả đo thời gian phản hồi (đơn vị: mili giây)
+
+ Endpoint            L1    L2    L3     L4         L5   Nhỏ nhất    Trung vị     Lớn nhất    Kết luận
+
+ /health             96     99   96     133        95          95           96         133      Đạt
+ /products          116    185   165    182       194         116          182         194      Đạt
+ /products/:id      104     89   81     80         81          80           81         104      Đạt
+
+
+Cả ba endpoint đều đạt ngưỡng NFR-01 (dưới 500 ms) với biên an toàn lớn: trường hợp xấu
+nhất là 194 ms, chưa bằng 40% ngưỡng. Endpoint danh sách có thời gian cao hơn vì trả về 8
+sản phẩm kèm bảng giá theo size và thông tin danh mục.
+
+7.2 Khởi động nguội
+Lần gọi đầu tiên sau một khoảng thời gian không có lưu lượng mất 52.483 ms (khoảng 52
+giây) do Render ở gói miễn phí tạm dừng dịch vụ khi rảnh. Đây là giới hạn của hạ tầng,
+không phải của mã ứng dụng: sau khi dịch vụ thức, mọi phản hồi đều dưới 200 ms. Ba hướng
+xử lý đã được ghi nhận: nâng gói Render để tắt chế độ ngủ, dùng bộ hẹn giờ gọi /health định
+kỳ, hoặc chuyển sang nền tảng không tạm dừng dịch vụ.
+
+8. Quy trình phát triển và đóng góp
+
+8.1 Các sprint
+Lịch sử commit được chia thành ba giai đoạn dựa trên mốc thời gian thực tế của kho mã:
+
+                          Bảng 9: Phân kỳ phát triển theo lịch sử commit
+
+Giai đoạn    Thời gian                 Số commit         Nội dung chính
+
+Sprint 1     20/10 – 26/10/2026               49         Khung monorepo, lược đồ cơ sở dữ liệu, xác thực,
+                                                         thực đơn, giỏ hàng.
+Sprint 2     27/10 – 03/11/2026               5          Ổn định luồng đặt hàng, sửa lỗi phát hiện khi
+                                                         tích hợp.
+Sprint 3     04/11 – 14/11/2026               40         Kho nguyên liệu và công thức, thanh toán ZaloPay,
+                                                         quản trị, kiểm thử, tài liệu và triển khai.
+
+
+                          Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                                             15 / 16
+
+
+
+8.2 Phân công theo module
+Nhóm chia việc theo module thay vì theo tầng, để mỗi thành viên chịu trách nhiệm trọn vẹn
+từ dữ liệu tới giao diện của phần mình. Bảng 10 tóm tắt phạm vi và bằng chứng.
+
+              Bảng 10: Phân công P1–P6 theo module và bằng chứng trong kho mã
+
+Vai     Module phụ          Bằng chứng chính
+trò     trách
+
+P1      Kiến trúc, đơn      orders/, payments/, schema.prisma, migration, order-state.ts, workflow CI,
+        hàng,     thanh     cấu hình Vercel/Render, tài liệu trong docs/.
+        toán, cơ sở dữ
+        liệu, triển khai
+P2      Thực đơn và         app/menu/, lib/menu-filter.ts, services/product.service.ts.
+        danh mục phía
+        web
+P3      Chi tiết sản        app/products/[id]/, product-purchase-modal.tsx, types/product.ts.
+        phẩm và tuỳ
+        chọn
+P4      Giỏ hàng, kho,      cart/, ingredients/, recipes/, stock-imports/, bộ điều khiển đơn hàng cho
+        công thức           quản trị.
+P5      Xác         thực,   auth/, jwt.strategy.ts, users/, các tệp payments/zalopay-*.
+        người      dùng,
+        tích hợp Zalo-
+        Pay
+P6      Kiểm thử và         15 tệp kiểm thử backend, 5 tệp frontend, kịch bản kiểm thử đầu cuối, theo dõi lỗi
+        chất lượng          giao diện.
+
+
+
+8.3 Quy trình làm việc
+Công việc được theo dõi bằng pull request trên GitHub: mỗi nhánh gắn với một phạm vi thay
+đổi, mô tả pull request nêu rõ phần đã làm và cách kiểm chứng. Kho mã có 19 pull request,
+trong đó 16 đã được hợp nhất vào main. Nhóm không sử dụng Jira, Trello hay Figma:
+yêu cầu và thiết kế được ghi trực tiếp trong docs/ (đặc tả yêu cầu, thiết kế cơ sở dữ liệu, ma
+trận truy vết, quyết định kiến trúc) và trong mô tả pull request, nên mọi quyết định đều truy
+vết được từ commit.
+
+9. Hạn chế và hướng phát triển
+
+• Chưa có quy trình triển khai tự động. Vercel và Render tự build khi main thay đổi,
+  nhưng chưa có workflow CD trong GitHub Actions, chưa có bước kiểm thử khói sau khi
+  phát hành và chưa có cơ chế tự động quay lui.
+• Khởi động nguội kéo dài. Gói miễn phí của Render tạm dừng dịch vụ khi rảnh, khiến
+  lần truy cập đầu tiên mất khoảng 52 giây. Cần nâng gói hoặc duy trì nhiệt cho dịch vụ.
+• Kiểm thử giao diện chưa tự động. Các kịch bản trình duyệt hiện được chạy thủ công;
+  chưa có Playwright/Cypress trong CI, nên hồi quy giao diện chỉ được phát hiện khi có
+  người kiểm tra.
+
+                            Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+BrewLite – Assignment 2: Kiểm thử, hiệu năng & triển khai                             16 / 16
+
+
+
+• Còn lỗi console nhỏ. Thiếu biểu tượng trang và lời gọi kiểm tra phiên khi chưa đăng
+  nhập; cả hai đã có cách khắc phục nhưng chưa phát hành.
+• Phạm vi nghiệp vụ còn hẹp. Chưa hỗ trợ giao hàng, nhiều chi nhánh, hoá đơn điện tử
+  và ứng dụng di động native.
+• Chưa có công cụ thiết kế chuyên dụng. Nhóm không dùng Figma; giao diện được
+  thiết kế trực tiếp bằng mã nguồn, nên thiếu bản đặc tả hình ảnh độc lập để so sánh.
+Hướng tiếp theo ưu tiên bốn việc: bổ sung workflow CD kèm kiểm thử khói và quay lui, đưa
+kiểm thử trình duyệt vào CI, xử lý hai lỗi console còn lại, và nâng cấu hình hạ tầng để loại
+bỏ khởi động nguội.
+
+Tài liệu tham khảo
+
+ [1] NestJS Documentation. https://docs.nestjs.com. Truy cập 15/11/2026.
+ [2] Next.js Documentation (App Router). https://nextjs.org/docs. Truy cập
+     15/11/2026.
+ [3] Prisma ORM Documentation. https://www.prisma.io/docs. Truy cập 15/11/2026.
+ [4] ZaloPay Payment Gateway – Sandbox API. https://docs.zalopay.vn. Truy cập
+     15/11/2026.
+ [5] OWASP Application Security Verification Standard. https://owasp.org/www-project-asvs/.
+     Truy cập 15/11/2026.
+ [6] Node.js Test Runner Documentation. https://nodejs.org/api/test.html. Truy cập
+     15/11/2026.
+
+
+
+
+                         Khoa Công nghệ Thông tin – Trường Đại học Sài Gòn
+

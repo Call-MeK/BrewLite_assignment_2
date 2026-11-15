@@ -1,0 +1,124 @@
+\documentclass[12pt,a4paper]{article}
+% Adapted from the SGU Assignment_report.tex template supplied by the user.
+% Compile with pdfLaTeX from this directory.
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{vntex}
+\usepackage[margin=2.3cm,top=2.8cm,bottom=2.6cm,headheight=40pt]{geometry}
+\usepackage{graphicx,array,longtable,tabularx,booktabs,multirow}
+\usepackage{amsmath,amssymb}
+\usepackage{fancyhdr,lastpage,setspace,enumitem,float}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric,calc,backgrounds}
+\usepackage{caption,xurl}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black,
+ pdftitle={BrewLite -- Báo cáo Assignment 1},pdfauthor={Nhóm sinh viên -- Chưa cung cấp}}
+\graphicspath{{assets/}}
+\setstretch{1.15}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{5pt}
+\setlist{nosep,leftmargin=*}
+\captionsetup{font=small,labelfont=bf}
+\setcounter{tocdepth}{2}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+% Fill these fields when the group's information is available.
+\newcommand{\GroupName}{Chưa cung cấp}
+\newcommand{\LecturerName}{Chưa cung cấp}
+\newcommand{\ClassName}{Chưa cung cấp}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\begin{tabular}{@{}cl@{}}
+\includegraphics[width=8mm]{logoITSGUsmall.png}&
+\begin{tabular}{@{}l@{}}\small\textbf{Trường Đại học Sài Gòn}\\
+\small Khoa Công nghệ Thông tin\end{tabular}\end{tabular}}
+\fancyhead[R]{\small BrewLite\\Assignment 1}
+\fancyfoot[L]{\scriptsize Công nghệ Phần mềm -- Học kỳ I, 2026--2027}
+\fancyfoot[R]{\scriptsize Trang \thepage/\pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+\begin{document}
+\begin{titlepage}
+\centering
+{\large\textbf{TRƯỜNG ĐẠI HỌC SÀI GÒN}}\\[4pt]
+{\large\textbf{KHOA CÔNG NGHỆ THÔNG TIN}}
+\vspace{1.1cm}
+
+\includegraphics[width=3cm]{logoITSGU.png}
+\vspace{1cm}
+
+{\Large\textbf{CÔNG NGHỆ PHẦN MỀM}}\\[12pt]
+\rule{\textwidth}{0.7pt}\\[12pt]
+{\Huge\bfseries BrewLite}\\[12pt]
+{\Large Hệ thống đặt cà phê không dùng tiền mặt}\\[12pt]
+{\Large\textbf{BÁO CÁO ASSIGNMENT 1}}\\[8pt]
+{\large Use Case -- User Story -- Kiến trúc hệ thống}\\[12pt]
+\rule{\textwidth}{0.7pt}
+\vspace{1cm}
+
+\begin{tabular}{ll}
+Giảng viên hướng dẫn: & \LecturerName\\
+Nhóm: & \GroupName\\
+Lớp: & \ClassName\\
+Học kỳ: & I -- Năm học 2026--2027
+\end{tabular}
+\vspace{0.7cm}
+
+\begin{tabularx}{0.85\textwidth}{@{}cYY@{}}
+\toprule
+STT & Họ và tên thành viên & MSSV\\\midrule
+1 & Chưa cung cấp & Chưa cung cấp\\
+\bottomrule
+\end{tabularx}
+\vfill
+{\small TP. HỒ CHÍ MINH, THÁNG 11 NĂM 2026}
+\end{titlepage}
+
+\pagenumbering{roman}
+\section*{Phạm vi báo cáo}
+Tài liệu trình bày phân tích yêu cầu, User Story, Use Case và kiến trúc của
+BrewLite theo đề \emph{BrewLite VER 1.0 -- Assignment 1}, gồm 10 task.
+Luồng cốt lõi là xem menu, chọn size/topping, quản lý giỏ hàng, đăng nhập,
+tạo đơn, thanh toán mô phỏng và xem xác nhận/lịch sử đơn.
+
+Nội dung thiết kế được đối chiếu với mã nguồn trong repository. Các chức năng
+quản trị, quản lý nguyên liệu và ZaloPay Sandbox được nhận diện là phần mở rộng.
+Yêu cầu nghiệp vụ là tiêu chí để nghiệm thu; việc tìm thấy mã nguồn hoặc test
+không tự đồng nghĩa tiêu chí đó đã được nghiệm thu đạt.
+Kế hoạch Sprint trong báo cáo là đề xuất tổ chức công việc, không phải biên bản
+các sự kiện Scrum đã diễn ra. Thông tin cá nhân chưa được cung cấp được để trống
+bằng nhãn ``Chưa cung cấp''.
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\input{sections/user-stories}
+\clearpage
+\input{sections/use-cases}
+\clearpage
+\input{sections/architecture}
+\clearpage
+\input{sections/verification}
+
+\clearpage
+\begin{thebibliography}{9}
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+\bibitem{assignment1} Trường Đại học Sài Gòn, Khoa Công nghệ Thông tin.
+\emph{BrewLite VER 1.0 -- Bài tập lớn môn Công nghệ Phần mềm}, học kỳ I,
+năm học 2026--2027. Tệp đề bài: \path{BrewLite-CongNghePhanMem.pdf}.
+\bibitem{repository} Nhóm phát triển BrewLite. Mã nguồn và tài liệu dự án:
+\url{https://github.com/Call-MeK/BrewLite_assignment}.
+Các đường dẫn mã nguồn trong báo cáo tính từ thư mục gốc repository;
+đối chiếu bản làm việc ngày 05/11/2026.
+\bibitem{template} Mẫu báo cáo SGU do người dùng cung cấp:
+\path{Assigment_template_SGU/Assignment_report.tex}.
+Kế thừa bố cục bìa, logo, đầu trang và chân trang; cập nhật nội dung cho BrewLite.
+\end{thebibliography}
+\end{document}

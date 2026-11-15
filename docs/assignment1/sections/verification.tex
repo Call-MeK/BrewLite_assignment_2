@@ -1,0 +1,54 @@
+\section{Kiểm chứng và chuẩn bị bàn giao Assignment 1}
+\label{sec:verification}
+
+\subsection{Phân biệt đặc tả, triển khai và kết quả nghiệm thu}
+Báo cáo này cung cấp đặc tả và giải thích thiết kế, không thay thế log kiểm thử,
+biên bản review hay buổi demo. Các test hiện có giúp kiểm chứng nghiệp vụ nhưng
+cần được chạy trong môi trường phù hợp trước khi kết luận một task hoàn tất.
+Nhóm không nên dùng số lượng test hoặc sự hiện diện của một file để khẳng định
+toàn bộ luồng người dùng đã chạy thành công.
+
+\begin{longtable}{@{}p{3cm}p{6.3cm}p{5.5cm}@{}}
+\toprule
+Nội dung & Bằng chứng trong repository & Cách kiểm chứng khi nghiệm thu\\
+\midrule\endhead
+State machine & \path{backend/test/orders.test.cjs} & Kiểm tra chuyển trạng thái hợp lệ và từ chối chuyển từ trạng thái kết thúc.\\
+Idempotency & \path{backend/test/payments.test.cjs} & Gửi lặp/đồng thời cùng khóa; kiểm tra chỉ một giao dịch thành công và một lần cộng điểm.\\
+Tồn kho đồng thời & \path{backend/test/core-flow.test.cjs} & Hai yêu cầu cạnh tranh cùng lượng nguyên liệu; tổng lượng được cấp không vượt tồn kho.\\
+Giữ chỗ nguyên liệu & \path{backend/test/ingredient-integration.test.cjs} & Hủy đơn hoàn đúng lượng đã giữ chỗ dù công thức được sửa sau khi tạo đơn.\\
+Giỏ hàng và checkout & \path{frontend/tests/} & Chạy test gộp dòng, tùy chọn, payload và tái sử dụng đơn đang chờ; bổ sung demo qua giao diện.\\
+Hiệu năng & \path{docs/test-scenarios/test-scenarios.md} & Đo API với dữ liệu mẫu và ghi môi trường, endpoint, kết quả đối chiếu ngưỡng dưới 500 ms. Chưa có số đo để kết luận đạt.\\
+Trình duyệt & Các trang trong \path{frontend/src/app/} & Ghi trình duyệt/phiên bản, kích thước màn hình và kết quả luồng từ menu đến xác nhận.\\
+\bottomrule
+\end{longtable}
+
+Test tích hợp backend yêu cầu biến \path{PAYMENT_TEST_DATABASE_URL} trỏ đến
+database/schema dùng riêng cho kiểm thử. Không trỏ biến này vào dữ liệu cần giữ.
+Thực hiện migration trên database test trước khi chạy các test có truy cập dữ liệu.
+Một lượt test dừng vì thiếu cấu hình môi trường không chứng minh nghiệp vụ sai,
+nhưng cũng chưa cung cấp bằng chứng nghiệp vụ đạt.
+
+\subsection{Kịch bản demo tối thiểu}
+\begin{enumerate}
+\item Khởi động PostgreSQL, NestJS và Next.js; chuẩn bị dữ liệu mẫu trên môi trường demo.
+\item Mở menu, chọn một sản phẩm có nguyên liệu và size khả dụng; chọn topping nếu sản phẩm hỗ trợ.
+\item Thêm vào giỏ, thay đổi số lượng và đối chiếu tổng tiền.
+\item Đăng nhập, tạo đơn; ghi lại mã đơn và trạng thái \texttt{PENDING}.
+\item Chọn Ví hoặc Thẻ mô phỏng; mô phỏng lỗi, kiểm tra \texttt{PAYMENT\_FAILED} và giỏ hàng còn nguyên.
+\item Thử lại với khóa thanh toán mới; kiểm tra \texttt{PAID}, mã xác nhận, điểm thưởng và lịch sử đơn.
+\item Chứng minh ba trường hợp của Task 10 bằng test: chuyển trạng thái sai, gửi lặp khóa và đặt đồng thời vượt nhu cầu tồn kho.
+\end{enumerate}
+
+\subsection{Checklist bàn giao cần nhóm hoàn thiện}
+\begin{itemize}[label=$\square$]
+\item Điền giảng viên, lớp, nhóm, thành viên và MSSV vào bìa.
+\item Chạy build/test trên phiên bản bàn giao; lưu lệnh, môi trường và log kết quả.
+\item Thử quy trình clone, cấu hình, khởi động Docker và seed theo README bằng môi trường sạch.
+\item Cung cấp commit/PR được review cho các task; ghi người nghiệm thu và ngày nghiệm thu thật.
+\item Bổ sung Sprint Backlog, dữ liệu burndown, Sprint Review và Retrospective từ hoạt động thực tế.
+\item Demo luồng end-to-end, ghi phản hồi giảng viên và chuyển các cải tiến thành backlog phiên bản sau.
+\end{itemize}
+
+Phạm vi hiện tại chưa đưa ra kết luận hoàn thành bàn giao hay triển khai production.
+Đặc biệt, ZaloPay Sandbox chỉ hoạt động trong development/test khi bật
+\texttt{ZALOPAY\_SANDBOX\_ENABLED} và cấu hình đủ khoá; đây là điều kiện cần chuẩn bị đúng trước khi trình diễn.
