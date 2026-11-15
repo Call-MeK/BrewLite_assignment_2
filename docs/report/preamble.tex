@@ -29,17 +29,19 @@
 \usepackage{needspace}
 \usepackage{listings}
 \usepackage[most]{tcolorbox}
-\usepackage[hidelinks]{hyperref}
+\usepackage{hyperref}
 
 % ---------------------------------------------------------------------
 %  Palette
 % ---------------------------------------------------------------------
-\definecolor{coffee}{HTML}{6F4E37}
-\definecolor{latte}{HTML}{C08552}
-\definecolor{cream}{HTML}{F6F1E7}
-\definecolor{ink}{HTML}{2B2118}
+\definecolor{sgublue}{HTML}{0000FF}
+\definecolor{coffee}{HTML}{0000FF}
+\definecolor{latte}{HTML}{0000CC}
+\definecolor{cream}{HTML}{FFFFFF}
+\definecolor{ink}{HTML}{000000}
 \definecolor{mint}{HTML}{2F6B4F}
 \definecolor{brick}{HTML}{9B2C2C}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=sgublue,citecolor=black}
 
 % ---------------------------------------------------------------------
 %  Layout
@@ -79,9 +81,10 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
-\fancyhead[L]{\footnotesize\color{coffee}\RunningHead}
-\fancyhead[R]{\footnotesize\color{coffee}\thepage\,/\,\pageref{LastPage}}
-\fancyfoot[C]{\footnotesize\color{coffee!70}Khoa Công nghệ Thông tin -- Trường Đại học Sài Gòn}
+\fancyhead[L]{\raisebox{-0.15\height}{\includegraphics[height=5mm]{assets/logoITSGU.png}}\hspace{4pt}\scriptsize\ttfamily\color{sgublue}Trường Đại học Sài Gòn -- Khoa Công nghệ Thông tin}
+\fancyhead[R]{}
+\fancyfoot[L]{\scriptsize\ttfamily\color{black}\CourseName}
+\fancyfoot[R]{\scriptsize\ttfamily\color{black}Trang \thepage/\pageref{LastPage}}
 
 % ---------------------------------------------------------------------
 %  Listings (code is ASCII only -- Vietnamese stays in prose)
@@ -142,44 +145,27 @@
 {\small KHOA CÔNG NGHỆ THÔNG TIN}\\[10pt]
 {\color{latte}\rule{\textwidth}{1.4pt}}\\[16pt]
 
-\begin{tikzpicture}[scale=1.05]
-  % saucer (behind the cup)
-  \draw[coffee,line width=1.4pt,fill=cream] (0,-0.70) ellipse (1.08 and 0.15);
-  % cup body: narrower at the bottom
-  \draw[coffee,line width=1.7pt,fill=white]
-     (-0.76,0.60) -- (-0.54,-0.48)
-     .. controls (-0.50,-0.66) and (0.50,-0.66) .. (0.54,-0.48)
-     -- (0.76,0.60) -- cycle;
-  % handle
-  \draw[coffee,line width=1.7pt] (0.74,0.36)
-     .. controls (1.34,0.34) and (1.30,-0.16) .. (0.56,-0.10);
-  % rim and coffee surface
-  \draw[coffee,line width=1.7pt,fill=white] (0,0.60) ellipse (0.76 and 0.13);
-  \fill[latte!45] (0,0.60) ellipse (0.66 and 0.09);
-  % steam
-  \draw[latte,line width=1.2pt] (-0.40,0.86) .. controls (-0.20,1.06) and (-0.58,1.16) .. (-0.38,1.38);
-  \draw[latte,line width=1.2pt] (0.00,0.86) .. controls (0.20,1.06) and (-0.18,1.16) .. (0.02,1.38);
-  \draw[latte,line width=1.2pt] (0.40,0.86) .. controls (0.60,1.06) and (0.22,1.16) .. (0.42,1.38);
-\end{tikzpicture}\\[14pt]
+\includegraphics[width=3cm]{assets/logoITSGU.png}\\[22pt]
 
-{\small\itshape BÁO CÁO BÀI TẬP NHÓM}\\[3pt]
-{\color{latte}\rule{0.42\textwidth}{0.8pt}}\\[10pt]
-
-{\Huge\bfseries\color{coffee}\ReportTitle}\\[8pt]
-{\Large\ReportSubtitle}\\[16pt]
-
-{\large\bfseries\ReportKind}\\[22pt]
+\begin{tabular}{c}
+  \textbf{\Large\color{sgublue}\CourseName} \\
+  \\[-1pt]\hline\\[-2pt]
+  \textbf{\large\color{sgublue}BÁO CÁO BÀI TẬP NHÓM} \\
+  \\
+  \textbf{\Huge\color{sgublue}\ReportTitle} \\
+  \\
+  \textbf{\Large\color{sgublue}\shortstack{\ReportSubtitle}} \\
+  \\[-1pt]\hline
+\end{tabular}\\[36pt]
 
 \begin{tabular}{@{}r@{\hspace{10pt}}l@{}}
-  \small Môn học:      & \small\textbf{\CourseName} \\[3pt]
-  \small Giảng viên:    & \small\LecturerName \\[3pt]
-  \small Nhóm:         & \small\GroupName \\[3pt]
-  \small Học kỳ:       & \small\AcademicTerm \\
+  \small Giảng viên: & \small\LecturerName \\[3pt]
+  \small Nhóm:       & \small\GroupName \\[3pt]
+  \small Học kỳ:     & \small\AcademicTerm \\
 \end{tabular}
 
 \vfill
-{\small\color{coffee}\CoverCity}\\[4pt]
-{\color{latte}\rule{\textwidth}{1pt}}
+{\small\CoverCity}
 \end{titlepage}}
 
 % ---------------------------------------------------------------------
