@@ -61,13 +61,13 @@ deployment `.svg`.
 | §6.1 | Ảnh giao diện khách + admin, mobile + desktop | `figures/as2/view/*.png`, `figures/as2/14-16*.png` | 16 ảnh | ✅ | `figC:` |
 | §6.2 | Test 3 tầng: 49 backend, 10 frontend, E2E HTTP; bảng kết quả; Docker Compose; migration/seed; `/health` | `apps/api/test/`, `apps/web/tests/`, `tests/e2e/`, `docker-compose.yml` | bảng test, bảng kết quả | ✅ (tái dùng từ `as2.tex` cũ) | `tabC:` |
 | §6.2 | Đo hiệu năng production | `as2.tex` cũ mục 7 | bảng 5 lần đo, cold start | ✅ | `tabC:` |
-| §6.3 | CD: quality gate → image tag → registry → deploy → migration → smoke test → rollback | `.github/workflows/ci.yml`, `.github/workflows/cd.yml`, `deployment.md` | sơ đồ pipeline | ✅ CD tự động trừ registry/image tag (Render build từ Git) | `figC:` |
-| §6.4 | URL production, tài khoản demo, release notes, Sprint Review/Retro, video demo | `deployment.md`, GitHub Releases | bảng URL, release notes | 🟡 release notes/retro/video chưa có | `tabC:` |
-| `08-truy-vet` §7 | FR → Use-case/US → Thiết kế/Sơ đồ → Code/API → Test, đúng mẫu đề | `traceability-matrix.md` | bảng lớn | 🟡 viết lại theo mẫu đề (thêm cột US, Diagram, Test ID) | `tabC:` |
+| §6.3 | CD: quality gate → image tag → registry → deploy → migration → smoke test → rollback | `.github/workflows/ci.yml`, `.github/workflows/cd.yml`, `deployment.md` | bảng đối chiếu 7 yêu cầu CD | ✅ CD tự động trừ registry/image tag (Render build từ Git) | `tabC:` |
+| §6.4 | URL production, tài khoản demo, release notes, Sprint Review/Retro, video demo | `deployment.md`, GitHub Releases | bảng URL, release notes, bảng retro | 🟡 release notes/retro đã viết; video demo còn link trống | `tabC:` |
+| `08-truy-vet` §7 | FR → Use-case/US → Thiết kế/Sơ đồ → Code/API → Test, đúng mẫu đề | `traceability-matrix.md` | bảng 12 FR + 9 NFR | ✅ đã viết lại theo mẫu đề | `tabC:` |
 | `10-ket-luan` §8 | Kết quả đạt được, hạn chế, hướng phát triển | `srs.md` mục 4 | — | ✅ | `secC:` |
 
-**Việc riêng của C:** viết lại traceability matrix; chụp release/tag; quay video demo 3 phút;
-viết release notes + retro.
+**Việc riêng của C:** quay video demo 3 phút và dán link vào §6.4; tạo git tag `v1.0.0` trỏ đúng
+commit đã chạy CD xanh (repo hiện chưa có tag; bản nộp đang đánh dấu bằng commit SHA).
 
 ---
 

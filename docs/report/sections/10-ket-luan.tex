@@ -4,16 +4,26 @@
 % =====================================================================
 \section{Kết luận}
 
-% TODO(C): 3 đoạn ngắn:
-%  1) Kết quả: chuỗi yêu cầu -> mô hình -> kiến trúc -> 2 sprint -> CI/CD -> production đã khép kín;
-%     nêu con số: 12 FR, 9 NFR, 49+10 test, 3 URL production.
-%  2) Hạn chế (trung thực): CD chưa tự động hoàn toàn, cold start Render, chưa có E2E trình duyệt,
-%     còn 2 lỗi console nhỏ, phạm vi nghiệp vụ hẹp.
-%  3) Hướng phát triển: cd.yml + smoke test + rollback tự động, Playwright trong CI,
-%     nâng gói hạ tầng, mở rộng giao hàng/đa chi nhánh.
-
 \paragraph{Kết quả đạt được.}
+Báo cáo đã khép kín chuỗi yêu cầu $\rightarrow$ mô hình hóa $\rightarrow$ kiến trúc $\rightarrow$
+hai sprint $\rightarrow$ CI/CD $\rightarrow$ production. Sản phẩm có 12 yêu cầu chức năng và 9 yêu
+cầu phi chức năng được đặc tả, 49 test backend, 10 test frontend và 1 kịch bản E2E HTTP; ba địa
+chỉ production (web, API, health) truy cập được qua HTTPS. Luồng cốt lõi chạy thật với ZaloPay
+Sandbox: tạo đơn, thanh toán, callback/sync, state machine, trừ/hoàn kho, voucher và điểm loyalty.
+CI chạy trên \code{main} và là cổng merge của nhóm; CD tự động chạy sau CI xanh, deploy đúng commit
+đã test, smoke test API/trang chủ và rollback khi smoke test thất bại.
 
 \paragraph{Hạn chế.}
+CD chưa phủ hết chuỗi phát hành: chưa đóng gói/đẩy image lên registry và chưa có image tag;
+migration chỉ do pipeline điều khiển khi khai báo \code{PROD\_DATABASE\_URL}, mặc định vẫn chạy lúc
+container start; smoke test mới kiểm \code{/health} và trang chủ; rollback tự động chỉ chạy khi
+smoke test lỗi. Render/Vercel vẫn bật Auto-Deploy nên có thể phát hành trước khi CI kết thúc nếu
+không tắt. Ngoài ra, chưa có E2E trình duyệt, Render Free có cold start 30--60 giây và phạm vi
+nghiệp vụ mới ở mức một quán, thanh toán sandbox.
 
 \paragraph{Hướng phát triển.}
+Tắt Auto-Deploy để CD là cổng duy nhất; thêm bước đóng gói image + tag + registry, migration có
+kiểm soát trước khi đổi traffic, mở rộng smoke test sang đăng nhập/tạo đơn/thanh toán sandbox và
+rollback cho mọi loại lỗi; thêm Playwright vào CI; nâng gói hạ tầng hoặc tách keep-alive/cron khỏi
+tiến trình API; mở rộng giao hàng, đa chi nhánh và tích hợp thanh toán thật khi có hợp đồng
+merchant.

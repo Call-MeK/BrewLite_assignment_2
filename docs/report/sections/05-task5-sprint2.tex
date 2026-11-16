@@ -8,8 +8,13 @@
 
 \subsection{Task 5.1 -- Hoàn thiện MVP end-to-end}
 
-% TODO(C): 1 đoạn dẫn + bảng 7 nhóm chức năng (chi tiết/size-topping, giỏ, auth JWT,
-% tạo đơn, thanh toán ZaloPay, trạng thái/lịch sử, validate 2 đầu).
+Sprint 2 (27/10 -- 14/11/2026) khép kín luồng nghiệp vụ từ chọn món đến theo dõi đơn:
+menu $\rightarrow$ chi tiết/size/topping $\rightarrow$ giỏ hàng $\rightarrow$ đăng nhập
+$\rightarrow$ tạo đơn $\rightarrow$ thanh toán ZaloPay Sandbox $\rightarrow$ xác nhận và lịch sử
+đơn. Trọng tâm của sprint là biến các đặc tả ở Task 1--2 thành luồng chạy thật, đồng thời giữ
+tính đúng đắn ở các điểm dễ sai: giá tính ở server, tồn kho khi đặt đồng thời, trạng thái đơn và
+tính idempotent của thanh toán. \tabref{tabC:features} tổng hợp bảy nhóm chức năng đã hoàn thiện.
+
 \begin{table}[H]
 \centering\small
 \caption{Chức năng hoàn thiện trong Sprint 2}
@@ -18,17 +23,69 @@
 \toprule
 \textbf{Nhóm} & \textbf{Nội dung} & \textbf{Mã FR} \\
 \midrule
-% TODO(C)
+Chi tiết và tùy chọn & Chọn size S/M/L, topping; giá cập nhật ngay; chặn size/topping hết
+  nguyên liệu; số lượng mỗi dòng 1--99 & FR-02 \\
+Giỏ hàng & Zustand store; gộp dòng theo \code{product + size + topping}; giữ giỏ và
+  \code{pendingOrderId} khi tạo đơn/thanh toán lỗi; chỉ xóa giỏ khi đơn \code{PAID} & FR-03 \\
+Xác thực và phân quyền & Đăng ký/đăng nhập JWT; bcrypt; role \code{ADMIN}; đổi mật khẩu làm
+  tăng \code{ver}, vô hiệu token cũ & FR-04 \\
+Tạo đơn và tồn kho & Transaction khi tạo đơn; snapshot giá; trừ nguyên liệu theo công thức của
+  size; chống bán vượt tồn kho & FR-05, FR-09 \\
+Thanh toán & ZaloPay Sandbox; \code{Idempotency-Key}; callback/\code{sync}/\code{cancel}; đối
+  soát giao dịch ở khu quản trị & FR-05, FR-08 \\
+Trạng thái và lịch sử & Bảy trạng thái, chín chuyển tiếp hợp lệ; chặn chuyển sai bằng
+  \code{409}; hủy đơn hoàn kho/điểm một lần; lịch sử phân trang & FR-06, FR-07, FR-10 \\
+Quản trị và phản hồi & CRUD sản phẩm, kho, công thức, đơn, người dùng; trạng thái
+  loading/empty/error; trang chờ thanh toán tự làm mới mỗi 15 giây & FR-11, FR-12 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+\paragraph{Chi tiết sản phẩm: API và kiểu dữ liệu phía web.}
+Trang chi tiết dùng \code{GET /products/:id} (\code{ProductsController.findOne} gọi
+\code{ProductsService.getProductDetail}). Response đã bọc bởi \code{TransformInterceptor}, phần
+\code{data} gồm \code{id}, \code{name}, \code{imageUrl}, \code{basePrice}, \code{currency},
+\code{categorySlug}, \code{isAvailable}, mảng \code{sizePrices} và mảng \code{toppings}. Mỗi phần tử
+\code{sizePrices} có \code{size} ($\in \{\text{S, M, L}\}$), \code{priceAdjustment},
+\code{isAvailable} và \code{availableQuantity}; số ly khả dụng được tính ở server từ công thức của
+size và tồn kho nguyên liệu, nên client không tự quyết định size còn hàng. Mỗi topping có
+\code{id}, \code{name}, \code{price}; cà phê không trả topping, các món khác chỉ trả topping đang
+bán và còn kho.
+
+Phía web, \path{apps/web/src/types/product.ts} khai báo \code{ProductSize},
+\code{ProductSizePrice}, \code{ProductTopping}, \code{ProductDetail}, \code{ProductSummary} và
+\code{CartItemDraft}. Trang \path{apps/web/src/app/products/[id]/page.tsx} kiểm tra hình dạng dữ
+liệu bằng \code{isValidProduct} trước khi render, mặc định chọn size M nếu còn hàng, chặn chọn quá
+3 topping, giới hạn số lượng 1--99 và không vượt \code{availableQuantity}. Giá ước tính ở client là
+\code{basePrice + priceAdjustment + topping}; khi thêm vào giỏ, trang tạo \code{CartItemDraft} kèm
+\code{estimatedUnitPrice} và \code{currency}. Đây chỉ là giá ước tính: server tính lại toàn bộ giá
+khi tạo đơn, nên sửa request trên trình duyệt không làm thay đổi số tiền phải trả. Test
+\path{products.test.cjs} kiểm chi tiết sản phẩm và trường hợp size hết nguyên liệu; các nhánh UI
+được kiểm theo TS-FR-02.
+
 \paragraph{Máy trạng thái đơn hàng.}
-% TODO(C): sơ đồ + 1 đoạn: 7 trạng thái, chuyển sai 409, optimistic lock,
-% huỷ đơn hoàn kho/điểm một lần, PAID cần refund thủ công.
-% Nguồn: docs/order/state-machine.md
+Đơn hàng có bảy trạng thái \code{PENDING}, \code{PAYMENT\_FAILED}, \code{PAID},
+\code{PREPARING}, \code{READY}, \code{COMPLETED}, \code{CANCELLED}, với chín chuyển tiếp hợp lệ
+giữa các trạng thái và một bước khởi tạo \code{(start) $\rightarrow$ PENDING}. Mọi thay đổi trạng
+thái bắt buộc đi qua \code{OrderService.transition}; hàm \code{assertTransition} từ chối mọi
+chuyển tiếp ngoài sơ đồ và trả \code{409 Conflict}. Câu lệnh cập nhật dùng điều kiện
+\code{WHERE id = ... AND status = ... AND version = ...} (optimistic locking), nên hai request
+đồng thời không ghi đè trạng thái của nhau. Hủy đơn từ \code{PENDING} hoặc
+\code{PAYMENT\_FAILED} hoàn nguyên liệu và hoàn điểm đã dùng đúng một lần trong cùng transaction;
+đơn đã \code{PAID} nếu bị hủy ở mức state machine được đánh dấu cần hoàn tiền thủ công
+(\code{refundStatus = MANUAL\_REQUIRED}). Nhánh \code{PAID $\rightarrow$ CANCELLED} chỉ tồn tại
+trong state machine theo đề bài, ngoài phạm vi MVP (không có UI/endpoint và không tự hoàn tiền).
+Ngoài hủy thủ công, một cron chạy mỗi phút tự hủy các đơn \code{PENDING} quá 15 phút và hoàn
+kho/điểm; cron nằm trong tiến trình API nên không scale backend lên nhiều instance khi còn dùng cơ
+chế này.
 
 \subsection{Giao diện thực tế}
+
+\figref{figC:ui-menu}--\figref{figC:admin-desktop} là ảnh chụp giao diện thật trên Chromium tại
+hai kích thước 390$\times$844 (mobile) và 1440$\times$900 (desktop). Các màn hình khách gồm menu,
+chi tiết/size/topping, giỏ hàng, đăng nhập, checkout (điểm và voucher), chọn ZaloPay, liên kết
+ZaloPay, lịch sử và chi tiết đơn; khu quản trị gồm tổng quan, đơn hàng, kho nguyên liệu và công
+thức. Ảnh dùng đúng dữ liệu seed và tài khoản demo, không dựng mockup.
 
 \begin{figure}[H]
 \centering
@@ -91,16 +148,41 @@
 \subsection{Task 5.2 -- Tích hợp và kiểm thử}
 
 \paragraph{Kiểm thử tự động.}
-% TODO(C): 1 đoạn: node:test, 15 tệp backend + 5 tệp frontend, schema PostgreSQL dùng một lần.
+Bộ kiểm thử dùng \code{node:test} có sẵn, không thêm framework ngoài. Backend có 15 tệp với 49
+test; frontend có 5 tệp với 10 test; E2E HTTP có 1 kịch bản. Test backend chạy trên schema
+PostgreSQL dùng một lần (\code{PAYMENT\_TEST\_DATABASE\_URL}), không gọi mạng ZaloPay. E2E chỉ
+chạy khi khai báo \code{E2E\_API\_URL}; nếu không có biến này, test tự bỏ qua để CI/local vẫn chạy
+được. \tabref{tabC:tests} nhóm các tệp theo phạm vi, \tabref{tabC:results} ghi kết quả chạy tại
+thời điểm chốt Sprint 2.
+
 \begin{table}[H]
 \centering\small
 \caption{Nhóm kiểm thử và phạm vi}
 \label{tabC:tests}
-\begin{tabularx}{\textwidth}{@{}p{4.4cm} X c@{}}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm} X >{\raggedright\arraybackslash}p{4.5cm}@{}}
 \toprule
-\textbf{Nhóm} & \textbf{Nội dung kiểm chứng} & \textbf{Số tệp} \\
+\textbf{Nhóm} & \textbf{Nội dung kiểm chứng} & \textbf{Tệp / số test} \\
 \midrule
-% TODO(C): 8 nhóm như as2.tex cũ
+Sản phẩm và menu & Danh sách công khai, chi tiết, size hết hàng, quyền admin khi sửa sản phẩm &
+  \file{products.test.cjs} (7), \file{product-access.test.cjs} (1) \\
+Giỏ hàng và xác thực & Giỏ theo người dùng, chặn ghi chéo, hồ sơ, đổi email/mật khẩu, JWT &
+  \file{cart.test.cjs} (3), \file{auth-profile.test.cjs} (5) \\
+Đơn hàng và state machine & Tạo đơn, tính giá server-side, chuỗi trạng thái, hủy, hoàn kho/điểm,
+  lịch sử, phân quyền &
+  \file{orders.test.cjs} (11), \file{orders-integration.test.cjs} (5) \\
+Tồn kho và công thức & Giữ/hoàn nguyên liệu theo size, xung đột đồng thời, công thức đổi sau khi
+  đặt & \file{ingredient-reservation.test.cjs} (2) \\
+Thanh toán và idempotency & Cùng key trả kết quả cũ, khác payload trả \code{409}, request đồng
+  thời, ZaloPay hủy/không xác định &
+  \file{payment-idempotency.test.cjs} (3), \file{zalopay-change-method.test.cjs} (3) \\
+Khuyến mãi và loyalty & Voucher theo thời hạn/giá trị đơn; cộng/hoàn điểm đúng một lần &
+  \file{promotions.test.cjs} (1) \\
+Quản trị & Đơn admin, người dùng, nguyên liệu/công thức, thứ tự trạng thái &
+  \file{admin-flow.test.cjs} (3), \file{admin-user-integration.test.cjs} (1),
+  \file{ingredient-integration.test.cjs} (1) \\
+Luồng lõi và giới hạn request & Đăng ký $\rightarrow$ đặt $\rightarrow$ hủy $\rightarrow$ đổi mật
+  khẩu qua HTTP; giới hạn tần suất ghi &
+  \file{core-flow.test.cjs} (2), \file{request-limits.test.cjs} (1) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -109,68 +191,148 @@
 \centering\small
 \caption{Kết quả chạy kiểm thử và build}
 \label{tabC:results}
-\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\begin{tabularx}{\textwidth}{@{}l X >{\raggedright\arraybackslash}p{4.6cm}@{}}
 \toprule
 \textbf{Hạng mục} & \textbf{Lệnh} & \textbf{Kết quả} \\
 \midrule
-% TODO(C): 49/49 backend, 10/10 frontend, build api/web, lint
+Backend & \code{cd apps/api \&\& npm test} & 49/49 test đạt \\
+Frontend & \code{cd apps/web \&\& npm test} & 10/10 test đạt \\
+E2E HTTP & \code{E2E\_API\_URL=... node --test tests/e2e} & 1/1 kịch bản đạt (menu $\rightarrow$
+  chi tiết $\rightarrow$ đặt đơn $\rightarrow$ lịch sử $\rightarrow$ hủy) \\
+Build API & \code{cd apps/api \&\& npm run build} & Đạt \\
+Build web & \code{cd apps/web \&\& npm run build} & Đạt \\
+Lint web & \code{cd apps/web \&\& npm run lint} & Đạt \\
+CI & \path{.github/workflows/ci.yml} trên \code{main} & Hai job frontend/backend; là điều kiện
+  merge theo quy trình của nhóm \\
+CD & \path{.github/workflows/cd.yml} sau CI xanh & Migration (tuỳ chọn) $\rightarrow$ Render đúng
+  commit $\rightarrow$ smoke API $\rightarrow$ Vercel $\rightarrow$ smoke web; rollback khi smoke
+  test lỗi \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+Backend chưa có script \code{lint} riêng; CI dùng \code{npm run lint --if-present} nên bước lint
+backend được bỏ qua, còn frontend có ESLint và chạy thật. Đây là khoảng trống nhỏ cần bổ sung nếu
+muốn quality gate chặt hơn.
+
 \paragraph{Migration, seed và Docker Compose.}
-% TODO(C): 1 đoạn + lệnh: docker compose up --build -d; prisma migrate deploy; prisma:seed.
+Chạy toàn bộ hệ thống bằng \code{docker compose up --build -d} (PostgreSQL 16, API, web).
+Container backend tự chạy \code{prisma migrate deploy} trước khi start \code{node dist/src/main};
+nhờ vậy schema production và local đi cùng một chuỗi migration. Seed dữ liệu mẫu bằng
+\code{docker compose exec backend npx prisma db seed}; lệnh seed xóa dữ liệu cũ trước khi tạo 2
+tài khoản, 8 sản phẩm, 24 nguyên liệu, 105 dòng công thức và 2 voucher. Trên production, seed chạy
+một lần từ máy local trỏ vào Neon hoặc qua Render Shell.
 
 \paragraph{Health check.}
-% TODO(C): GET /api/v1/health trả JSON trạng thái API + DB; dùng cho smoke test và keep-alive.
+\code{GET /api/v1/health} trả
+\code{\{"success": true, "statusCode": 200, "data": \{"status": "ok", "service":
+"brewlite-api"\}, "timestamp": "..."\}} (bọc bởi \code{TransformInterceptor}). Đây là liveness
+probe nhẹ, \textbf{không truy vấn database}; \path{cd.yml} kiểm tra \code{data.status = "ok"} sau
+deploy, còn workflow keep-alive (\path{.github/workflows/keepalive.yml}, mỗi 5 phút) dùng cùng
+endpoint để giữ Render Free thức. Vì không kiểm tra DB, smoke test cần gọi thêm một endpoint đọc
+dữ liệu (ví dụ \code{GET /products}) nếu muốn xác nhận kết nối Neon trong checklist thủ công.
+
+\paragraph{Đo hiệu năng production.}
+Năm lượt đo trên production sau khi dịch vụ đã thức cho các endpoint đọc mẫu (\code{/products},
+\code{/products/:id}, \code{/orders/me}) đạt trung vị 81--182 ms tùy endpoint, tối đa 194 ms,
+dưới ngưỡng 500 ms của NFR-01. Đây là đo thủ công bằng Postman, không phải test hiệu năng tự động
+trong CI. Cold start của Render Free (khi dịch vụ ngủ) mất khoảng 30--60 giây, không nằm trong con
+số trung vị ở trên.
 
 \subsection{Task 5.3 -- Continuous Delivery/Deployment}
 
-Pipeline CD nằm trong \path{.github/workflows/cd.yml}. Workflow được kích hoạt bằng
-\texttt{workflow\_run} khi \path{ci.yml} của một push vào \texttt{main} kết thúc thành công,
-hoặc chạy tay bằng \texttt{workflow\_dispatch}. Job kiểm tra commit còn là HEAD của
-\texttt{main}, áp migration Prisma, deploy backend qua Render API theo đúng \texttt{commitId}
-đã test, chờ trạng thái \texttt{live}, gọi \texttt{GET /api/v1/health} và kiểm tra trang chủ
-Vercel. Nếu smoke test thất bại sau khi bản mới đã lên, workflow tự gọi rollback của Render
-(và Vercel khi có \texttt{VERCEL\_TOKEN}) về deployment trước; lỗi build hoặc migration thì
-dừng trước khi đổi traffic.
+\textbf{Hiện trạng: có pipeline CD tự động tại \path{.github/workflows/cd.yml}.} Pipeline chạy sau
+CI chứ không chạy song song, gồm các bước:
 
-Các secret cần khai báo: \texttt{RENDER\_API\_KEY} (bắt buộc), \texttt{PROD\_DATABASE\_URL},
-\texttt{VERCEL\_TOKEN}, \texttt{VERCEL\_DEPLOY\_HOOK} (tuỳ chọn). Nếu Render vẫn bật
-Auto-Deploy, workflow nhận diện deployment cùng commit thay vì tạo bản trùng; muốn CD là cổng
-duy nhất thì tắt Auto-Deploy. Phần chưa làm: chưa đẩy image lên registry và chưa có E2E trình
-duyệt trong pipeline.
+\begin{itemize}
+  \item \textbf{Kích hoạt:} \code{workflow\_run} khi workflow \textbf{BrewLite CI} của một push
+    vào \code{main} kết thúc với \code{conclusion = success}, hoặc chạy tay bằng
+    \code{workflow\_dispatch}. Push lên nhánh khác và CI đỏ không kích hoạt CD.
+  \item \textbf{Kiểm tra commit:} so SHA vừa được test với HEAD hiện tại của \code{main}; nếu
+    commit đã cũ thì bỏ qua để không deploy đè lên commit mới hơn.
+  \item \textbf{Migration (tuỳ chọn):} nếu khai báo secret \code{PROD\_DATABASE\_URL}, pipeline
+    chạy \code{npm ci} rồi \code{npx prisma migrate deploy} trước khi deploy; nếu không, container
+    Render vẫn tự chạy migration lúc khởi động (\code{CMD} trong \path{apps/api/Dockerfile}).
+  \item \textbf{Deploy API:} gọi Render API \code{POST /services/\{id\}/deploys} với đúng
+    \code{commitId}; nếu Render Auto-Deploy đã tạo deployment cho commit đó thì dùng lại thay vì
+    tạo bản trùng; chờ trạng thái \code{live} tối đa khoảng 15 phút.
+  \item \textbf{Smoke test API:} gọi \code{GET /api/v1/health}, yêu cầu \code{data.status = "ok"},
+    lặp 12 lần cách 10 giây để chịu cold start của Render Free.
+  \item \textbf{Deploy/xác minh frontend:} gọi \code{VERCEL\_DEPLOY\_HOOK} nếu có; nếu có
+    \code{VERCEL\_TOKEN} thì chờ deployment đúng SHA đạt \code{READY}; nếu không có token thì chỉ
+    chạy smoke test URL.
+  \item \textbf{Smoke test web:} \code{GET} trang chủ, yêu cầu HTTP 200 và HTML có chuỗi
+    \code{brewlite}, lặp 30 lần cách 10 giây.
+  \item \textbf{Rollback tự động:} nếu smoke test API lỗi, gọi
+    \code{POST /services/\{id\}/rollback} về deployment \code{live} trước đó; nếu smoke test web
+    lỗi và có \code{VERCEL\_TOKEN}, gọi rollback Vercel về deployment production trước. Rollback
+    chỉ chạy khi smoke test thất bại; lỗi build hoặc migration thì dừng trước khi đổi traffic, bản
+    cũ vẫn phục vụ.
+  \item \textbf{Tổng kết:} ghi bảng trạng thái từng bước vào \code{GITHUB\_STEP\_SUMMARY};
+    \code{concurrency: cd-production} bảo đảm hai lần deploy không chồng nhau.
+\end{itemize}
+
+\textbf{Secret và biến cấu hình.} Bắt buộc \code{RENDER\_API\_KEY}; tuỳ chọn
+\code{PROD\_DATABASE\_URL}, \code{VERCEL\_TOKEN}, \code{VERCEL\_DEPLOY\_HOOK}. Có thể override
+\code{API\_BASE\_URL}, \code{WEB\_URL}, \code{RENDER\_SERVICE\_ID}, \code{VERCEL\_PROJECT\_ID},
+\code{VERCEL\_TEAM\_ID} bằng Variables; nếu không khai báo, workflow dùng giá trị của môi trường
+demo.
 
 \begin{table}[H]
 \centering\small
-\caption{Đối chiếu 7 yêu cầu pipeline CD của đề với hiện trạng}
+\caption{Đối chiếu bảy yêu cầu pipeline CD của đề với hiện trạng}
 \label{tabC:cd}
 \begin{tabularx}{\textwidth}{@{}c X X@{}}
 \toprule
 \textbf{\#} & \textbf{Yêu cầu} & \textbf{Hiện trạng} \\
 \midrule
 1 & Quality gate: lint, test, build trước khi phát hành &
-  \textbf{Đạt} -- \path{ci.yml} chạy trước; \path{cd.yml} chỉ chạy khi CI xanh \\
+  \partialok{} -- \path{cd.yml} chỉ chạy khi CI xanh và kiểm tra commit còn là HEAD của
+  \code{main}; nhưng Render/Vercel vẫn bật Auto-Deploy nên có thể phát hành trước khi CI kết thúc
+  nếu không tắt Auto-Deploy \\
 2 & Đóng gói image từ commit đã test &
-  \textbf{Một phần} -- Render build \path{apps/api/Dockerfile}; chưa gắn tag riêng \\
+  \partialok{} -- Render build \path{apps/api/Dockerfile} từ đúng commit; không gắn tag image
+  riêng \\
 3 & Đẩy image lên registry &
-  \textbf{Chưa} -- không dùng GHCR; Render build trực tiếp từ Git \\
+  \bad{Chưa} -- không dùng GHCR/Docker Hub; Render build trực tiếp từ Git \\
 4 & Deploy tự động &
-  \textbf{Đạt} -- Render API theo \texttt{commitId}; Vercel deploy hook/Git integration \\
+  \pass{} -- Render API theo \code{commitId}; Vercel deploy hook/Git integration, có chờ
+  deployment đúng SHA khi khai báo token \\
 5 & Migration cơ sở dữ liệu &
-  \textbf{Đạt} -- \texttt{prisma migrate deploy} trong CI, CD (tuỳ chọn) và lúc container start \\
+  \partialok{} -- có bước \code{prisma migrate deploy} trong CD nếu khai báo
+  \code{PROD\_DATABASE\_URL}; nếu không, migration nằm trong container start nên không bảo đảm
+  xong trước khi đổi traffic \\
 6 & Smoke test sau deploy &
-  \textbf{Đạt} -- \texttt{/health} + trang chủ, retry cold start \\
+  \partialok{} -- tự động \code{/health} và trang chủ; chưa kiểm đăng nhập/tạo đơn/thanh toán, các
+  bước đó vẫn theo checklist thủ công \\
 7 & Rollback &
-  \textbf{Đạt} -- Render tự rollback khi smoke API lỗi; Vercel cần \texttt{VERCEL\_TOKEN}; có thể rollback tay \\
+  \partialok{} -- tự động khi smoke test thất bại; lỗi build/migration không rollback vì bản cũ
+  vẫn chạy; vẫn có thể rollback tay \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+\textbf{Phần chưa tự động (ghi rõ để tránh hiểu nhầm).}
+
+\begin{itemize}
+  \item Không đẩy image lên registry và không có image tag theo release; Render build trực tiếp từ
+    Git.
+  \item Migration chỉ do pipeline điều khiển khi khai báo \code{PROD\_DATABASE\_URL}; mặc định vẫn
+    chạy trong container start.
+  \item Smoke test mới ở mức liveness và trang chủ, chưa đi hết luồng người dùng; checklist mục
+    6.5 vẫn làm tay.
+  \item Rollback tự động chỉ gắn với smoke test. Rollback của Render không tắt Auto-Deploy, nên
+    một auto-deploy sau đó có thể ghi đè bản vừa rollback.
+  \item Chạy tay \code{workflow\_dispatch} không qua CI -- dùng có chủ đích để redeploy sau khi đổi
+    biến môi trường.
+  \item Chưa có E2E trình duyệt (Playwright/Cypress) trong pipeline; E2E hiện tại chỉ là HTTP và
+    chỉ chạy khi có \code{E2E\_API\_URL}.
+  \item Frontend chỉ được xác minh đầy đủ khi khai báo \code{VERCEL\_TOKEN} hoặc
+    \code{VERCEL\_DEPLOY\_HOOK}.
+\end{itemize}
+
 \subsection{Task 5.4 -- Triển khai production và bàn giao}
-% TODO(C): bảng URL frontend/API/health + tài khoản demo + release/tag + release notes.
-% Sprint Review + Retrospective: 3 mục Đã tốt / Chưa tốt / Hành động.
-% Video demo 3-5 phút: nêu link + các bước quay.
+
 \begin{table}[H]
 \centering\small
 \caption{Địa chỉ bàn giao}
@@ -179,10 +341,43 @@ duyệt trong pipeline.
 \toprule
 \textbf{Hạng mục} & \textbf{URL / ghi chú} \\
 \midrule
-% TODO(C)
+Frontend & \url{https://brewlite-acme-1b6f1.vercel.app} \\
+API & \url{https://brewlite-api-u2jb.onrender.com/api/v1} \\
+Health check & \url{https://brewlite-api-u2jb.onrender.com/api/v1/health} \\
+Cơ sở dữ liệu & Neon PostgreSQL (Singapore), không mở cổng công khai; API truy cập qua
+  \code{DATABASE\_URL} có SSL \\
+Thanh toán & ZaloPay Sandbox (\code{app\_id=2554}); không dùng tiền thật \\
+Mã nguồn & GitHub monorepo \path{apps/web}, \path{apps/api}, \path{docs/}, \path{tests/} \\
+CI & GitHub Actions, workflow \path{.github/workflows/ci.yml} \\
+CD & GitHub Actions, workflow \path{.github/workflows/cd.yml} (chạy sau CI xanh trên
+  \code{main}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+Hai tài khoản seed dùng cho chấm bài: khách hàng
+\code{demo@brewlite.test / Demo@12345} (có sẵn 120 điểm loyalty) và quản trị
+\code{admin@brewlite.test / Admin@12345}. Đây là tài khoản demo trên môi trường sandbox, không
+phải người dùng thật.
+
+\paragraph{Ghi chú phát hành v1.0.0.}
+Repo hiện chưa tạo git tag; bản nộp được đánh dấu bằng commit SHA trên \code{main}. Nếu nhóm tạo
+tag \code{v1.0.0} trước khi nộp, tag phải trỏ đúng commit đã chạy CD xanh.
+
+\begin{itemize}
+  \item Luồng end-to-end: menu $\rightarrow$ chi tiết/size/topping $\rightarrow$ giỏ $\rightarrow$
+    đăng nhập $\rightarrow$ tạo đơn $\rightarrow$ ZaloPay Sandbox $\rightarrow$ xác nhận/lịch sử
+    đơn.
+  \item Thanh toán idempotent, callback/\code{sync}/\code{cancel}, đối soát giao dịch ở
+    \code{/admin/payments}.
+  \item State machine bảy trạng thái, kiểm soát tồn kho, voucher và điểm loyalty.
+  \item 49 test backend + 10 test frontend + 1 E2E HTTP; build và lint chạy trong CI.
+  \item Triển khai Vercel + Render + Neon; CI là cổng merge, CD tự động chạy sau CI xanh với
+    smoke test và rollback khi smoke test lỗi.
+  \item Hạn chế đã biết: chưa đẩy image lên registry/image tag; smoke test mới phủ \code{/health}
+    và trang chủ; rollback chỉ tự động khi smoke test lỗi; Render Free cold start 30--60 giây;
+    chưa có E2E trình duyệt.
+\end{itemize}
 
 \begin{table}[H]
 \centering\small
@@ -192,10 +387,22 @@ duyệt trong pipeline.
 \toprule
 \textbf{Điểm} & \textbf{Nội dung} \\
 \midrule
-% TODO(C): điền 3 dòng retro
-Đã làm tốt & \\
-Chưa tốt & \\
-Hành động & \\
+Đã làm tốt & Khép kín được luồng thanh toán sandbox và state machine; bộ test backend/frontend phủ
+  các điểm dễ sai (idempotency, tồn kho, hủy đơn); dựng được CD chạy sau CI với deploy đúng
+  commit, smoke test và rollback khi smoke lỗi; tài liệu yêu cầu -- sơ đồ -- truy vết khớp nhau;
+  phân công A/B/C rõ ràng \\
+Chưa tốt & Chưa đóng gói/đẩy image lên registry và chưa có image tag; Render/Vercel vẫn bật
+  Auto-Deploy nên có thể phát hành trước khi CI xong; smoke test mới phủ \code{/health} và trang
+  chủ; chưa có E2E trình duyệt; cuối sprint thời gian gấp nên một số bảng trong báo cáo phải bổ
+  sung muộn \\
+Hành động & Tắt Auto-Deploy của Render/Vercel để CD là cổng duy nhất; thêm bước đóng gói image +
+  tag + registry; mở rộng smoke test sang đăng nhập/tạo đơn/thanh toán sandbox; bổ sung Playwright
+  vào CI; tách keep-alive/cron khỏi tiến trình API; chốt checklist phát hành trước mỗi lần nộp \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\textbf{Video demo 3--5 phút:} nhóm quay luồng đăng nhập $\rightarrow$ chọn món $\rightarrow$ đặt
+hàng $\rightarrow$ thanh toán ZaloPay $\rightarrow$ xem lịch sử $\rightarrow$ admin đổi trạng thái.
+Link video cần được điền trước khi nộp; nếu chưa có, ghi rõ ``chưa có trong repo'' thay vì mô tả
+như đã có.
