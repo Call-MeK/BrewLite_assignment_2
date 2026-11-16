@@ -6,8 +6,8 @@
 \addcontentsline{toc}{section}{Thành viên nhóm và phân công}
 
 Nhóm 05 gồm sáu thành viên. Ba thành viên A, B, C biên soạn báo cáo theo ba khối nội dung của
-đề; ba thành viên còn lại phụ trách các module kho -- công thức, đơn hàng -- lược đồ dữ liệu,
-cùng phần kiểm thử và thu thập minh chứng (ảnh giao diện, log CI, video demo).
+đề; ba thành viên còn lại phụ trách module giỏ hàng -- kho nguyên liệu, module đơn hàng -- lịch
+sử đơn, cùng phần xác thực -- thanh toán -- công thức.
 
 \begin{table}[H]
 \centering\small
@@ -18,20 +18,23 @@ cùng phần kiểm thử và thu thập minh chứng (ảnh giao diện, log CI
 \textbf{STT} & \textbf{Họ và tên} & \textbf{MSSV} & \textbf{Phần phụ trách} \\
 \midrule
 1 & Dương Anh Khoa & 3124410154 &
-  Chương 1, Task 1 (yêu cầu), Task 2 (sơ đồ activity, sequence, class);
-  module đơn hàng, thanh toán ZaloPay và khu quản trị \\
+  Chương 1, Task 1, Task 2; kiến trúc monorepo, \file{cd.yml} + Docker;
+  giỏ hàng phía state, admin đơn hàng + phiếu nhập kho,
+  tồn khả dụng theo định lượng (BOM) \\
 2 & Võ Thị Thuỷ & 3124410351 &
-  Task 3 (kiến trúc, ADR, deployment), Task 4 (Sprint 1, CI), mục 9;
-  module thực đơn và chi tiết sản phẩm \\
+  Task 3, Task 4, mục 9; API sản phẩm (danh sách, chi tiết, danh mục);
+  thực đơn, lọc danh mục, tìm kiếm không dấu; CI (\file{ci.yml}) \\
 3 & Võ Quốc Anh & 3124410010 &
-  Task 5 (Sprint 2, kiểm thử, CD), mục 8 (truy vết), kết luận;
-  module giỏ hàng và thực đơn \\
+  Task 5, mục 8, kết luận; chi tiết sản phẩm (chọn size/topping);
+  API và kiểu dữ liệu sản phẩm phía web \\
 4 & Lê Hoàng An & 3124560001 &
-  Module kho nguyên liệu, công thức theo size và khu quản trị \\
+  Giỏ hàng phía server; kiểm tồn và trừ kho khi đặt hàng, cron dọn đơn;
+  module nguyên liệu; dashboard admin, quản lí sản phẩm và nguyên liệu \\
 5 & Lưu Tấn Nin & 3124410259 &
-  Module đơn hàng, lược đồ Prisma và migration cơ sở dữ liệu \\
+  Module đơn hàng và lịch sử đơn (service, controller, máy trạng thái, DTO) \\
 6 & Hà Đức Phúc & 3124410281 &
-  Kiểm thử, thu thập minh chứng (ảnh giao diện, log CI, video demo) và rà soát chéo \\
+  Auth JWT; ZaloPay Sandbox + idempotency; công thức theo size;
+  admin thanh toán, người dùng, công thức; admin guard \\
 \bottomrule
 \end{tabularx}
 \end{table}

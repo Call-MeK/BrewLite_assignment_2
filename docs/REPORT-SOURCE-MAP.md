@@ -22,15 +22,16 @@ Ký hiệu: ✅ có sẵn · 🟡 cần bổ sung/viết mới · 🔴 chưa có
 | §2.3 | UC-01 “Đặt và thanh toán đơn hàng”: 12 bước rút gọn, A1–A3/E1–E4, map FR | `requirements/use-case-uc01.md` v2.0 | `tabA:uc01`, `tabA:uc01-main`, `tabA:uc01-alt` | ✅ đã gộp nhánh ZaloPay + `409` | `tabA:` |
 | `02-task2` §3.1 | Activity end-to-end 4 làn, 4 quyết định, 3 kết thúc | `diagrams/activity-end-to-end.puml` | `figures/diagrams/activity-end-to-end.png` + `.svg/.puml`, `tabA:activity-decision` | ✅ | `figA:` |
 | §3.2 | Sequence checkout 5 lifeline, 3 giai đoạn, alt idempotency | `diagrams/sequence-checkout.puml` | `figures/diagrams/BrewLite-Checkout.png` + `.svg/.puml` | ✅ | `figA:` |
-| §3.3 | Class diagram domain 11 lớp + 9 enum + multiplicity | `apps/api/prisma/schema.prisma`, `database-design.md` | `figures/diagrams/class-domain.png` + `.svg/.puml`, `tabA:enum` | ✅ PlantUML (không dùng draw.io) | `figA:` |
+| §3.3 | Class diagram domain 14 lớp + 9 enum + multiplicity | `apps/api/prisma/schema.prisma`, `database-design.md` | `figures/diagrams/class-domain.png` + `.svg/.puml`, `tabA:enum` | ✅ PlantUML (không dùng draw.io) | `figA:` |
 | §3.4 | Bảng nhất quán 3 sơ đồ với SRS/use-case | tự tổng hợp | `tabA:consistency` | ✅ | `tabA:` |
 
 **Trạng thái build (A):** `latexmk` sạch, **27 trang**, phần A = trang in 3–16. Ba sơ đồ nằm trong
 `docs/diagrams/` (`.puml` nguồn + `.svg` + `.png`); bản PNG dùng cho LaTeX nằm ở
-`docs/report/figures/diagrams/`. Activity diagram in riêng một trang dọc, class diagram in trên
+`docs/figures/diagrams/`. Activity diagram in riêng một trang dọc, class diagram in trên
 trang ngang (`pdflscape`).
 
-**Việc còn lại của A:** điền họ tên/MSSV vào `sections/00-thanh-vien.tex` (đang là chỗ trống).
+**Việc còn lại của A:** build lại PDF sau khi cập nhật bảng thành viên (đã điền đủ họ tên/MSSV và
+phần phụ trách khớp lịch sử commit).
 
 ---
 

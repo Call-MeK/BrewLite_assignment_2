@@ -1,11 +1,6 @@
 @startuml class-domain
 skinparam classAttributeIconSize 0
 
-enum UserRole {
-  CUSTOMER
-  ADMIN
-}
-
 enum OrderStatus {
   PENDING
   PAID
@@ -16,10 +11,9 @@ enum OrderStatus {
   CANCELLED
 }
 
-enum ProductSize {
-  S
-  M
-  L
+enum PaymentMethod {
+  E_WALLET
+  BANK_CARD
 }
 
 enum PaymentStatus {
@@ -28,9 +22,20 @@ enum PaymentStatus {
   FAILED
 }
 
-enum PromotionType {
-  PERCENT
-  FIXED_AMOUNT
+enum PaymentSource {
+  MOCK
+  ZALOPAY_SANDBOX
+}
+
+enum RefundStatus {
+  NONE
+  MANUAL_REQUIRED
+}
+
+enum ProductSize {
+  S
+  M
+  L
 }
 
 enum LoyaltyTransactionType {
@@ -40,56 +45,99 @@ enum LoyaltyTransactionType {
   REVERSED
 }
 
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum IngredientUnit {
+  G
+  ML
+  PIECE
+}
+
 class User {
   +id: String <<PK>>
   +email: String <<UK>>
   +passwordHash: String
-  +fullName: String
-  +role: UserRole
+  +fullName: String?
+  +role: UserRole?
   +loyaltyPoints: Int
   +createdAt: DateTime
   +verifyPassword(raw: String): Boolean
   +adjustPoints(delta: Int): void
 }
 
+class Category {
+  +id: String <<PK>>
+  +name: String <<UK>>
+  +slug: String <<UK>>
+  +displayOrder: Int
+}
+
 class Product {
   +id: String <<PK>>
+  +categoryId: String <<FK?>>
   +name: String
-  +category: String
-  +basePrice: Int
-  +imageUrl: String
+  +basePrice: Decimal
+  +imageUrl: String?
   +isAvailable: Boolean
-  +getPriceBySize(size: ProductSize): Int
+  +getPriceBySize(size: ProductSize): Decimal
+}
+
+class Recipe {
+  +productId: String <<FK>>
+  +size: ProductSize
+  +ingredientId: String <<FK>>
+  +quantity: Decimal
 }
 
 class Ingredient {
   +id: String <<PK>>
-  +name: String <<UK>>
-  +unit: String
-  +stock: Decimal
-  +minThreshold: Decimal
+  +name: String
+  +nameKey: String <<UK>>
+  +unit: IngredientUnit
+  +stock: Float
+  +price: Float
   +version: Int
-  +reserve(amount: Decimal): Boolean
-  +restore(amount: Decimal): void
+  +reserve(amount: Float): Boolean
+  +restore(amount: Float): void
 }
 
-class Recipe {
+class Topping {
   +id: String <<PK>>
-  +productId: String <<FK>>
-  +ingredientId: String <<FK>>
-  +size: ProductSize
-  +quantity: Decimal
+  +name: String <<UK>>
+  +price: Decimal
+  +stock: Int
+  +isAvailable: Boolean
+}
+
+class Promotion {
+  +id: String <<PK>>
+  +code: String <<UK>>
+  +description: String?
+  +discountPercent: Int?
+  +discountAmount: Decimal?
+  +maxDiscount: Decimal?
+  +minOrderAmount: Decimal
+  +startDate: DateTime
+  +endDate: DateTime?
+  +isActive: Boolean
+  +calculateDiscount(subtotal: Decimal): Decimal
 }
 
 class Order {
   +id: String <<PK>>
+  +orderNumber: Int <<UK>>
   +userId: String <<FK>>
   +promotionId: String <<FK?>>
   +status: OrderStatus
-  +subtotal: Int
-  +discountAmount: Int
-  +pointsUsed: Int
-  +totalAmount: Int
+  +refundStatus: RefundStatus
+  +totalAmount: Decimal
+  +discountAmount: Decimal
+  +finalAmount: Decimal
+  +pointsEarned: Int
+  +version: Int
   +createdAt: DateTime
   +canTransitionTo(next: OrderStatus): Boolean
   +transitionTo(next: OrderStatus): void
@@ -100,53 +148,89 @@ class OrderItem {
   +orderId: String <<FK>>
   +productId: String <<FK>>
   +size: ProductSize
-  +toppings: Json
   +quantity: Int
-  +unitPrice: Int
-  +lineTotal: Int
-  +ingredientSnapshot: Json
+  +unitPrice: Decimal
+  +lineTotal: Decimal
+}
+
+class OrderStatusHistory {
+  +id: String <<PK>>
+  +orderId: String <<FK>>
+  +fromStatus: OrderStatus?
+  +toStatus: OrderStatus
+  +changedBy: String?
+  +reason: String?
+  +createdAt: DateTime
 }
 
 class Payment {
   +id: String <<PK>>
   +orderId: String <<FK>>
-  +appTransId: String <<UK>>
-  +provider: String
-  +amount: Int
+  +idempotencyKey: String <<UK>>
+  +requestHash: String?
+  +amount: Decimal
+  +method: PaymentMethod
   +status: PaymentStatus
-  +zpTransId: String?
-  +paidAt: DateTime?
+  +source: PaymentSource
+  +providerOrderId: String? <<UK>>
+  +providerTransactionId: String? <<UK>>
+  +paymentUrl: String?
+  +createdAt: DateTime
   +markSuccess(zpTransId: String): void
-}
-
-class Promotion {
-  +id: String <<PK>>
-  +code: String <<UK>>
-  +type: PromotionType
-  +value: Int
-  +minOrderAmount: Int
-  +isActive: Boolean
-  +validFrom: DateTime
-  +validTo: DateTime
-  +calculateDiscount(subtotal: Int): Int
 }
 
 class LoyaltyTransaction {
   +id: String <<PK>>
   +userId: String <<FK>>
   +orderId: String <<FK?>>
-  +type: LoyaltyTransactionType
   +points: Int
+  +type: LoyaltyTransactionType
+  +reason: String
   +createdAt: DateTime
+}
+
+class StockImport {
+  +id: String <<PK>>
+  +importNumber: Int <<UK>>
+  +supplier: String?
+  +note: String?
+  +totalAmount: Decimal
+  +createdBy: String?
+  +createdAt: DateTime
+}
+
+class StockImportItem {
+  +id: String <<PK>>
+  +importId: String <<FK>>
+  +ingredientId: String <<FK>>
+  +quantity: Float
+  +unitPrice: Float
+  +lineTotal: Decimal
 }
 
 User "1" -- "0..*" Order : places >
 User "1" -- "0..*" LoyaltyTransaction : owns >
+Category "1" -- "0..*" Product : groups >
+Product "1" *-- "1..*" Recipe : defined by >
+Ingredient "1" -- "0..*" Recipe : used in >
+Product "1" -- "0..*" OrderItem : referenced by >
 Order "1" *-- "1..*" OrderItem : contains >
 Order "1" -- "0..*" Payment : paid via >
 Order "0..*" -- "0..1" Promotion : applies >
-Order "0..1" -- "0..*" LoyaltyTransaction : generates >
-Product "1" -- "0..*" OrderItem : referenced by >
-Product "1" *-- "1..*" Recipe : defined by >
-Ingredient "1" -- "0..*" Recipe : used in >
+Order "1" -- "0..*" LoyaltyTransaction : generates >
+Order "1" *-- "0..*" OrderStatusHistory : logs >
+OrderItem "0..*" -- "0..*" Topping : chosen >
+StockImport "1" *-- "1..*" StockImportItem : contains >
+StockImportItem "0..*" -- "1" Ingredient : restocks >
+
+note bottom of Order
+  Snapshot nguyên liệu đã trừ khi đặt hàng nằm ở bảng nối OrderIngredient
+  (orderId, ingredientId, quantity) — lược bỏ để sơ đồ gọn; khi huỷ đơn,
+  hệ thống hoàn kho từ snapshot này chứ không đọc lại Recipe.
+end note
+
+note bottom of Topping
+  Topping hiện quản lý tồn kho riêng (stock), chưa nối vào Ingredient —
+  là hạn chế đã biết của mô hình kho.
+end note
 @enduml
