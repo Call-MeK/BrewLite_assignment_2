@@ -25,25 +25,27 @@ else (có)
   else (có)
     :Truy vấn Product, SizePrice, Topping từ DB;
     if (Sản phẩm/Topping tồn tại và khả dụng (isAvailable = true)?) then (không)
-      :Trả về 400 Bad Request / 404 Not Found\n(Món không khả dụng hoặc không tồn tại);
+      :Trả về 400 Bad Request\n(Món không khả dụng hoặc không tồn tại);
       |Frontend|
       :Thông báo món không khả dụng;
       stop
     else (có)
-      if (Tồn kho sản phẩm & topping đủ (stock >= quantity)?) then (không)
-        :Trả về 400 Bad Request\n(Sản phẩm hoặc topping không đủ tồn kho);
+      if (Quy đổi được món → nguyên liệu theo công thức (BOM)?) then (không)
+        :Trả về 400 Bad Request\n(Sản phẩm chưa có công thức cho size đã chọn);
         |Frontend|
-        :Thông báo hết hàng, cập nhật lại giỏ;
+        :Thông báo món tạm thời không bán được;
         stop
       else (có)
-        :Tính giá phía Server:\nunitPrice = basePrice + priceAdjustment(size)\nlineTotal = (unitPrice + Σ toppingPrice) * quantity\ntotalAmount = Σ lineTotal\nfinalAmount = totalAmount - discountAmount (nếu có promotionCode - Quyết định D7);
+        :Tính giá phía Server:\nunitPrice = basePrice + priceAdjustment(size)\nlineTotal = (unitPrice + Σ toppingPrice) × quantity\ntotalAmount = Σ lineTotal;
 
         |Cơ sở dữ liệu|
-        :Bắt đầu Transaction (Prisma $transaction);
-        :Trừ tồn kho Product dùng Optimistic Lock\n(WHERE id = product.id AND stock >= qty AND version = product.version, version + 1 - Quyết định D3);\nNếu 0 dòng update -> Rollback & trả 400;
-        :Trừ tồn kho Toppings có điều kiện\n(WHERE id = topping.id AND stock >= qty - Quyết định D3);\nNếu 0 dòng update -> Rollback & trả 400;
+        :Bắt đầu Transaction\n(Prisma $transaction, isolationLevel = Serializable);
+        :Quy đổi món → nguyên liệu theo công thức (BOM):\nrequiredIngredients[ingredientId] += recipe.quantity × item.quantity;
+        :Trừ tồn kho Ingredient dùng Optimistic Lock\n(UPDATE ingredients SET stock = stock - qty, version = version + 1\nWHERE id = ? AND version = ? AND stock >= qty - Quyết định D3);\nNếu 0 dòng update -> Rollback & trả 409 Conflict;
+        :Trừ tồn kho Topping có điều kiện\n(WHERE id = topping.id AND stock >= qty - Quyết định D3);\nNếu 0 dòng update -> Rollback & trả 409 Conflict;
+        :Áp voucher (đang hoạt động, trong hạn, đủ minOrderAmount)\nvà trừ điểm (user.loyaltyPoints >= pointsToUse);\nSai điều kiện -> Rollback & trả 400;
         :Tạo bản ghi Order (status = PENDING, totalAmount, discountAmount, finalAmount);\nSinh tự động orderNumber (Int);
-        :Tạo các bản ghi OrderItem và OrderItemTopping;
+        :Tạo OrderItem, OrderItemTopping và OrderIngredient\n(snapshot nguyên liệu đã trừ, dùng để hoàn kho khi huỷ);
         :Tạo bản ghi OrderStatusHistory\n(fromStatus: null, toStatus: PENDING, reason: "Order created");
 
         |Backend|
@@ -51,7 +53,7 @@ else (có)
           |Cơ sở dữ liệu|
           :Rollback Transaction;
           |Backend|
-          :Trả về 500 Internal Server Error\n(hoặc 400 nếu do hết hàng đồng thời);
+          :Trả về 409 Conflict nếu hết nguyên liệu / xung đột tồn kho\n(mã Prisma P2034), hoặc 400 nếu voucher / điểm không hợp lệ;
           |Frontend|
           :Hiển thị thông báo lỗi tạo đơn thất bại, cho phép thử lại;
           stop

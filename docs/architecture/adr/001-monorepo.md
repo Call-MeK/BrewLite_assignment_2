@@ -6,7 +6,7 @@
 
 ## Bối cảnh
 
-Nhóm 4 người cùng phát triển một ứng dụng gồm Next.js (frontend), NestJS (backend) và
+Nhóm 6 người cùng phát triển một ứng dụng gồm Next.js (frontend), NestJS (backend) và
 Prisma/PostgreSQL. Cần chọn cách tổ chức mã nguồn sao cho:
 
 - Thay đổi API và UI trong cùng một pull request vẫn review được.

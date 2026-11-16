@@ -133,21 +133,18 @@ lần. Các enum còn lại chỉ là nhãn phân loại dùng khi hiển thị 
 \begin{landscape}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\linewidth]{../figures/diagrams/class-domain.png}
+\includegraphics[height=0.86\textheight,keepaspectratio]{../figures/diagrams/class-domain.png}
 \caption{Class diagram miền nghiệp vụ BrewLite}
 \label{figA:class}
 \end{figure}
+\end{landscape}
 
-\vspace{2pt}
-\begin{minipage}{0.86\linewidth}
-\small
 \textbf{Cách đọc sơ đồ.} Khối enum nằm ở góc trên trái; mỗi lớp chỉ giữ thuộc tính cốt lõi, còn
 các bảng trung gian (\code{ProductSizePrice}, \code{OrderIngredient}, \code{OrderItemTopping})
 được lược bỏ để sơ đồ gọn mà quan hệ 1--n vẫn đúng. Multiplicity ghi ngay trên đường liên kết:
 một \code{Order} có nhiều \code{OrderItem} nhưng mỗi dòng chỉ thuộc một đơn; \code{Payment} giữ
-\code{appTransId} có ràng buộc \code{UNIQUE} nên một đơn chỉ có tối đa một giao dịch hợp lệ.
-\end{minipage}
-\end{landscape}
+\code{providerOrderId} (ánh xạ cột \code{app\_trans\_id} của ZaloPay) có ràng buộc \code{UNIQUE}
+nên một đơn chỉ có tối đa một giao dịch hợp lệ.
 
 \subsection{Tính nhất quán giữa các mô hình}
 
@@ -168,7 +165,7 @@ từng mô hình.
 Trừ kho theo công thức & FR-09 & Bước 4, E1 &
   Activity: ``Trừ kho (optimistic lock)''; Sequence: \code{UPDATE ... version}; Class: \code{Ingredient.version}, \code{Recipe}. \\
 Thanh toán idempotent & FR-08 & E2, E3 &
-  Sequence: nhánh \code{alt} theo \code{appTransId}; Class: \code{Payment.appTransId} có \code{UNIQUE}. \\
+  Sequence: nhánh \code{alt} theo \code{providerOrderId}; Class: \code{Payment.providerOrderId} có \code{UNIQUE}. \\
 Xác thực JWT & FR-04 & Bước 2, A1 &
   Activity: quyết định D1; Sequence: \code{JwtAuthGuard}; Class: \code{User.role}. \\
 Điểm loyalty & FR-10 & A2, Bước 10 &
