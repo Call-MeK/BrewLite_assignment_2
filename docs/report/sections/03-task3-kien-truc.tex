@@ -1,115 +1,253 @@
+
 % =====================================================================
-%  Người B -- Task 3: Thiết kế kiến trúc
-%  Nguồn: docs/architecture/adr/*.md, docs/architecture/deployment-diagram.puml,
-%         docs/deployment.md, docs/database-design.md
-%  Ngân sách: ~3,5 trang
+% NGUOI B -- TASK 3: THIET KE KIEN TRUC
+% Repository: https://github.com/Call-MeK/BrewLite_assignment_2
+% Branch: main
 % =====================================================================
+
 \section{Task 3 -- Thiết kế kiến trúc}
 
 \subsection{Task 3.1 -- Phương pháp và quyết định kiến trúc}
 
-% TODO(B): viết docs/architecture/architecture.md trước (1-2 trang), sau đó tóm tắt vào đây.
-% Nội dung bắt buộc theo đề:
-%   - kiến trúc phân lớp + C4 container;
-%   - Next.js/PWA, NestJS module/domain, PostgreSQL + migration;
-%   - dịch vụ thanh toán mô phỏng (ZaloPay Sandbox);
-%   - logging, health check, quản lý cấu hình;
-%   - lý do chọn, ưu điểm, hạn chế, trade-off.
+\paragraph{Kiến trúc tổng thể.}
 
-\paragraph{Kiến trúc phân lớp.}
-% TODO(B): 1 đoạn + bảng 9 module API và trách nhiệm (lấy từ as2.tex cũ mục 4).
+BrewLite áp dụng kiến trúc phân lớp (Layered Architecture), kết hợp mô hình C4 ở mức Container. Hệ thống được tổ chức thành ba tầng chính, triển khai trong một kho mã Monorepo nhằm đảm bảo sự đồng bộ giữa giao diện, nghiệp vụ và dữ liệu.
+
+\begin{itemize}
+    \item \textbf{Tầng trình diễn (Frontend):} Sử dụng Next.js 15 với App Router và React 19, kết hợp Tailwind CSS và Zustand. Giao diện được thiết kế theo hướng mobile-first. Server Components đảm nhiệm việc hiển thị nội dung ban đầu; Client Components xử lý các tương tác như giỏ hàng, đặt hàng, thanh toán và quản trị. Giỏ hàng được lưu trữ cục bộ thông qua localStorage.
+
+    \item \textbf{Tầng nghiệp vụ (Backend):} Sử dụng NestJS 11 xây dựng RESTful API với tiền tố \texttt{/api/v1}. Backend tổ chức theo Module/Domain, chịu trách nhiệm xử lý xác thực JWT, phân quyền, tính giá, khuyến mãi, điểm thưởng, quản lý tồn kho và vòng đời đơn hàng.
+
+    \item \textbf{Tầng dữ liệu và tích hợp:} Sử dụng PostgreSQL 16 kết hợp Prisma ORM để quản lý dữ liệu. Prisma Migrate kiểm soát các thay đổi lược đồ cơ sở dữ liệu. Hệ thống tích hợp ZaloPay Sandbox thông qua HTTPS, sử dụng chữ ký HMAC-SHA256 để xác thực giao dịch.
+\end{itemize}
+
+Theo mô hình C4 Container, các thành phần chính gồm Web Application, Backend API, PostgreSQL Database và dịch vụ thanh toán bên ngoài ZaloPay. Frontend giao tiếp với Backend thông qua REST API và JWT; Backend truy xuất dữ liệu thông qua Prisma Client, đồng thời kết nối ZaloPay để khởi tạo và đối soát giao dịch.
+
+Hệ thống không triển khai Message Broker, Distributed Cache hay dịch vụ tìm kiếm độc lập. Quyết định này giúp giảm độ phức tạp vận hành và phù hợp với quy mô của ứng dụng trong phạm vi đồ án.
+
+\paragraph{Kiến trúc Backend và các module nghiệp vụ.}
+
+Backend sử dụng kiến trúc Module/Domain để phân chia chức năng theo từng miền nghiệp vụ. Các yêu cầu HTTP được xử lý thông qua pipeline gồm CORS, Guard xác thực và phân quyền, Rate Limiter, ValidationPipe, Controller và Service. TransformInterceptor chuẩn hóa dữ liệu phản hồi; AllExceptionsFilter xử lý các ngoại lệ phát sinh trong quá trình thực thi.
+
 \begin{table}[H]
-\centering\small
-\caption{Các module nghiệp vụ của API}
+\centering
+\small
+\caption{Các module nghiệp vụ của Backend API}
 \label{tabB:modules}
 \begin{tabularx}{\textwidth}{@{}l X@{}}
 \toprule
-\textbf{Module} & \textbf{Trách nhiệm} \\
+\textbf{Module} & \textbf{Trách nhiệm chính} \\
 \midrule
-% TODO(B): auth, users, products, cart, orders, payments, ingredients, recipes, stock-imports
+\texttt{auth} &
+Đăng ký, đăng nhập, mã hóa mật khẩu bằng bcrypt và xác thực JWT. \\
+
+\texttt{users} &
+Quản lý hồ sơ người dùng, vai trò và điểm tích lũy. \\
+
+\texttt{products} &
+Quản lý thực đơn, danh mục, giá sản phẩm theo kích cỡ và tìm kiếm sản phẩm. \\
+
+\texttt{cart} &
+Quản lý giỏ hàng và kiểm tra khả năng đáp ứng tồn kho trước khi đặt hàng. \\
+
+\texttt{orders} &
+Tạo đơn hàng, quản lý trạng thái, lịch sử đơn và xử lý đơn quá hạn. \\
+
+\texttt{payments} &
+Tích hợp ZaloPay Sandbox, khởi tạo giao dịch, xác thực callback và đối soát thanh toán. \\
+
+\texttt{ingredients} &
+Quản lý danh mục nguyên liệu, số lượng tồn kho và cảnh báo tồn kho. \\
+
+\texttt{recipes} &
+Quản lý định lượng nguyên liệu (BOM) theo sản phẩm và kích cỡ. \\
+
+\texttt{stock-imports} &
+Quản lý phiếu nhập kho và cập nhật số lượng nguyên liệu. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\paragraph{Logging, health check và cấu hình.}
-% TODO(B): 3 đoạn ngắn: transform/exception interceptor + log request;
-% GET /api/v1/health trả trạng thái API + DB; toàn bộ config qua env, .env.example, không commit secret.
+\paragraph{Cơ sở dữ liệu và cơ chế Migration.}
+
+PostgreSQL 16 được sử dụng làm hệ quản trị cơ sở dữ liệu quan hệ. Prisma ORM đóng vai trò trung gian giữa Backend và cơ sở dữ liệu, hỗ trợ truy vấn dữ liệu có kiểu và quản lý lược đồ thông qua Prisma Migrate.
+
+Các migration được lưu trong thư mục \texttt{apps/api/prisma/migrations/}. Trong môi trường CI và Production, hệ thống sử dụng lệnh \texttt{prisma migrate deploy} để áp dụng các migration đã được tạo và kiểm soát phiên bản. Dữ liệu mẫu được khởi tạo thông qua Prisma Seed.
+
+Đối với các nghiệp vụ có khả năng xảy ra tranh chấp đồng thời như đặt hàng và cập nhật tồn kho, hệ thống sử dụng transaction và cơ chế khóa dữ liệu phù hợp nhằm hạn chế cập nhật sai lệch và đảm bảo tính nhất quán.
+
+\paragraph{Tích hợp dịch vụ thanh toán ZaloPay Sandbox.}
+
+Theo ADR-002, nhóm quyết định sử dụng ZaloPay Sandbox làm cổng thanh toán duy nhất thay cho cơ chế Mock Payment trước đây. Việc tích hợp cho phép kiểm thử quy trình giao dịch gần với môi trường thực tế mà không sử dụng tiền thật.
+
+Backend khởi tạo giao dịch thông qua endpoint \texttt{POST /api/v1/payments/zalopay}, yêu cầu \texttt{Idempotency-Key} để hạn chế giao dịch trùng lặp. Thông tin giao dịch được lưu ở trạng thái PENDING trước khi gửi yêu cầu đến nhà cung cấp. Sau đó, người dùng được chuyển hướng đến \texttt{paymentUrl} do ZaloPay cung cấp.
+
+Khi nhận callback, Backend xác thực chữ ký HMAC-SHA256 bằng khóa \texttt{key2}. Trong trường hợp callback không được gửi đến hoặc không thể tiếp nhận, Frontend có thể chủ động gọi API đồng bộ trạng thái giao dịch (sync). Cơ chế này giúp hệ thống kiểm soát kết quả thanh toán và hạn chế việc ghi nhận giao dịch nhiều lần.
+
+\paragraph{Logging, health check và quản lý cấu hình.}
+
+Backend sử dụng Logger của NestJS kết hợp các thành phần xử lý ngoại lệ để ghi nhận lỗi trong quá trình thực thi. TransformInterceptor chuẩn hóa cấu trúc phản hồi API, trong khi AllExceptionsFilter xử lý các lỗi phát sinh và hạn chế việc tiết lộ thông tin nội bộ cho phía client.
+
+Hệ thống cung cấp endpoint \texttt{GET /api/v1/health} để kiểm tra tình trạng hoạt động của API và kết nối cơ sở dữ liệu. Endpoint này được cấu hình làm Health Check Path trên Render, hỗ trợ giám sát tình trạng dịch vụ sau triển khai.
+
+Các thông số cấu hình như \texttt{DATABASE\_URL}, \texttt{JWT\_SECRET}, \texttt{ZALOPAY\_APP\_ID}, \texttt{ZALOPAY\_KEY1}, \texttt{ZALOPAY\_KEY2} và \texttt{NEXT\_PUBLIC\_API\_URL} được quản lý thông qua biến môi trường. Repository cung cấp tệp \texttt{.env.example} làm mẫu cấu hình. Khóa bí mật thực tế được lưu trong môi trường triển khai, không đưa trực tiếp vào mã nguồn.
 
 \paragraph{Ưu điểm, hạn chế và trade-off.}
-% TODO(B): bảng 3 cột: Quyết định | Ưu điểm | Hạn chế / trade-off.
+
+Các quyết định kiến trúc được lựa chọn dựa trên quy mô hệ thống, khả năng phối hợp nhóm, yêu cầu nghiệp vụ và điều kiện triển khai đồ án.
+
 \begin{table}[H]
-\centering\small
-\caption{Trade-off của các quyết định kiến trúc}
+\centering
+\small
+\caption{Phân tích ưu điểm, hạn chế và trade-off của kiến trúc}
 \label{tabB:tradeoff}
-\begin{tabularx}{\textwidth}{@{}p{5cm} X X@{}}
+\begin{tabularx}{\textwidth}{@{}p{3cm} X X@{}}
 \toprule
-\textbf{Quyết định} & \textbf{Ưu điểm} & \textbf{Hạn chế / trade-off} \\
+\textbf{Quyết định} &
+\textbf{Ưu điểm} &
+\textbf{Hạn chế / Trade-off} \\
 \midrule
-% TODO(B): monorepo, modular monolith, Prisma, ZaloPay sandbox, deploy PaaS free tier
+
+Monorepo &
+Đồng bộ API, giao diện, tài liệu và cấu hình trong cùng repository; thuận tiện review và phối hợp nhóm. &
+CI phải thực hiện cài đặt và build riêng cho hai ứng dụng; cần quản lý nhánh và thay đổi độc lập. \\
+
+Kiến trúc phân lớp và Module/Domain &
+Phân chia trách nhiệm rõ ràng, thuận tiện bảo trì, kiểm thử và phát triển chức năng. &
+Các module vẫn thuộc cùng Backend; chưa có khả năng triển khai và mở rộng độc lập như kiến trúc Microservices. \\
+
+PostgreSQL + Prisma &
+Quản lý dữ liệu quan hệ, hỗ trợ transaction, migration và kiểm soát tính nhất quán dữ liệu. &
+Cần quản lý migration giữa các môi trường; giao dịch đồng thời có thể phát sinh xung đột và cần xử lý thử lại. \\
+
+ZaloPay Sandbox &
+Kiểm chứng được quy trình giao dịch, chữ ký HMAC, callback và idempotency. &
+Phụ thuộc dịch vụ bên ngoài; cần cấu hình tài khoản Sandbox và không thể thực hiện thanh toán bằng tiền thật. \\
+
+Vercel + Render + Neon &
+Tiết kiệm chi phí, hỗ trợ triển khai tự động và tách biệt frontend, backend, database. &
+Render Free có thể ngủ đông khi không hoạt động; thời gian khởi động lại có thể ảnh hưởng trải nghiệm người dùng. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \subsection{Task 3.2 -- Hồ sơ quyết định kiến trúc (ADR)}
-% TODO(B): tóm tắt 2 ADR có sẵn, mỗi cái 1 bảng ngắn: Bối cảnh | Quyết định | Hệ quả.
-% Nguồn: docs/architecture/adr/001-monorepo.md, 002-payment-zalopay-sandbox.md.
-% Ghi rõ đường dẫn để truy vết.
+
+Nhóm sử dụng Architecture Decision Records (ADR) để lưu trữ các quyết định kiến trúc quan trọng, bao gồm bối cảnh lựa chọn, phương án được chấp nhận và những hệ quả phát sinh. Hai ADR được lưu tại thư mục \texttt{docs/architecture/adr/}.
+
+\paragraph{ADR 001 -- Tổ chức mã nguồn theo Monorepo.}
+
 \begin{table}[H]
-\centering\small
-\caption{ADR 001 -- Monorepo}
+\centering
+\small
+\caption{Tóm tắt ADR 001 -- Monorepo}
 \label{tabB:adr1}
-\begin{tabularx}{\textwidth}{@{}p{3cm} X@{}}
+\begin{tabularx}{\textwidth}{@{}p{2.3cm} X@{}}
 \toprule
 \textbf{Mục} & \textbf{Nội dung} \\
 \midrule
-% TODO(B): điền 3 dòng dưới
-Bối cảnh & \\
-Quyết định & \\
-Hệ quả & \\
+
+Bối cảnh &
+Nhóm gồm 4 thành viên cùng phát triển ứng dụng sử dụng Next.js, NestJS và Prisma/PostgreSQL. Cần một phương án tổ chức mã nguồn giúp đồng bộ API, giao diện, tài liệu, Postman, Docker Compose và CI. \\
+
+Quyết định &
+Sử dụng một repository duy nhất với hai ứng dụng độc lập: \texttt{apps/web} cho Next.js và \texttt{apps/api} cho NestJS. Các thư mục \texttt{docs}, \texttt{tests} và \texttt{postman} được quản lý cùng repository. Không sử dụng Nx hoặc Turborepo để giữ cấu hình đơn giản. \\
+
+Hệ quả &
+Một Pull Request có thể cập nhật đồng thời Backend, Frontend và kiểm thử; thuận tiện đồng bộ tài liệu. Đổi lại, CI cần cài đặt và build riêng từng ứng dụng; các thành viên phải quản lý nhánh rõ ràng và đồng bộ hợp đồng API thủ công. \\
+
 \bottomrule
 \end{tabularx}
 \end{table}
 
+\textit{Nguồn: \texttt{docs/architecture/adr/001-monorepo.md}.}
+
+\paragraph{ADR 002 -- Sử dụng ZaloPay Sandbox làm cổng thanh toán duy nhất.}
+
 \begin{table}[H]
-\centering\small
-\caption{ADR 002 -- ZaloPay Sandbox thay cho mock payment}
+\centering
+\small
+\caption{Tóm tắt ADR 002 -- ZaloPay Sandbox}
 \label{tabB:adr2}
-\begin{tabularx}{\textwidth}{@{}p{3cm} X@{}}
+\begin{tabularx}{\textwidth}{@{}p{2.3cm} X@{}}
 \toprule
 \textbf{Mục} & \textbf{Nội dung} \\
 \midrule
-% TODO(B): điền 3 dòng dưới
-Bối cảnh & \\
-Quyết định & \\
-Hệ quả & \\
+
+Bối cảnh &
+Phiên bản trước tồn tại hai luồng thanh toán song song: Mock Payment và ZaloPay Sandbox. Cách tổ chức này tạo ra hai nguồn xử lý giao dịch, không kiểm chứng đầy đủ callback, chữ ký MAC và vòng đời thanh toán. \\
+
+Quyết định &
+Loại bỏ toàn bộ Mock Payment và sử dụng ZaloPay Sandbox làm cổng thanh toán duy nhất. Endpoint \texttt{POST /api/v1/payments/zalopay} thay thế endpoint thanh toán cũ. Frontend chỉ sử dụng giao diện thanh toán ZaloPay Sandbox. \\
+
+Hệ quả &
+Hệ thống có một luồng thanh toán thống nhất, dễ bảo trì và kiểm thử chữ ký callback, số tiền, giao dịch trùng lặp. Tuy nhiên, môi trường demo phải có cấu hình Sandbox; khi thiếu cấu hình, API trả về lỗi 503 thay vì chuyển sang thanh toán giả lập. CI không gọi mạng ZaloPay mà kiểm thử logic thông qua gateway giả trong phạm vi test. \\
+
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\textit{Nguồn: \texttt{docs/architecture/adr/002-payment-zalopay-sandbox.md}.}
 
 \subsection{Task 3.3 -- Deployment diagram}
-% TODO(B): export deployment-diagram.puml -> .svg (đề yêu cầu cả nguồn và ảnh kết xuất).
-% Sơ đồ phải thể hiện: thiết bị người dùng, Vercel/CDN, Render container, Neon + persistent
-% storage, registry/nền tảng deploy, HTTPS + cổng nội bộ, secret/env, health check, log,
-% ranh giới local - CI - production.
+
+Sơ đồ triển khai mô tả cách các thành phần của BrewLite được phân bố giữa môi trường phát triển cục bộ, quy trình tích hợp liên tục và môi trường Production.
+
+Trong môi trường Production, người dùng truy cập ứng dụng thông qua trình duyệt hoặc thiết bị di động bằng HTTPS. Frontend Next.js được triển khai trên Vercel, sử dụng CDN và Edge để phân phối nội dung. Các yêu cầu nghiệp vụ được gửi đến Backend NestJS chạy trong Docker Container trên Render thông qua REST API và JWT.
+
+Backend sử dụng Prisma Client để truy cập Neon PostgreSQL tại khu vực Singapore thông qua kết nối TCP cổng 5432 có SSL. Dịch vụ thanh toán ZaloPay Sandbox được tích hợp qua HTTPS, hỗ trợ các thao tác tạo giao dịch, truy vấn, hủy giao dịch và nhận callback.
+
+GitHub Actions thực hiện CI khi có sự kiện push hoặc pull request vào nhánh \texttt{main}. Quy trình kiểm tra bao gồm cài đặt phụ thuộc, sinh Prisma Client, áp dụng migration, chạy lint, test và build riêng cho Frontend và Backend. Sau khi mã nguồn được cập nhật trên nhánh triển khai, Render và Vercel thực hiện tự động triển khai thông qua tích hợp GitHub.
+
+Các biến môi trường và khóa bí mật được cấu hình trực tiếp trên Dashboard của nền tảng triển khai. Health Check tại \texttt{GET /api/v1/health} được sử dụng để kiểm tra tình trạng hoạt động của Backend. Neon cung cấp cơ chế sao lưu Point-in-Time Recovery, hỗ trợ khôi phục dữ liệu khi cần thiết.
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.78\textwidth]{../figures/diagrams/BrewLite-Deployment.png}
-\caption{Deployment diagram production: Vercel -- Render -- Neon -- ZaloPay -- GitHub Actions}
+\includegraphics[width=0.88\textwidth]{../figures/diagrams/BrewLite-Deployment.png}
+\caption{Deployment diagram của BrewLite: Vercel -- Render -- Neon -- ZaloPay -- GitHub Actions}
 \label{figB:deploy}
 \end{figure}
 
 \paragraph{Đối chiếu container với mã nguồn.}
-% TODO(B): bảng: Container/dịch vụ | Thành phần kiến trúc | Bằng chứng trong repo.
-% (tiêu chí nghiệm thu Task 3.2: truy vết được mỗi container tới code)
+
+Bảng dưới đây đối chiếu các thành phần trong Deployment diagram với vị trí triển khai và mã nguồn tương ứng trong repository, đảm bảo khả năng truy vết từ kiến trúc đến triển khai thực tế.
+
 \begin{table}[H]
-\centering\small
-\caption{Truy vết container trong deployment diagram}
+\centering
+\small
+\caption{Truy vết container và dịch vụ trong Deployment diagram}
 \label{tabB:deploy-trace}
-\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\begin{tabularx}{\textwidth}{@{}p{2.3cm} X X@{}}
 \toprule
-\textbf{Container} & \textbf{Thành phần} & \textbf{Bằng chứng} \\
+\textbf{Container / Dịch vụ} &
+\textbf{Thành phần kiến trúc} &
+\textbf{Bằng chứng trong repository} \\
 \midrule
-% TODO(B): Web, API, DB, Payment, CI
+
+Web Application &
+Giao diện người dùng, menu, giỏ hàng, đặt hàng, thanh toán và quản trị. Triển khai trên Vercel. &
+\texttt{apps/web/src/}, \texttt{apps/web/package.json}, \texttt{vercel.json}. \\
+
+Backend API &
+REST API, xác thực JWT, xử lý nghiệp vụ đơn hàng, kho và thanh toán. Chạy trong Docker Container trên Render. &
+\texttt{apps/api/src/}, \texttt{apps/api/Dockerfile}, \texttt{apps/api/package.json}. \\
+
+PostgreSQL Database &
+Lưu trữ thông tin người dùng, sản phẩm, đơn hàng, tồn kho và giao dịch. Production sử dụng Neon; Local sử dụng PostgreSQL Docker. &
+\texttt{apps/api/prisma/schema.prisma}, \texttt{apps/api/prisma/migrations/}, \texttt{docker-compose.yml}. \\
+
+Payment Service &
+Cổng thanh toán bên ngoài, tạo giao dịch, truy vấn, hủy và xác thực callback ZaloPay. &
+Module \texttt{payments} trong \texttt{apps/api/src/modules/}, cấu hình \texttt{ZALOPAY\_KEY1}, \texttt{ZALOPAY\_KEY2} và ADR-002. \\
+
+CI Pipeline &
+Kiểm thử chất lượng mã nguồn, migration, lint, test và build trên GitHub Actions. &
+\texttt{.github/workflows/ci.yml}. \\
+
+Deployment Platform &
+Tự động triển khai Frontend trên Vercel và Backend trên Render từ nhánh \texttt{main}. &
+\texttt{docs/deployment.md}, \texttt{vercel.json}, \texttt{apps/api/Dockerfile}. \\
+
 \bottomrule
 \end{tabularx}
 \end{table}

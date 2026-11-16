@@ -1,116 +1,333 @@
+
 % =====================================================================
 %  Người B -- Task 4: Triển khai Sprint 1
-%  Nguồn: docs/requirements/product-backlog.md, docs/git-convention.md,
-%         .github/workflows/ci.yml, apps/web/src/app/menu/, apps/api/src/modules/products/
-%  Ngân sách: ~3 trang
+%  Nguồn: docs/requirements/product-backlog.md,
+%         docs/git-convention.md, docs/requirements/srs.md,
+%         .github/workflows/ci.yml, apps/web, apps/api
 % =====================================================================
+
 \section{Task 4 -- Triển khai Sprint 1}
 
 \subsection{Task 4.1 -- Thiết lập repository và quản lý công việc}
 
 \paragraph{Cấu trúc monorepo.}
-% TODO(B): 1 đoạn + cây thư mục ngắn (apps/web, apps/api, docs, tests, .github/workflows).
-% Nêu README, .gitignore, .env.example, docker-compose.yml.
+Dự án BrewLite sử dụng mô hình monorepo nhằm quản lý mã nguồn frontend,
+backend, tài liệu và kiểm thử trong cùng một repository. Cấu trúc này
+giúp các thành viên dễ dàng phối hợp, đồng bộ thay đổi và kiểm soát
+phiên bản của toàn bộ hệ thống.
 
-\paragraph{Chiến lược nhánh và pull request.}
-% TODO(B): main ổn định, feat/<scope>, fix/<scope>, docs/<scope>; PR bắt buộc review + CI xanh.
+Các thành phần chính của repository được tổ chức như sau:
+
+\begin{itemize}
+    \item \file{apps/web/}: ứng dụng frontend xây dựng bằng Next.js,
+    bao gồm các trang giao diện, component dùng chung và kiểm thử frontend.
+    \item \file{apps/api/}: backend xây dựng bằng NestJS, cung cấp REST API,
+    quản lý nghiệp vụ và kết nối PostgreSQL thông qua Prisma.
+    \item \file{docs/}: lưu trữ tài liệu yêu cầu, sơ đồ, kiến trúc,
+    kịch bản kiểm thử và báo cáo đồ án.
+    \item \file{tests/e2e/}: chứa các kiểm thử end-to-end cho luồng nghiệp vụ.
+    \item \file{.github/workflows/}: định nghĩa các workflow CI, CD
+    và keep-alive bằng GitHub Actions.
+    \item \file{postman/}: lưu trữ collection và environment phục vụ
+    kiểm thử API.
+\end{itemize}
+
+Ngoài ra, repository có các tệp cấu hình cấp dự án như
+\file{README.md}, \file{.gitignore}, \file{.env.example} và
+\file{docker-compose.yml}. Trong đó, Docker Compose hỗ trợ khởi chạy
+PostgreSQL, backend và frontend trong cùng một môi trường phát triển.
+
+\paragraph{Chiến lược nhánh và Pull Request.}
+Nhóm áp dụng mô hình Git Flow rút gọn. Nhánh \file{main} được sử dụng
+để lưu phiên bản ổn định, còn \file{develop} là nhánh tích hợp mã nguồn
+trong quá trình phát triển Sprint. Thành viên tạo nhánh riêng để phát
+triển tính năng, sửa lỗi hoặc cập nhật tài liệu thay vì commit trực tiếp
+lên nhánh chính.
+
 \begin{table}[H]
-\centering\small
-\caption{Quy ước nhánh và commit}
+\centering
+\small
+\caption{Quy ước nhánh và commit của dự án}
 \label{tabB:branch}
 \begin{tabularx}{\textwidth}{@{}l X@{}}
 \toprule
 \textbf{Hạng mục} & \textbf{Quy ước} \\
 \midrule
-% TODO(B)
+Nhánh ổn định & \file{main}: lưu mã nguồn đã qua kiểm tra và nghiệm thu. \\
+Nhánh tích hợp & \file{develop}: tích hợp công việc của các thành viên trong Sprint. \\
+Nhánh tính năng & \file{feat/<scope>}: ví dụ \file{feat/product-menu},
+\file{feat/auth-jwt}. \\
+Nhánh sửa lỗi & \file{fix/<scope>}: ví dụ \file{fix/cart-total-price}. \\
+Commit & Sử dụng Conventional Commits: \file{feat:}, \file{fix:},
+\file{docs:}, \file{test:}, \file{refactor:}, \file{chore:}. \\
+Pull Request & Tạo PR vào \file{develop} theo Git Convention;
+yêu cầu ít nhất một thành viên khác review trước khi merge. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+Quy trình làm việc yêu cầu thành viên cập nhật nhánh \file{develop},
+đồng bộ thay đổi mới nhất vào nhánh cá nhân, kiểm tra khả năng build
+của frontend và backend, sau đó tạo Pull Request để thành viên khác
+đánh giá trước khi hợp nhất mã nguồn.
+
 \paragraph{Product Backlog.}
-% TODO(B): bảng user story US-01..US-12 rút gọn (mã | story | MoSCoW | FR | Sprint).
-% Nguồn đầy đủ: docs/requirements/product-backlog.md
+Product Backlog được xây dựng trong
+\file{docs/requirements/product-backlog.md}, gồm 12 User Story,
+được phân chia thành hai Sprint. Mỗi User Story có mã định danh,
+mức độ ưu tiên, yêu cầu chức năng liên quan và Sprint thực hiện.
+
 \begin{table}[H]
-\centering\footnotesize
-\caption{Product Backlog hai sprint}
+\centering
+\scriptsize
+\caption{Product Backlog của dự án BrewLite}
 \label{tabB:backlog}
 \begin{tabularx}{\textwidth}{@{}c X c c c@{}}
 \toprule
-\textbf{Mã} & \textbf{User story} & \textbf{MoSCoW} & \textbf{FR} & \textbf{Sprint} \\
+\textbf{Mã} & \textbf{User Story} & \textbf{Ưu tiên} &
+\textbf{FR} & \textbf{Sprint} \\
 \midrule
-% TODO(B): 12 dòng
+US-01 & Xem thực đơn kèm ảnh, giá và danh mục. & Must & FR-01 & 1 \\
+US-02 & Tìm kiếm món có dấu/không dấu và lọc danh mục. & Must & FR-01 & 1 \\
+US-03 & Xem chi tiết món, chọn size và topping. & Must & FR-02 & 2 \\
+US-04 & Thêm, sửa, xóa món trong giỏ hàng. & Must & FR-03 & 2 \\
+US-05 & Đăng ký, đăng nhập và duy trì phiên JWT. & Must & FR-04 & 2 \\
+US-06 & Đặt đơn và kiểm tra tồn kho, tính tiền phía server. & Must & FR-05, FR-09 & 2 \\
+US-07 & Thanh toán qua ZaloPay Sandbox. & Must & FR-05, FR-08 & 2 \\
+US-08 & Xem lịch sử và chi tiết đơn hàng. & Must & FR-06, FR-12 & 2 \\
+US-09 & Sử dụng voucher và điểm tích lũy. & Should & FR-10 & 2 \\
+US-10 & Quản lý trạng thái và hủy đơn hàng. & Must & FR-07, FR-11 & 2 \\
+US-11 & Quản lý sản phẩm, nguyên liệu, công thức và nhập kho. & Should & FR-11 & 2 \\
+US-12 & Đối soát giao dịch và đồng bộ ZaloPay. & Should & FR-11 & 2 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+Sprint 1 được thực hiện trong giai đoạn 20/10--26/10/2026 với mục tiêu
+xây dựng nền tảng monorepo, hoàn thiện tài liệu Task 1--3, triển khai
+MVP Menu trên dữ liệu mẫu và thiết lập quy trình CI. Sprint 2 tập trung
+vào các nghiệp vụ chi tiết sản phẩm, giỏ hàng, xác thực, đặt hàng,
+thanh toán và triển khai hệ thống.
+
 \paragraph{Definition of Done.}
-% TODO(B): liệt kê 8 tiêu chí ngắn (build, test, lint, review, CI xanh, không secret, docs, merge qua PR).
-% Viết thành danh sách khi soạn nội dung.
+Theo tài liệu Product Backlog, một hạng mục chỉ được xem là hoàn thành
+khi đáp ứng các tiêu chí sau:
+
+\begin{enumerate}
+    \item Có issue hoặc Pull Request mô tả phạm vi và cách kiểm chứng.
+    \item Frontend và backend đều build thành công.
+    \item Có kiểm thử cho nghiệp vụ chính và các kiểm thử hiện có vẫn đạt.
+    \item Lint không có lỗi chặn quá trình build.
+    \item Có ít nhất một thành viên khác review và thay đổi được merge
+    thông qua Pull Request.
+    \item Không chứa secret, lệnh debug tạm thời hoặc mã nguồn không sử dụng.
+    \item Tài liệu liên quan trong \file{docs/} được cập nhật khi có thay đổi.
+    \item CI trên Pull Request đạt trạng thái thành công; không merge
+    khi pipeline thất bại.
+\end{enumerate}
 
 \subsection{Task 4.2 -- Quản lý tài liệu và kiểm soát phiên bản}
-% TODO(B): 1 đoạn: toàn bộ tạo phẩm Task 1-3 nằm trong docs/;
-% mọi thay đổi yêu cầu/sơ đồ/kiến trúc đi qua commit + PR, ghi lý do.
-% Bảng cây docs/ sau khi dọn (requirements, diagrams, architecture, report, _archive).
+
+Các tạo phẩm của những nhiệm vụ trước được tổ chức tập trung trong
+thư mục \file{docs/}. Cách tổ chức này giúp tách biệt tài liệu dự án
+với mã nguồn ứng dụng, đồng thời hỗ trợ các thành viên tra cứu và
+cập nhật tài liệu trong quá trình phát triển.
+
 \begin{table}[H]
-\centering\small
-\caption{Bản đồ tài liệu trong \file{docs/}}
+\centering
+\small
+\caption{Cấu trúc và nội dung tài liệu trong \file{docs/}}
 \label{tabB:docmap}
 \begin{tabularx}{\textwidth}{@{}l X@{}}
 \toprule
 \textbf{Thư mục / tệp} & \textbf{Nội dung} \\
 \midrule
-% TODO(B)
+\file{requirements/} & Bối cảnh, phạm vi, SRS và đặc tả Use Case. \\
+\file{diagrams/} & Các sơ đồ Use Case, Activity, Sequence và mô hình hệ thống. \\
+\file{architecture/adr/} & Tài liệu kiến trúc và các quyết định thiết kế (ADR). \\
+\file{figures/} & Hình ảnh giao diện và sơ đồ minh họa. \\
+\file{test-scenarios/} & Các kịch bản và tiêu chí kiểm thử. \\
+\file{report/} & Báo cáo đồ án, mã nguồn LaTeX và tài nguyên báo cáo. \\
+\file{traceability-matrix.md} & Ma trận truy vết yêu cầu, thiết kế, mã nguồn và kiểm thử. \\
+\file{git-convention.md} & Quy ước nhánh, commit và quy trình Pull Request. \\
+\file{deployment.md} & Hướng dẫn CI/CD, triển khai và rollback. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\subsection{Task 4.3 -- MVP Sprint 1}
-% TODO(B): 3 đoạn:
-%  - API GET /products, GET /products/:id (lọc, tìm kiếm, giá theo size);
-%  - màn hình menu mobile-first + loading/empty/error;
-%  - dữ liệu seed 8 sản phẩm + test tối thiểu.
+Các thay đổi liên quan đến yêu cầu, sơ đồ và kiến trúc được lưu lại
+thông qua hệ thống Git. Thành viên sử dụng commit để ghi nhận nội dung
+thay đổi và Pull Request để trao đổi, review trước khi tích hợp.
+Nhờ đó, nhóm có thể theo dõi lịch sử chỉnh sửa, xác định nguyên nhân
+thay đổi và duy trì tính nhất quán giữa tài liệu với mã nguồn.
+
+\subsection{Task 4.3 -- Triển khai MVP Sprint 1}
+
+\paragraph{Backend API.}
+Trong Sprint 1, nhóm triển khai module quản lý sản phẩm tại
+\file{apps/api/src/modules/products/}. Hai endpoint công khai chính
+được xây dựng gồm:
+
+\begin{itemize}
+    \item \file{GET /products}: trả về danh sách sản phẩm kèm tên,
+    giá cơ bản, hình ảnh, danh mục và thông tin khả dụng của từng size.
+    Khả năng phục vụ được xác định dựa trên trạng thái sản phẩm và
+    lượng nguyên liệu hiện có theo công thức.
+    \item \file{GET /products/:id}: trả về thông tin chi tiết sản phẩm,
+    các size, mức phụ thu, số lượng có thể phục vụ và topping phù hợp.
+\end{itemize}
+
+Backend sử dụng Prisma để truy vấn PostgreSQL. Khi xác định khả năng
+phục vụ, hệ thống đối chiếu lượng nguyên liệu tồn kho với định lượng
+công thức của từng size. Những size không đủ nguyên liệu không được
+đánh dấu khả dụng.
+
+\paragraph{Frontend Menu.}
+Giao diện thực đơn được triển khai tại
+\file{apps/web/src/app/menu/page.tsx} theo hướng mobile-first.
+Trang menu lấy dữ liệu thông qua hàm \file{getProducts()} và hiển thị
+danh sách sản phẩm cùng thông tin giá, hình ảnh và danh mục.
+
+Chức năng tìm kiếm và lọc danh mục được xử lý ở frontend thông qua
+\file{filterMenu()} trong \file{apps/web/src/lib/menu-filter.ts}.
+Hàm tìm kiếm chuẩn hóa chuỗi bằng cách loại bỏ dấu tiếng Việt,
+chuyển về chữ thường và loại bỏ khoảng trắng thừa. Nhờ đó, người dùng
+có thể tìm kiếm tên món bằng từ khóa có dấu hoặc không dấu.
+
+Giao diện cũng xử lý các trạng thái tải dữ liệu, lỗi kết nối và
+danh sách kết quả rỗng, giúp người dùng nhận biết tình trạng của
+thực đơn trong quá trình sử dụng.
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.26\textwidth]{../figures/as2/view/01-menu-mobile.png}
-\caption{Màn hình menu mobile-first của MVP Sprint 1}
+\includegraphics[width=0.30\textwidth]{../figures/as2/view/01-menu-mobile.png}
+\caption{Giao diện thực đơn mobile-first của BrewLite}
 \label{figB:menu-s1}
 \end{figure}
 
+\paragraph{Dữ liệu mẫu và kiểm thử.}
+Dữ liệu mẫu được khởi tạo bằng Prisma Seed tại
+\file{apps/api/prisma/seed.ts}. Tập dữ liệu gồm 8 sản phẩm thuộc
+hai danh mục Cà phê và Trà \& Trái cây. Mỗi sản phẩm được cấu hình
+ba size S, M, L với mức phụ thu tương ứng 0, 5.000 và 10.000 đồng.
+Ngoài ra, dữ liệu mẫu còn có topping, nguyên liệu, công thức pha chế
+và lượng tồn kho phục vụ việc kiểm tra khả năng cung cấp sản phẩm.
+
+Nhóm xây dựng kiểm thử cho backend và frontend để kiểm tra các
+nghiệp vụ chính của MVP Menu.
+
 \begin{table}[H]
-\centering\small
-\caption{Kết quả kiểm thử MVP Sprint 1}
+\centering
+\small
+\caption{Các kiểm thử của MVP Sprint 1}
 \label{tabB:s1-test}
 \begin{tabularx}{\textwidth}{@{}l X l@{}}
 \toprule
-\textbf{Hạng mục} & \textbf{Nội dung} & \textbf{Kết quả} \\
+\textbf{Hạng mục} & \textbf{Nội dung kiểm thử} & \textbf{Tệp kiểm thử} \\
 \midrule
-% TODO(B): products.test.cjs, menu-filter.test.mjs, build web/api
+API sản phẩm & Kiểm tra danh sách menu, chi tiết sản phẩm,
+size khả dụng và dữ liệu trả về. &
+\file{apps/api/test/products.test.cjs} \\
+Tìm kiếm menu & Kiểm tra tìm kiếm tên món và kết hợp
+điều kiện danh mục. &
+\file{apps/web/tests/menu-filter.test.mjs} \\
+Frontend & Kiểm tra lint, unit test và build ứng dụng. &
+\file{apps/web/} \\
+Backend & Kiểm tra unit/integration test và build ứng dụng. &
+\file{apps/api/} \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \subsection{Task 4.4 -- Continuous Integration}
-% TODO(B): pipeline install -> lint -> unit test -> build; chạy trên push/PR vào main;
-% PR đỏ không được merge. Nêu số lần chạy thực tế nếu lấy được từ GitHub Actions.
+
+Nhóm sử dụng GitHub Actions để tự động hóa quá trình kiểm tra mã nguồn
+thông qua workflow \file{.github/workflows/ci.yml}. Workflow được kích
+hoạt khi có commit push lên \file{main} hoặc khi tạo Pull Request
+nhắm đến nhánh này.
+
+Pipeline được chia thành hai job độc lập là Frontend CI và Backend CI.
+Cả hai sử dụng Node.js 22 và thực hiện cài đặt thư viện, kiểm tra,
+kiểm thử và build. Riêng Backend CI khởi tạo PostgreSQL 16 service,
+sinh Prisma Client, áp dụng migration và chuẩn bị schema kiểm thử
+riêng trước khi chạy test.
+
 \begin{table}[H]
-\centering\small
-\caption{Các bước trong workflow \file{ci.yml}}
+\centering
+\small
+\caption{Các bước trong workflow CI}
 \label{tabB:ci}
 \begin{tabularx}{\textwidth}{@{}c l X@{}}
 \toprule
-\textbf{Bước} & \textbf{Lệnh} & \textbf{Điều kiện đạt} \\
+\textbf{Bước} & \textbf{Lệnh / tác vụ} & \textbf{Điều kiện đạt} \\
 \midrule
-% TODO(B)
+1 & Checkout code & Lấy đúng mã nguồn từ repository. \\
+2 & Setup Node.js 22 & Môi trường Node.js được cấu hình thành công. \\
+3 & \file{npm ci} & Cài đặt đầy đủ dependency theo lockfile. \\
+4 & Prisma generate/migrate & Sinh Prisma Client và áp dụng migration
+(thực hiện ở Backend CI). \\
+5 & \file{npm run lint --if-present} & Lint không phát sinh lỗi
+chặn workflow. \\
+6 & \file{npm test --if-present} & Các bài kiểm thử được cấu hình
+trong package.json hoàn thành thành công. \\
+7 & \file{npm run build} & Frontend và backend build thành công. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+Đối với frontend, workflow chạy lint, test và build trong thư mục
+\file{apps/web/}. Đối với backend, workflow thực hiện thêm các bước
+khởi tạo PostgreSQL, sinh Prisma Client, áp dụng migration và chuẩn bị
+schema kiểm thử trước khi chạy lint, test và build trong
+\file{apps/api/}. Tùy chọn \file{--if-present} cho phép bỏ qua script
+nếu package tương ứng không khai báo lệnh đó.
+
+\paragraph{Kết quả chạy CI thực tế.}
+Theo lịch sử GitHub Actions của repository, workflow BrewLite CI
+đã có các lần chạy thành công và thất bại. Tại lần chạy số 19,
+ngày 16/11/2026, cả hai job Frontend CI và Backend CI đều hoàn thành
+với trạng thái \textit{success}. Các bước cài đặt dependency,
+lint, test và build đều đạt yêu cầu.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Minh chứng kết quả GitHub Actions}
+\label{tabB:ci-result}
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+\textbf{Workflow run} & \textbf{Kết quả ghi nhận} & \textbf{Trạng thái} \\
+\midrule
+Run \#19 & Frontend CI và Backend CI đều hoàn thành thành công
+(16/11/2026). & Success \\
+Run \#18 & Workflow CI hoàn thành thành công. & Success \\
+Run \#15 & Workflow CI kết thúc với lỗi. & Failure \\
+Run \#6 & Workflow CI kết thúc với lỗi. & Failure \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Kết quả trên cho thấy pipeline đã được thực thi trên repository
+và có khả năng ghi nhận cả trường hợp thành công lẫn thất bại.
+Theo Definition of Done, nhóm sử dụng trạng thái CI thành công
+làm điều kiện kiểm tra trước khi tích hợp mã nguồn.
+
 \paragraph{Minh chứng.}
-% TODO(B): chụp 2 ảnh GitHub Actions: 1 run xanh, 1 run đỏ bị chặn merge.
-% Lưu vào docs/report/figures/ci-pass.png, ci-fail.png rồi bỏ comment.
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.9\textwidth]{figures/ci-pass.png}
-% \caption{Pipeline CI thành công trên pull request}
-% \label{figB:ci-pass}
-% \end{figure}
+Hình \ref{figB:ci-pass} minh họa lần chạy CI thành công,
+trong đó cả Frontend CI và Backend CI đều đạt trạng thái Success.
+Hình \ref{figB:ci-fail} minh họa lần chạy CI thất bại,
+cho thấy pipeline phát hiện lỗi trong quá trình kiểm tra mã nguồn.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/ci-pass.png}
+    \caption{Pipeline CI thực thi thành công}
+    \label{figB:ci-pass}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/ci-fail.png}
+    \caption{Pipeline CI ghi nhận lỗi trong quá trình kiểm tra}
+    \label{figB:ci-fail}
+\end{figure}

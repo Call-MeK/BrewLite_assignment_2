@@ -1,39 +1,152 @@
+
 % =====================================================================
-%  Người B -- Cấu trúc repository và checklist nghiệm thu (mục 9 của đề)
-%  Nguồn: cây thư mục thật + mục 9.1 trong đề bài
-%  Ngân sách: ~1,5 trang
+% Nguoi B -- Cau truc repository va checklist nghiem thu (Muc 9)
+% Nguon: Repository BrewLite_assignment_2 va muc 9.1 de bai
 % =====================================================================
+
 \section{Cấu trúc repository và checklist nghiệm thu}
 
 \subsection{Cấu trúc repository}
-% TODO(B): cây rút gọn, đúng với repo thật:
-% apps/web, apps/api, docs/(requirements, diagrams, architecture, report),
-% tests/e2e, .github/workflows, docker-compose.yml, .env.example, README.md
+
+Repository BrewLite được tổ chức theo mô hình monorepo, trong đó
+frontend và backend được quản lý trong cùng một kho mã nguồn.
+Các thư mục chính được trình bày tại Bảng~\ref{tabB:tree}.
+
 \begin{table}[H]
-\centering\small
-\caption{Cấu trúc thư mục chính}
+\centering
+\small
+\caption{Cấu trúc thư mục chính của repository}
 \label{tabB:tree}
-\begin{tabularx}{\textwidth}{@{}l X@{}}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm} X@{}}
 \toprule
 \textbf{Đường dẫn} & \textbf{Nội dung} \\
 \midrule
-% TODO(B)
+\file{apps/web/} &
+Frontend Next.js, chứa giao diện, component, thư viện xử lý và kiểm thử frontend. \\
+
+\file{apps/api/} &
+Backend NestJS, chứa REST API, các module nghiệp vụ, Prisma, migration và kiểm thử backend. \\
+
+\file{docs/requirements/} &
+Tài liệu bối cảnh, phạm vi và đặc tả yêu cầu phần mềm (SRS). \\
+
+\file{docs/diagrams/} &
+Các sơ đồ Use Case, Activity và Sequence được biểu diễn bằng PlantUML. \\
+
+\file{docs/architecture/} &
+Tài liệu kiến trúc, các quyết định ADR và sơ đồ triển khai. \\
+
+\file{docs/} &
+Đặc tả use-case, API Contract, DB Mapping, tài liệu thiết kế và ma trận truy vết theo chức năng. \\
+
+\file{docs/report/} &
+Báo cáo Assignment 1, Assignment 2, mã nguồn LaTeX và tài nguyên hình ảnh. \\
+
+\file{apps/api/test/}, \file{apps/web/tests/} &
+Các bài kiểm thử unit và integration của backend, frontend. \\
+
+\file{tests/e2e/} &
+Kiểm thử end-to-end luồng đặt hàng thông qua API. \\
+
+\file{.github/workflows/} &
+Các workflow GitHub Actions phục vụ CI, CD và keep-alive. \\
+
+\file{docker-compose.yml} &
+Cấu hình Docker Compose để chạy frontend, backend và PostgreSQL. \\
+
+\file{.env.example} &
+Tệp mẫu khai báo các biến môi trường của dự án. \\
+
+\file{README.md} &
+Hướng dẫn cài đặt, khởi chạy và sử dụng dự án. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \subsection{Checklist nộp bài}
-% TODO(B): bảng 9 dòng theo đúng mục 9.1 của đề, cột: Hạng mục | Trạng thái | Bằng chứng.
-% Đánh dấu Đạt / Đạt một phần / Chưa có -- trung thực với repo.
+
+Bảng~\ref{tabB:checklist} đối chiếu các hạng mục nghiệm thu theo
+Mục 9.1 của đề bài với tài liệu, mã nguồn và kết quả triển khai
+thực tế trong repository.
+
 \begin{table}[H]
-\centering\small
-\caption{Đối chiếu checklist nộp bài}
+\centering
+\footnotesize
+\caption{Đối chiếu checklist nghiệm thu theo Mục 9.1}
 \label{tabB:checklist}
-\begin{tabularx}{\textwidth}{@{}c X l X@{}}
+\begin{tabularx}{\textwidth}{@{}c p{3.35cm} p{1.65cm} X@{}}
 \toprule
-\textbf{\#} & \textbf{Hạng mục} & \textbf{Trạng thái} & \textbf{Bằng chứng} \\
+\textbf{\#} & \textbf{Hạng mục} &
+\textbf{Trạng thái} & \textbf{Bằng chứng} \\
 \midrule
-% TODO(B): 9 dòng
+
+1 &
+Link repository và quyền truy cập cho giảng viên. &
+\pass &
+Repository công khai:
+\file{Call-MeK/BrewLite\_assignment\_2}. \\
+
+2 &
+SRS, đặc tả use-case và ma trận truy vết. &
+\pass &
+\file{docs/requirements/srs.md},
+\file{docs/traceability-matrix.md},
+các tài liệu use-case trong \file{docs/}. \\
+
+3 &
+Activity, sequence, class và deployment diagram. &
+\partialok &
+Có Activity, Sequence, Database UML và
+\file{docs/architecture/deployment-diagram.puml};
+chưa có Class Diagram riêng được xác nhận. \\
+
+4 &
+Source code frontend, backend và migration. &
+\pass &
+\file{apps/web/}, \file{apps/api/},
+\file{apps/api/prisma/migrations/}. \\
+
+5 &
+Unit, integration và end-to-end test. &
+\pass &
+\file{apps/web/tests/},
+\file{apps/api/test/},
+\file{tests/e2e/checkout-flow.test.mjs}. \\
+
+6 &
+Pipeline CI/CD chạy thành công. &
+\partialok &
+\file{.github/workflows/ci.yml},
+\file{.github/workflows/cd.yml}.
+CI gần nhất thành công; lần chạy CD đầu tiên thất bại tại bước deploy API. \\
+
+7 &
+URL production, API và health check. &
+\pass &
+Frontend: \url{https://brewlite-acme-1b6f1.vercel.app};
+API: \url{https://brewlite-api-u2jb.onrender.com/api/v1};
+health check đã được workflow keep-alive kiểm tra thành công. \\
+
+8 &
+Release notes, README và hướng dẫn rollback. &
+\partialok &
+Có \file{README.md} và
+\file{docs/deployment.md} hướng dẫn triển khai, rollback;
+chưa tìm thấy Release Notes riêng. \\
+
+9 &
+Video/demo và Sprint Retrospective. &
+\partialok &
+Có môi trường demo trực tuyến;
+chưa tìm thấy video demo và tài liệu Sprint Retrospective trong repository. \\
+
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\begin{note}[Ghi chú nghiệm thu]
+Các trạng thái được đánh giá dựa trên bằng chứng hiện có trong
+repository và lịch sử GitHub Actions tại thời điểm kiểm tra.
+Đạt một phần thể hiện hạng mục đã có một số thành phần nhưng
+chưa đáp ứng đầy đủ toàn bộ yêu cầu của đề bài.
+\end{note}
