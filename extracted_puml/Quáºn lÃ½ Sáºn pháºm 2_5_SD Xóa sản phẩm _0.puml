@@ -1,0 +1,38 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "ProductsController" as API
+participant "ProductsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Bấm nút Xóa sản phẩm & xác nhận Confirm
+activate UI
+UI -> API : DELETE /api/v1/products/:id + JWT
+activate API
+API -> API : Kiểm tra JwtAuthGuard & AdminGuard
+API -> Svc : remove(id)
+activate Svc
+Svc -> DB : DELETE FROM products WHERE id = :id
+activate DB
+
+alt Sản phẩm đã phát sinh Đơn hàng (OrderItem Restrict)
+  DB --> Svc : Lỗi khóa ngoại Foreign Key (P2003)
+  Svc --> API : Từ chối xóa
+  API --> UI : Báo lỗi không thể xóa
+  UI --> Admin : Thông báo lỗi xóa sản phẩm
+else Chưa phát sinh đơn hàng
+  DB --> Svc : Xóa Product + Cascade xóa ProductSizePrice & RecipeIngredient
+  Svc --> API : Thành công
+  API --> UI : 200 OK ("Đã xóa sản phẩm thành công")
+  UI -> UI : Loại bỏ sản phẩm khỏi State
+  UI --> Admin : Cập nhật giao diện
+end
+deactivate DB
+deactivate Svc
+deactivate API
+deactivate UI
+deactivate Admin
+@enduml

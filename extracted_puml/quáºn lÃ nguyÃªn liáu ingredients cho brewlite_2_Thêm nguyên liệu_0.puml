@@ -1,0 +1,44 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "IngredientsController" as API
+participant "IngredientsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Điền form Thêm nguyên liệu & bấm "Lưu lại"
+activate UI
+UI -> API : POST /api/v1/ingredients + JWT
+activate API
+API -> API : Kiểm tra Guard & Validate CreateIngredientDto
+
+alt Dữ liệu không hợp lệ
+  API --> UI : 400 Bad Request
+  UI --> Admin : Thông báo lỗi nhập liệu
+else Dữ liệu hợp lệ
+  API -> Svc : create(dto)
+  activate Svc
+  Svc -> Svc : Sinh nameKey = name.toLowerCase()
+  Svc -> DB : INSERT INTO ingredients (name, name_key, unit, stock, price, version=0)
+  activate DB
+  alt Trùng name_key (Đã tồn tại nguyên liệu)
+    DB --> Svc : Lỗi Unique Constraint (P2002)
+    Svc --> API : Lỗi trùng dữ liệu
+    API --> UI : Báo lỗi không thể tạo trùng
+    UI --> Admin : Cảnh báo lỗi lưu dữ liệu
+  else Thành công
+    DB --> Svc : Bản ghi Ingredient mới
+    Svc --> API : Ingredient
+    API --> UI : 201 Created
+    UI -> UI : Đóng Modal & tải lại danh sách
+    UI --> Admin : Hiển thị nguyên liệu mới
+  end
+  deactivate DB
+  deactivate Svc
+end
+deactivate API
+deactivate UI
+deactivate Admin
+@enduml

@@ -1,0 +1,53 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "IngredientsController" as API
+participant "IngredientsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Chỉnh sửa nguyên liệu & bấm "Lưu lại"
+activate UI
+UI -> API : PATCH /api/v1/ingredients/:id + JWT
+activate API
+API -> API : Kiểm tra Guard & Validate UpdateIngredientDto
+API -> Svc : update(id, dto)
+activate Svc
+Svc -> DB : BEGIN & SELECT unit FROM ingredients WHERE id = :id FOR UPDATE
+activate DB
+DB --> Svc : Kết quả khóa dòng (rows)
+deactivate DB
+
+alt Không tìm thấy nguyên liệu (rows.length == 0)
+  Svc --> API : 404 NotFoundException
+  API --> UI : 404 Not Found
+  UI --> Admin : Thông báo lỗi
+else Tìm thấy nguyên liệu
+  opt Nếu đổi đơn vị tính (dto.unit != rows[0].unit)
+    Svc -> DB : COUNT recipe_ingredients WHERE ingredient_id = :id
+    activate DB
+    DB --> Svc : count
+    deactivate DB
+  end
+  alt Đang dùng trong công thức (count > 0)
+    Svc --> API : 409 ConflictException (ROLLBACK)
+    API --> UI : 409 Conflict
+    UI --> Admin : Báo lỗi không thể đổi đơn vị tính
+  else Hợp lệ
+    Svc -> DB : UPDATE ingredients SET ..., version = version + 1 & COMMIT
+    activate DB
+    DB --> Svc : Ingredient đã cập nhật
+    deactivate DB
+    Svc --> API : Ingredient
+    API --> UI : 200 OK
+    UI -> UI : Đóng Modal & tải lại danh sách
+    UI --> Admin : Hiển thị thông tin mới
+  end
+end
+deactivate Svc
+deactivate API
+deactivate UI
+deactivate Admin
+@enduml 

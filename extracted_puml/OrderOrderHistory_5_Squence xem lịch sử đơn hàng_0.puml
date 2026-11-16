@@ -1,0 +1,19 @@
+@startuml
+autonumber
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+
+actor "Khách Hàng" as KH
+participant "Controller" as C
+participant "Service" as S
+database "Database" as DB
+
+KH -> C : Yêu cầu xem lịch sử (kèm số trang, lọc trạng thái)
+C -> C : Kiểm tra đăng nhập (lấy userId)
+C -> S : Gọi hàm lấy lịch sử đơn
+S -> DB : Truy vấn danh sách đơn & đếm tổng số đơn
+DB --> S : Trả về danh sách đơn
+S -> S : Tính toán số trang (phân trang)
+S --> C : Danh sách đơn hàng đã phân trang
+C --> KH : Hiển thị lịch sử đơn hàng (HTTP 200)
+@enduml

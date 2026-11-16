@@ -1,0 +1,26 @@
+@startuml
+title Activity Diagram: Xem danh sách sản phẩm & Tính tồn kho khả dụng
+skinparam shadowing false
+
+|Quản trị viên / Khách hàng|
+start
+:Mở trang Danh sách Sản phẩm;
+
+|Next.js UI|
+:Gửi yêu cầu GET /api/v1/products;
+
+|NestJS API & PostgreSQL|
+:Truy vấn Product kèm Category, ProductSizePrice,\nRecipeIngredient và Ingredient.stock;
+:Duyệt qua từng Size (S, M, L) của mỗi sản phẩm;
+if (Size đã được thiết lập công thức?) then (Chưa)
+  :Gán availableQuantity = 0 (Chưa mở bán size này);
+else (Đã có công thức)
+  :Tính availableQuantity = floor(min(stock / quantity));
+endif
+:Xác định trạng thái isAvailable của sản phẩm\n(Có ít nhất 1 size còn nguyên liệu > 0);
+:Trả về danh sách ProductSummary[];
+
+|Next.js UI|
+:Hiển thị danh sách sản phẩm, giá gốc và tình trạng phục vụ;
+stop
+@enduml

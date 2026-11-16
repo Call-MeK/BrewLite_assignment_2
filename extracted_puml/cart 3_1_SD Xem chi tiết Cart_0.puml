@@ -1,0 +1,37 @@
+@startuml
+title SEQUENCE 01: USE CASE - XEM CHI TIẾT GIỎ HÀNG
+autonumber
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+actor "Khách Hàng" as Customer
+participant "CartPage\n(/cart/page.tsx)" as CartPage
+participant "CartStore\n(useCartStore.ts)" as Store
+participant "Browser\nLocalStorage" as Storage
+
+Customer -> CartPage: Truy cập trang Giỏ hàng (/cart)
+activate CartPage
+
+CartPage -> Store: useCartReady() / persist.rehydrate()
+activate Store
+
+Store -> Storage: getItem('brewlite-cart')
+activate Storage
+Storage --> Store: Chuỗi JSON danh sách món
+deactivate Storage
+
+Store -> Store: JSON.parse() -> chuẩn hóa state.items[]
+Store --> CartPage: Trả về danh sách items[] (ready = true)
+deactivate Store
+
+alt Trường hợp 1: Giỏ hàng TRỐNG (items.length === 0)
+    CartPage --> Customer: Hiển thị giao diện rỗng ("Chưa có món nào")\nkèm nút "Khám phá thực đơn"
+else Trường hợp 2: Giỏ hàng CÓ MÓN
+    CartPage -> CartPage: total = items.reduce(estimatedUnitPrice * quantity)
+    CartPage -> CartPage: count = items.reduce(quantity)
+    CartPage --> Customer: Hiển thị danh sách món (ảnh, size, topping, số lượng),\nthành tiền từng món và bảng tóm tắt tạm tính
+end
+
+deactivate CartPage
+@enduml

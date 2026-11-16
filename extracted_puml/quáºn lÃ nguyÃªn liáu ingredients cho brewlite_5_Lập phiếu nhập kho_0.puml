@@ -1,0 +1,50 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "StockImportsController" as API
+participant "StockImportsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Điền thông tin Phiếu nhập (NCC, danh sách NL, SL, Đơn giá)
+activate UI
+UI -> API : POST /api/v1/admin/stock-imports + JWT
+activate API
+API -> API : Kiểm tra Guard & Validate CreateStockImportDto\n(@ArrayUnique, quantity > 0, unitPrice >= 0)
+API -> Svc : create(actorId, dto)
+activate Svc
+Svc -> DB : BEGIN & SELECT id FROM ingredients WHERE id IN (...) ORDER BY id FOR UPDATE
+activate DB
+DB --> Svc : Danh sách dòng đã khóa (locked)
+deactivate DB
+
+alt Có nguyên liệu không tồn tại (locked.length != ids.length)
+  Svc --> API : 400 BadRequestException (ROLLBACK)
+  API --> UI : 400 Bad Request
+  UI --> Admin : Báo lỗi "Có nguyên liệu không tồn tại"
+else Tất cả nguyên liệu tồn tại
+  Svc -> DB : Đọc User & INSERT INTO stock_imports, stock_import_items
+  activate DB
+  DB --> Svc : created.id
+  deactivate DB
+  loop Từng mặt hàng trong phiếu nhập
+    Svc -> DB : UPDATE ingredients\nSET stock = stock + quantity, price = unitPrice, version = version + 1
+    activate DB
+    DB --> Svc : Đã cộng kho & tăng version
+    deactivate DB
+  end
+  Svc -> DB : Lấy chi tiết phiếu nhập & COMMIT
+  activate DB
+  DB --> Svc : StockImportDetail
+  deactivate DB
+  Svc --> API : StockImportDetail
+  API --> UI : 201 Created
+  UI --> Admin : Thông báo thành công & làm mới danh sách
+end
+deactivate Svc
+deactivate API
+deactivate UI
+deactivate Admin
+@enduml

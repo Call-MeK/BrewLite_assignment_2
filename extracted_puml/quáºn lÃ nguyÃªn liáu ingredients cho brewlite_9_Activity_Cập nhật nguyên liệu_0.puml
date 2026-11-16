@@ -1,0 +1,46 @@
+@startuml
+title Activity Diagram: Cập nhật thông tin nguyên liệu
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Chọn nguyên liệu cần sửa;
+:Thay đổi thông tin;
+:Bấm "Lưu lại";
+
+|Giao diện (Next.js)|
+:Gửi PATCH /api/v1/ingredients/:id;
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (DTO hợp lệ?) then (Không)
+  :Trả về 400 Bad Request;
+else (Có)
+  :Mở Transaction;
+  :Khóa bản ghi\n(SELECT ... FOR UPDATE);
+  if (Tìm thấy nguyên liệu?) then (Không)
+    :Rollback;
+    :Trả về 404 Not Found;
+  else (Có)
+    if (Đổi đơn vị VÀ đang dùng\ntrong công thức?) then (Có)
+      :Rollback;
+      :Trả về 409 Conflict;
+    else (Không)
+      :Cập nhật thông tin và nameKey;
+      :Tăng version (+1);
+      :Commit Transaction;
+      :Trả về 200 OK;
+    endif
+  endif
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi 200?) then (Có)
+  :Đóng hộp thoại;
+  :Tải lại danh sách nguyên liệu;
+else (Không)
+  :Hiển thị thông báo lỗi\n(400 / 404 / 409);
+endif
+stop
+@enduml

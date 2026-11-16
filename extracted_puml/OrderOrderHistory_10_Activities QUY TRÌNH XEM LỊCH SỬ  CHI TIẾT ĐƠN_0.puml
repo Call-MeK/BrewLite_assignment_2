@@ -1,0 +1,36 @@
+@startuml
+skinparam backgroundColor White
+skinparam ActivityBackgroundColor White
+skinparam ActivityBorderColor Black
+skinparam ArrowColor Black
+skinparam DecisionBackgroundColor White
+skinparam DecisionBorderColor Black
+
+|Khách Hàng|
+start
+:Truy cập trang "Đơn hàng của bạn";
+
+|Hệ Thống (Backend)|
+:Kiểm tra token đăng nhập (JWT);
+if (Đã đăng nhập?) then (Chưa)
+  :Hiển thị thông báo yêu cầu đăng nhập;
+  stop
+else (Đã đăng nhập)
+endif
+
+|Cơ Sở Dữ Liệu|
+:Truy vấn danh sách đơn hàng theo userId & bộ lọc trạng thái;
+:Đếm tổng số đơn để tính phân trang;
+
+|Khách Hàng|
+:Xem danh sách đơn hàng (mã đơn, ngày tạo, tổng tiền, trạng thái);
+:Chọn 1 đơn hàng để xem chi tiết;
+
+|Cơ Sở Dữ Liệu|
+:Truy vấn chi tiết đơn (món, topping, thanh toán, mốc trạng thái, tình trạng hoàn tiền);
+
+|Khách Hàng|
+:Xem chi tiết đơn hàng đầy đủ;
+stop
+
+@enduml

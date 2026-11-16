@@ -1,0 +1,65 @@
+@startuml
+left to right direction
+skinparam usecase {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+}
+
+actor "Khách Hàng\n(Đã đăng nhập)" as KH
+actor "Khách Vãng Lai" as GUEST
+actor "Admin" as AD
+actor "Hệ Thống\n(Cronjob 1 phút/lần)" as SYS
+
+rectangle "Phân hệ Đặt hàng (BrewLite Order)" {
+
+  ' --- Nhóm đặt hàng ---
+  usecase "Xem danh sách khuyến mãi" as UC_PROMO_LIST
+  usecase "Tạo đơn hàng" as UC_CREATE
+  usecase "Kiểm tra công thức & \ntrừ tồn kho nguyên liệu (BOM)" as UC_CHECK_INGR
+  usecase "Kiểm tra tồn kho &\ntrừ kho Topping" as UC_CHECK_TOPPING
+  usecase "Áp dụng mã khuyến mãi" as UC_APPLY_PROMO
+  usecase "Dùng điểm tích lũy (Loyalty)" as UC_USE_POINTS
+
+  ' --- Nhóm hủy đơn ---
+  usecase "Hủy đơn hàng\n(Trước khi pha chế)" as UC_CANCEL
+  usecase "Hoàn trả kho\nnguyên liệu & topping" as UC_RESTORE_STOCK
+  usecase "Hoàn trả điểm tích lũy" as UC_REFUND_POINTS
+  usecase "Yêu cầu hoàn tiền thủ công\n(refundStatus = MANUAL_REQUIRED)" as UC_REFUND_MONEY
+
+  ' --- Nhóm xử lý đơn của Admin & Cron ---
+  usecase "Cập nhật trạng thái đơn\n(PREPARING / READY / COMPLETED)" as UC_UPDATE_STATUS
+  usecase "Tự động hủy đơn PENDING\nquá 15 phút" as UC_CRON_EXPIRE
+
+}
+
+' Tương tác Actor
+GUEST --> UC_PROMO_LIST
+KH --> UC_PROMO_LIST
+KH --> UC_CREATE
+KH --> UC_CANCEL
+
+AD --> UC_UPDATE_STATUS
+AD --> UC_CANCEL
+
+SYS --> UC_CRON_EXPIRE
+
+' Quan hệ Include & Extend của Tạo đơn hàng
+UC_CREATE ..> UC_CHECK_INGR : <<include>>
+UC_CREATE ..> UC_CHECK_TOPPING : <<include>>
+UC_CREATE <.. UC_APPLY_PROMO : <<extend>>\n(nếu có mã)
+UC_CREATE <.. UC_USE_POINTS : <<extend>>\n(nếu dùng điểm)
+
+' Quan hệ Include & Extend của Hủy đơn hàng
+UC_CANCEL ..> UC_RESTORE_STOCK : <<include>>
+UC_CANCEL <.. UC_REFUND_POINTS : <<extend>>\n(nếu đơn đã dùng điểm)
+UC_CANCEL <.. UC_REFUND_MONEY : <<extend>>\n(nếu đơn đã thanh toán PAID)
+
+' Cronjob gọi quy trình hủy đơn
+UC_CRON_EXPIRE ..> UC_CANCEL : <<include>>
+
+@enduml

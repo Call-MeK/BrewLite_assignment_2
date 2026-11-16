@@ -1,0 +1,78 @@
+@startuml
+title BIỂU ĐỒ HOẠT ĐỘNG: QUẢN LÝ GIỎ HÀNG (BREWLITE CART)
+
+' --- CẤU HÌNH GIAO DIỆN ĐEN TRẮNG ---
+skinparam monochrome true
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 8
+
+' --- KHAI BÁO CÁC LÀN (SWIMLANE) ---
+|Khách Hàng|
+|Hệ thống Giỏ hàng (Frontend)|
+
+' --- BẮT ĐẦU LUỒNG ---
+|Khách Hàng|
+start
+:Khách hàng mở trang Giỏ hàng (/cart);
+
+|Hệ thống Giỏ hàng (Frontend)|
+:Đọc dữ liệu từ LocalStorage 
+(Key: 'brewlite-cart');
+
+if (Trạng thái Giỏ hàng?) then (Trống)
+  :Hiển thị giao diện "Giỏ hàng rỗng";
+  |Khách Hàng|
+  :Xem thông báo & Quay lại Menu;
+  stop
+else (Có sản phẩm)
+  :Tính tổng tiền tạm tính;
+  :Render danh sách các món trong giỏ;
+endif
+
+|Khách Hàng|
+repeat
+  :Thực hiện thao tác thay đổi;
+  
+  |Hệ thống Giỏ hàng (Frontend)|
+  if (Loại thao tác?) then (Đổi số lượng)
+    :Cập nhật số lượng mới\n(Giới hạn: 1 <= qty <= 99);
+  elseif (Chỉnh sửa món) then (Đổi Size/Topping)
+    :Kiểm tra cấu hình món sau khi sửa;
+    if (Món mới trùng với món có sẵn?) then (Trùng khớp)
+      :Tự động gộp số lượng vào món cũ;
+    else (Khác biệt)
+      :Cập nhật thành dòng món mới;
+    endif
+  elseif (Xóa món) then (Xóa 1 hoặc Tất cả)
+    :Loại bỏ món khỏi danh sách;
+  else (Chọn thêm món)
+    :Thêm món mới hoặc cộng dồn\nnếu trùng cấu hình trong giỏ;
+  endif
+  
+  :Tính toán lại tổng tiền tạm tính;
+  :Lưu dữ liệu mới vào LocalStorage;
+  :Cập nhật số lượng trên Badge;
+  :Render lại giao diện giỏ hàng cập nhật;
+
+  |Khách Hàng|
+repeat while (Khách hàng tiếp tục thao tác?) is (Có) not (Không)
+
+:Bấm nút "Tiến hành thanh toán";
+
+|Hệ thống Giỏ hàng (Frontend)|
+if (Kiểm tra trạng thái đăng nhập?) then (Chưa đăng nhập)
+  :Chuyển hướng sang trang Đăng nhập (/login?next=/checkout);
+  
+  |Khách Hàng|
+  :Đăng nhập thành công;
+  
+  |Hệ thống Giỏ hàng (Frontend)|
+  :Khôi phục luồng & Điều hướng tiếp;
+else (Đã đăng nhập)
+endif
+
+:Chuyển toàn bộ dữ liệu giỏ hàng\nsang trang Checkout (/checkout);
+stop
+@enduml

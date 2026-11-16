@@ -1,0 +1,16 @@
+@startuml
+autonumber
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+
+participant "Hệ Thống (Cronjob)" as SYS
+participant "Service" as S
+database "Database" as DB
+
+SYS -> S : Quét đơn tự động (mỗi phút 1 lần)
+S -> DB : Tìm các đơn PENDING tạo quá 15 phút
+DB --> S : Danh sách đơn hết hạn
+S -> S : Tự động kích hoạt luồng hủy đơn (hoàn kho & hoàn điểm)
+S -> DB : Cập nhật trạng thái đơn thành CANCELLED
+DB --> S : Hoàn tất
+@enduml

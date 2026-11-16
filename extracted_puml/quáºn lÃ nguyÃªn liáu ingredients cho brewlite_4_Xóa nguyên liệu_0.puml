@@ -1,0 +1,38 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "IngredientsController" as API
+participant "IngredientsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Bấm nút Xóa & xác nhận Confirm
+activate UI
+UI -> API : DELETE /api/v1/ingredients/:id + JWT
+activate API
+API -> API : Kiểm tra JwtAuthGuard & AdminGuard
+API -> Svc : remove(id)
+activate Svc
+Svc -> DB : DELETE FROM ingredients WHERE id = :id
+activate DB
+
+alt Đã phát sinh Công thức / Đơn hàng / Phiếu nhập (onDelete: Restrict)
+  DB --> Svc : Lỗi khóa ngoại Foreign Key (P2003)
+  Svc --> API : Từ chối xóa
+  API --> UI : Báo lỗi không thể xóa
+  UI --> Admin : Hiển thị "Không thể xóa nguyên liệu lúc này"
+else Chưa từng sử dụng
+  DB --> Svc : Xóa thành công
+  Svc --> API : Ingredient đã xóa
+  API --> UI : 200 OK
+  UI -> UI : Loại bỏ nguyên liệu khỏi danh sách hiển thị
+  UI --> Admin : Cập nhật giao diện
+end
+deactivate DB
+deactivate Svc
+deactivate API
+deactivate UI
+deactivate Admin
+@enduml

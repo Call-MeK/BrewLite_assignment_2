@@ -1,0 +1,28 @@
+@startuml Sequence-Dat-Don-Hang
+autonumber
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+
+actor "Khách Hàng" as Customer #FFFFFF
+participant "Controller" as Controller #FFFFFF
+participant "Service" as Service #FFFFFF
+database "Database" as DB #FFFFFF
+
+Customer -> Controller: Tạo yêu cầu đặt món
+Controller -> Controller: Kiểm tra đăng nhập (JWT)
+Controller -> Service: Gọi hàm tạo đơn hàng
+
+Service -> DB: Tính giá và kiểm tra giỏ hàng
+Service -> DB: Kiểm tra khả dụng nguyên liệu & topping
+DB --> Service: Còn đủ nguyên liệu & topping
+
+Service -> DB: Trừ kho nguyên liệu (theo công thức) & trừ topping
+Service -> DB: Áp dụng mã khuyến mãi & dùng điểm tích lũy
+Service -> DB: Lưu đơn hàng mới (trạng thái: PENDING)
+DB --> Service: Lưu thành công
+
+Service --> Controller: Trả về thông tin đơn hàng
+Controller --> Customer: Đặt hàng thành công
+
+@enduml

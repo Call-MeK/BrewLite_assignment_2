@@ -1,0 +1,45 @@
+@startuml
+title Activity Diagram: Thêm nguyên liệu mới
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Bấm "Thêm nguyên liệu";
+:Điền thông tin:
+- Tên
+- Đơn vị (G / ML / PIECE)
+- Tồn đầu
+- Giá vốn;
+:Bấm "Lưu lại";
+
+|Giao diện (Next.js)|
+:Gửi POST /api/v1/ingredients;
+
+|Máy chủ (NestJS + PostgreSQL)|
+:Chuẩn hóa tên (trim, NFC);
+:Kiểm tra CreateIngredientDto;
+
+if (DTO hợp lệ?) then (Không)
+  :Trả về 400 Bad Request;
+else (Có)
+  :Sinh nameKey = name.toLowerCase();
+  if (nameKey đã tồn tại?) then (Có)
+    :Từ chối tạo mới (Unique Constraint);
+    :Trả về lỗi;
+  else (Không)
+    :Lưu nguyên liệu (version = 0);
+    :Trả về 201 Created;
+  endif
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi 201?) then (Có)
+  :Đóng hộp thoại;
+  :Tải lại danh sách nguyên liệu;
+else (Không)
+  :Hiển thị thông báo lỗi;
+endif
+stop
+@enduml

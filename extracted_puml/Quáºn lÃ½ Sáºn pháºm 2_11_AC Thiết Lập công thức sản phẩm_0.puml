@@ -1,0 +1,49 @@
+@startuml
+title Activity Diagram: Thiết lập công thức sản phẩm
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Mở hộp thoại Công thức của sản phẩm;
+
+|Giao diện (Next.js)|
+:Gọi GET /api/v1/products/:id/recipe;
+:Hiển thị danh sách thành phần\nvà tổng giá vốn (COGS);
+
+|Quản trị viên|
+:Chọn thao tác\n(Thêm hoặc Xóa nguyên liệu);
+
+|Giao diện (Next.js)|
+if (Thao tác?) then (Thêm)
+  :Gửi POST /api/v1/products/:id/recipe;
+else (Xóa)
+  :Gửi DELETE /api/v1/products/:id/recipe/:ingredientId;
+endif
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (Thao tác?) then (Thêm)
+  :Mở Transaction;
+  :Lấy danh sách Size của sản phẩm;
+  if (Sản phẩm có cấu hình Size?) then (Không)
+    :Trả về 404 Not Found;
+  else (Có)
+    :Upsert định mức nguyên liệu\ncho các Size của sản phẩm;
+    :Commit Transaction;
+    :Trả về 201 Created;
+  endif
+else (Xóa)
+  :Xóa nguyên liệu khỏi công thức\n(deleteMany);
+  :Trả về 200 OK;
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi thành công\n(201 / 200)?) then (Có)
+  :Tải lại danh sách thành phần;
+  :Tính lại tổng giá vốn (COGS);
+else (Không)
+  :Hiển thị thông báo lỗi;
+endif
+stop
+@enduml

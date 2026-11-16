@@ -1,181 +1,219 @@
 % =====================================================================
-%  Người A -- Task 2: Mô hình hóa hệ thống
-%  Nguồn: docs/diagrams/*.puml, docs/order/state-machine.md,
-%         docs/database-design.md, apps/api/prisma/schema.prisma
+%  Người A -- Task 2: Mô hình hóa hệ thống UML
+%  Nguồn: docs/diagrams/*.puml, Order&OrderHistory.drawio
 % =====================================================================
-\section{Task 2 -- Mô hình hóa hệ thống}
+\section{Task 2 -- Mô hình hóa hệ thống UML}
 
-Ba sơ đồ dưới đây dùng chung một bộ mã với Task~1: mỗi hành động hoặc thông điệp đều gắn
-\code{FR-xx}, mỗi lớp đều gắn với bảng dữ liệu thật. Mỗi sơ đồ được lưu cả tệp nguồn
-PlantUML (\file{.puml}) và ảnh kết xuất (\file{.svg}, \file{.png}) trong \file{docs/diagrams/}
-đúng yêu cầu của đề.
+Chương này trình bày các mô hình UML thể hiện các khía cạnh hành vi, tương tác và cấu trúc tĩnh của phân hệ trọng tâm \textbf{UC - Order} và toàn hệ thống BrewLite. Tất cả các sơ đồ đều được trích xuất từ mô hình thiết kế chuẩn trong các tệp \file{.drawio} và \file{.puml}.
 
-\subsection{Task 2.1 -- Activity diagram}
+\subsection{Activity Diagram -- Biểu đồ hoạt động}
 
-Sơ đồ hoạt động end-to-end gộp bảy activity rời của từng chức năng thành một luồng duy nhất,
-chia theo bốn làn: \emph{Khách hàng}, \emph{Next.js UI}, \emph{NestJS API \& PostgreSQL} và
-\emph{ZaloPay Sandbox}. API và cơ sở dữ liệu được gộp chung một làn vì nghiệp vụ trừ kho, tạo
-đơn và cộng điểm xảy ra bên trong cùng một transaction; tách đôi sẽ làm sơ đồ khó đọc mà không
-thêm thông tin. Sơ đồ có đủ điểm bắt đầu/kết thúc, sáu điểm rẽ nhánh và các nhánh lỗi: hết
-nguyên liệu, chưa đăng nhập, thanh toán thất bại, hủy đơn và thử lại.
+Biểu đồ hoạt động mô tả luồng điều khiển nghiệp vụ, các điều kiện rẽ nhánh và cơ chế đảm bảo tính toàn vẹn dữ liệu khi đặt đơn và hủy đơn.
 
-Mỗi làn giữ một trách nhiệm riêng. Khách hàng chỉ gửi \emph{ý định} (chọn món, xác nhận, thanh
-toán); Next.js UI giữ trạng thái cục bộ, điều hướng và gọi API; NestJS API thực thi toàn bộ luật
-nghiệp vụ trong transaction; ZaloPay Sandbox là hệ thống ngoài duy nhất có quyền thay đổi kết quả
-thanh toán. Ranh giới này giải thích vì sao mọi lỗi nghiệp vụ đều kết thúc ở làn API, còn lỗi
-thanh toán bắt đầu từ làn ZaloPay.
+\subsubsection{Quy trình đặt đơn hàng (Order Creation Process)}
+Quy trình đặt đơn gồm sự phối hợp giữa Khách hàng, Giao diện Next.js, API OrdersController và Cơ sở dữ liệu PostgreSQL. Các bước kiểm tra được thực hiện tuần tự: xác thực đăng nhập, kiểm tra giỏ hàng, tính giá server-side, và đặc biệt là bước kiểm tra tồn kho nguyên liệu (BOM) với atomic update trong transaction.
 
-Sơ đồ có ba điểm kết thúc tương ứng ba số phận của một đơn: đơn \code{PAID} đi tiếp sang pha chế;
-đơn \code{CANCELLED} được hoàn kho và hoàn điểm; đơn thất bại nhưng chưa hủy thì quay lại bước
-thanh toán với khóa idempotency mới. Ba nhánh này chính là nội dung của bảng quyết định bên dưới.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{../figures/diagrams/ad-order-create.png}
+\caption{Activity Diagram: Quy trình đặt đơn hàng và trừ kho nguyên liệu}
+\label{figA:ad-order-create}
+\end{figure}
 
-\begin{table}[H]
-\centering\footnotesize
-\caption{Các điểm rẽ nhánh trong activity diagram}
-\label{tabA:activity-decision}
-\begin{tabularx}{\textwidth}{@{}c X X p{2.4cm}@{}}
-\toprule
-\textbf{Mã} & \textbf{Điều kiện} & \textbf{Nhánh thành công / thất bại} & \textbf{Liên kết} \\
-\midrule
-D1 & Đã có phiên JWT hợp lệ? &
-  Có: đi tiếp tới thanh toán. Không: lưu giỏ, chuyển \code{/login?next=/checkout}, đăng nhập rồi quay lại. & FR-04 \\
-D2 & Nguyên liệu đủ và \code{version} hợp lệ? &
-  Có: trừ kho, tạo đơn \code{PENDING}, commit. Không: rollback, trả \code{409}, giữ giỏ. & FR-09, NFR-04 \\
-D3 & Thanh toán ZaloPay thành công? &
-  Có: callback, đơn \code{PAID}, cộng điểm. Không: sang nhánh hủy hoặc thử lại. & FR-05 \\
-D4 & Khách hủy đơn hay cron phát hiện quá hạn? &
-  Có: \code{CANCELLED}, hoàn kho và điểm. Không: cho phép gọi lại thanh toán. & FR-07, FR-09 \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\subsubsection{Quy trình hủy đơn hàng (Order Cancellation Process)}
+Quy trình hủy đơn được kích hoạt bởi Khách hàng (khi đơn ở \code{PENDING} hoặc \code{PAYMENT\_FAILED}) hoặc Admin/Cronjob quá hạn. Điểm then chốt là hệ thống phục hồi tồn kho nguyên liệu dựa trên snapshot \code{OrderIngredientUsage} đã chụp tại thời điểm đặt đơn, tránh việc công thức thay đổi làm sai lệch lượng hoàn trả.
 
-\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{../figures/diagrams/ad-order-cancel.png}
+\caption{Activity Diagram: Quy trình hủy đơn hàng và hoàn trả tồn kho}
+\label{figA:ad-order-cancel}
+\end{figure}
+
+\subsubsection{Biểu đồ hoạt động End-to-End toàn hệ thống}
+Sơ đồ hoạt động end-to-end bao quát toàn bộ hành trình từ duyệt thực đơn, chọn size/topping, thêm giỏ, đặt hàng, xử lý thanh toán đến các nhánh phục hồi sự cố:
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{../figures/diagrams/activity-end-to-end.png}
-\caption{Activity diagram end-to-end của luồng xem menu, đặt đơn và thanh toán}
-\label{figA:activity}
+\caption{Activity Diagram End-to-End: Luồng đặt đồ uống và thanh toán toàn hệ thống}
+\label{figA:activity-e2e}
 \end{figure}
 
-\subsection{Task 2.2 -- Sequence diagram}
-
-Sơ đồ tuần tự có đúng năm lifeline theo yêu cầu: \emph{Customer}, \emph{Next.js UI},
-\emph{NestJS API}, \emph{PostgreSQL (Neon)} và \emph{ZaloPay Sandbox}. Sơ đồ chia làm ba giai
-đoạn tương ứng ba giao dịch độc lập, nhờ đó có thể mô tả chính xác thời điểm dữ liệu được ghi
-và thời điểm trạng thái đơn thay đổi.
+\subsubsection{Biểu đồ hoạt động: Phân hệ Chi tiết món (Product Detail Activity Diagram)}
+Biểu đồ hoạt động thể hiện sự phối hợp luồng nghiệp vụ giữa 3 phân làn (swimlanes): \textbf{Khách hàng}, \textbf{Frontend (Next.js)} và \textbf{Backend (NestJS API)}. Quy trình bao quát từ khâu đọc tham số URL, truy vấn API, xác thực dữ liệu sản phẩm, tương tác chọn size/topping/số lượng và cơ chế lưu trữ an toàn vào \code{localStorage}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[height=0.84\textheight,keepaspectratio]{../figures/diagrams/BrewLite-Checkout.png}
-\caption{Sequence diagram luồng đặt và thanh toán đơn hàng}
-\label{figA:sequence}
+\includegraphics[height=0.82\textheight,keepaspectratio]{../figures/diagrams/ad-product-detail-custom.png}
+\caption{Activity Diagram: Quy trình hiển thị, tùy biến và thêm vào giỏ hàng (Product Detail)}
+\label{figA:ad-product-detail}
 \end{figure}
 
-\begin{enumerate}[label=\arabic*.,leftmargin=1.6em]
-  \item \textbf{Xác thực và validate.} UI gửi \code{POST /api/v1/orders} kèm Bearer JWT;
-        \code{JwtAuthGuard} giải mã token và \code{ValidationPipe} kiểm tra DTO. \code{userId}
-        luôn lấy từ token, client không được gửi.
-  \item \textbf{Tạo đơn trong transaction.} API mở transaction mức \code{SERIALIZABLE}, đọc
-        \code{Product}, \code{Recipe}, \code{Ingredient}, \code{Promotion}, \code{User}, tính
-        lại toàn bộ tiền rồi cập nhật kho bằng câu lệnh có điều kiện
-        \code{WHERE version = ... AND stock >= qty}. Nhánh \code{alt} mô tả rollback và trả
-        \code{409} khi hết nguyên liệu hoặc lệch version.
-  \item \textbf{Khởi tạo giao dịch ZaloPay.} API kiểm tra quyền sở hữu đơn, sinh
-        \code{app\_trans\_id}, ký HMAC-SHA256 rồi gọi Create API. Chỉ sau khi ZaloPay trả
-        \code{order\_url} hệ thống mới lưu bản ghi \code{Payment} trạng thái \code{PENDING}.
-  \item \textbf{Callback idempotent.} Mỗi callback đều phải xác thực \code{mac} bằng
-        \code{crypto.timingSafeEqual} trước khi mở transaction. Nhánh \code{alt} lồng nhau xử lý
-        hai trường hợp: chữ ký sai trả \code{return\_code = -1}; giao dịch đã \code{SUCCESS}
-        trả \code{return\_code = 1} mà không ghi trùng. Giao dịch mới hợp lệ cập nhật
-        \code{Payment}, chuyển đơn sang \code{PAID}, ghi \code{OrderStatusHistory} và cộng điểm
-        loyalty trong cùng một commit.
-\end{enumerate}
+\subsection{Sequence Diagram -- Biểu đồ tuần tự}
 
-Điểm đáng chú ý về thiết kế: callback \textbf{không} tin dữ liệu client và \textbf{không} cộng
-điểm hai lần, vì khóa idempotency là \code{app\_trans\_id} có ràng buộc \code{UNIQUE}. Đây là
-cơ sở để AC của FR-08 kiểm chứng được bằng kiểm thử tự động.
+Biểu đồ tuần tự làm rõ sự tương tác thời gian thực giữa các đối tượng trong kiến trúc phân tầng (Client, Controller, Service, Database Transaction, Cronjob).
 
-\subsection{Task 2.3 -- Class diagram}
+\subsubsection{Sequence: Yêu cầu đặt đơn hàng}
+Biểu đồ mô tả chi tiết lời gọi \code{POST /api/v1/orders}. OrdersService mở một transaction ACID để trừ kho nguyên liệu theo thứ tự ID tăng dần, tạo bản ghi Order, OrderItem, và snapshot OrderIngredientUsage.
 
-Sơ đồ lớp mức miền tập trung vào các thực thể nghiệp vụ cốt lõi thay vì sao chép toàn bộ lược
-đồ Prisma (vốn có thêm bảng trung gian như \code{ProductSizePrice}, \code{OrderIngredient},
-\code{OrderItemTopping}). Mỗi lớp ghi rõ khóa chính (\code{PK}), khóa ngoại (\code{FK}), khóa
-duy nhất (\code{UK}), kiểu dữ liệu và multiplicity của quan hệ. Các enum trạng thái được đặt
-ngay trong sơ đồ và khớp với \file{apps/api/prisma/schema.prisma}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{../figures/diagrams/sd-order-create.png}
+\caption{Sequence Diagram: Yêu cầu đặt đơn hàng (Order Creation)}
+\label{figA:sd-order-create}
+\end{figure}
 
-\begin{table}[H]
-\centering\scriptsize
-\caption{Enum trong mã nguồn, đối chiếu với \file{prisma/schema.prisma}}
-\label{tabA:enum}
-\begin{tabularx}{\textwidth}{@{}p{4.6cm} X@{}}
-\toprule
-\textbf{Enum} & \textbf{Giá trị} \\
-\midrule
-\code{OrderStatus} & \code{PENDING}, \code{PAID}, \code{PREPARING}, \code{READY},
-  \code{COMPLETED}, \code{PAYMENT\_FAILED}, \code{CANCELLED} \\
-\code{PaymentStatus} & \code{PENDING}, \code{SUCCESS}, \code{FAILED} \\
-\code{PaymentSource} & \code{MOCK}, \code{ZALOPAY\_SANDBOX} \\
-\code{RefundStatus} & \code{NONE}, \code{MANUAL\_REQUIRED} \\
-\code{PaymentMethod} & \code{E\_WALLET}, \code{BANK\_CARD} \\
-\code{ProductSize} & \code{S}, \code{M}, \code{L} \\
-\code{LoyaltyTransactionType} & \code{EARNED}, \code{SPENT}, \code{REFUNDED}, \code{REVERSED} \\
-\code{UserRole} & \code{CUSTOMER}, \code{ADMIN} \\
-\code{IngredientUnit} & \code{G}, \code{ML}, \code{PIECE} \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\subsubsection{Sequence: Quy trình hủy đơn hàng thủ công}
+Mô tả lời gọi \code{POST /api/v1/orders/:id/cancel}. Hệ thống kiểm tra quyền sở hữu đơn (chỉ chủ đơn mới có quyền hủy), kiểm tra trạng thái hợp lệ, cập nhật trạng thái đơn \code{CANCELLED} và hoàn kho nguyên liệu theo snapshot.
 
-Ba enum đầu mang nghiệp vụ: \code{OrderStatus} quyết định bảng chuyển tiếp (sai luật trả
-\code{409}), \code{PaymentStatus} là mốc chặn cộng điểm lần hai, còn
-\code{LoyaltyTransactionType} phân biệt bốn loại bút toán để hoàn điểm và thu hồi điểm đúng một
-lần. Các enum còn lại chỉ là nhãn phân loại dùng khi hiển thị và khi trừ kho theo công thức.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{../figures/diagrams/sd-order-cancel.png}
+\caption{Sequence Diagram: Hủy đơn hàng và hoàn nguyên liệu theo snapshot}
+\label{figA:sd-order-cancel}
+\end{figure}
+
+\subsubsection{Sequence: Tự động hủy đơn quá hạn 15 phút (Cronjob)}
+Hệ thống Cronjob quét các đơn hàng \code{PENDING} có thời gian tạo vượt quá 15 phút. Cronjob tự động gọi quy trình hủy đơn, chuyển trạng thái sang \code{CANCELLED} và giải phóng nguyên liệu đã giữ về lại kho.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{../figures/diagrams/sd-order-cancel-15m.png}
+\caption{Sequence Diagram: Tự động hủy đơn hàng PENDING quá hạn 15 phút}
+\label{figA:sd-order-cancel-15m}
+\end{figure}
+
+\subsubsection{Sequence: Cập nhật trạng thái đơn hàng (Admin/Barista)}
+Biểu đồ mô tả thao tác cập nhật tiến độ pha chế từ phía nhân viên quầy: từ \code{PAID} $\rightarrow$ \code{PREPARING} $\rightarrow$ \code{READY} $\rightarrow$ \code{COMPLETED}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{../figures/diagrams/sd-order-status-update.png}
+\caption{Sequence Diagram: Cập nhật trạng thái đơn hàng bởi Admin/Barista}
+\label{figA:sd-order-status-update}
+\end{figure}
+
+\subsubsection{Sequence: Tải chi tiết món, tùy biến và thêm vào giỏ hàng}
+Biểu đồ tuần tự làm rõ sự tương tác giữa các thành phần kiến trúc: \textbf{Customer}, trang giao diện \textbf{ProductDetailPage}, hook quản lý trạng thái \textbf{useProductDetail.ts}, lớp giao tiếp \textbf{ApiClient.ts}, dịch vụ \textbf{Backend API} và kho lưu trữ \textbf{LocalStorage}. Mô hình phân định thành 3 giai đoạn rõ ràng: nạp thông tin món (\textit{Load Product Detail}), người dùng tùy biến (\textit{Select Product Options}) và thêm vào giỏ hàng (\textit{Add Product To Cart}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.82\textheight,keepaspectratio]{../figures/diagrams/sd-product-detail-custom.png}
+\caption{Sequence Diagram: Chi tiết món, tùy chọn topping và thêm vào giỏ hàng (Product Detail)}
+\label{figA:sd-product-detail}
+\end{figure}
+
+\subsubsection{Sequence: Khởi tạo thanh toán ZaloPay Sandbox và kiểm soát Idempotency}
+Biểu đồ tuần tự mô tả quy trình khởi tạo giao dịch thanh toán trực tuyến qua cổng \textbf{ZaloPay Sandbox} (\code{POST /payments/zalopay}). Để ngăn chặn việc thanh toán trùng lặp khi người dùng bấm đúp hoặc mạng chập chờn, hệ thống bắt buộc sử dụng \code{Idempotency-Key}. Nếu khóa đã tồn tại và khớp nội dung đơn hàng, hệ thống lập tức trả về giao dịch cũ; nếu khóa mới, \code{Payment} trạng thái \code{PENDING} được lưu vào cơ sở dữ liệu trước khi gọi API sang ZaloPay Sandbox nhằm bảo toàn tính toàn vẹn trạng thái.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{../figures/diagrams/sd-zalopay-create-hd.png}
+\caption{Sequence Diagram: Khởi tạo thanh toán ZaloPay Sandbox và chống tạo trùng}
+\label{figA:sd-zalopay-create-main}
+\end{figure}
+
+\subsubsection{Sequence: Tiếp nhận Webhook Callback từ ZaloPay và cập nhật đơn hàng}
+Biểu đồ tuần tự làm rõ quy trình tiếp nhận thông báo thanh toán tức thì (IPN Callback) tại \code{POST /payments/zalopay/callback}. Hệ thống thẩm định chữ ký số HMAC-SHA256 (\code{verifyCallback}), kiểm tra mã giao dịch và số tiền trong Transaction ACID. Nếu hợp lệ, giao dịch được xác nhận (\code{SUCCESS}), đơn hàng chuyển sang trạng thái \code{PAID} và ghi nhận lịch sử trạng thái phục vụ đối soát.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{../figures/diagrams/sd-zalopay-callback-hd.png}
+\caption{Sequence Diagram: Thẩm định Callback ZaloPay và ghi nhận thanh toán}
+\label{figA:sd-zalopay-callback-main}
+\end{figure}
+
+\subsubsection{Sequence: Phân quyền quản trị và thay đổi vai trò người dùng (RBAC)}
+Biểu đồ tuần tự mô tả nghiệp vụ thay đổi vai trò giữa \code{CUSTOMER} và \code{ADMIN} (\code{PATCH /admin/users/:id/role}). Để ngăn ngừa leo thang đặc quyền hoặc race condition khi nhiều quản trị viên cùng thao tác, hệ thống cấm tài khoản tự đổi quyền của bản thân (\code{actorId == targetId}), kích hoạt \textbf{Advisory Lock} trong transaction PostgreSQL và kiểm tra lại quyền hạn của Admin trước khi cập nhật.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{../figures/diagrams/sd-user-change-role-hd.png}
+\caption{Sequence Diagram: Thay đổi vai trò người dùng an toàn bằng Advisory Lock}
+\label{figA:sd-user-change-role-main}
+\end{figure}
+
+\subsubsection{Sequence: Quản lý định lượng và lưu công thức pha chế BOM}
+Biểu đồ tuần tự mô tả quy trình lưu định lượng nguyên liệu cho từng kích cỡ món (\code{PUT /admin/recipes/:productId/:size}). Thao tác được bảo vệ trong Transaction với khóa \code{FOR SHARE} trên các nguyên liệu thành phần và \code{FOR UPDATE} trên giá kích cỡ, đảm bảo thay thế nguyên tử toàn bộ công thức và ngăn chặn việc nguyên liệu bị sửa đổi hoặc xóa xen kẽ.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{../figures/diagrams/sd-recipe-save-hd.png}
+\caption{Sequence Diagram: Lưu công thức pha chế nguyên tử (Atomic BOM Replacement)}
+\label{figA:sd-recipe-save-main}
+\end{figure}
+
+\subsection{Class Diagram -- Biểu đồ lớp miền nghiệp vụ}
+
+Biểu đồ lớp miền nghiệp vụ (Domain Model) thể hiện cấu trúc thực thể, thuộc tính và mối quan hệ giữa các bảng trong cơ sở dữ liệu PostgreSQL.
+
+\subsubsection{Class Diagram phân hệ Đặt hàng \& Lịch sử đơn}
+Hình~\ref{figA:cd-order} thể hiện các thực thể xoay quanh đơn hàng: \code{User}, \code{Order}, \code{OrderItem}, \code{OrderItemTopping}, \code{OrderStatusHistory}, \code{OrderIngredientUsage}, \code{Payment}, \code{Promotion} và \code{LoyaltyTransaction}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{../figures/diagrams/cd-order.png}
+\caption{Class Diagram: Phân hệ Đặt hàng và Lịch sử đơn (Order Domain Model)}
+\label{figA:cd-order}
+\end{figure}
+
+\subsubsection{Class Diagram miền nghiệp vụ tổng thể}
+Sơ đồ lớp toàn hệ thống thể hiện mối quan hệ giữa tất cả 16 model trong schema Prisma, kết nối giữa Thực đơn (Product, Category, ProductSizePrice, Topping), Kho nguyên liệu (Ingredient, ProductRecipe, ToppingRecipe), và Giao dịch đơn hàng.
 
 \begin{landscape}
 \begin{figure}[H]
 \centering
-\includegraphics[height=0.86\textheight,keepaspectratio]{../figures/diagrams/class-domain.png}
-\caption{Class diagram miền nghiệp vụ BrewLite}
-\label{figA:class}
+\includegraphics[height=0.84\textheight,keepaspectratio]{../figures/diagrams/class-domain.png}
+\caption{Class Diagram miền nghiệp vụ tổng thể hệ thống BrewLite}
+\label{figA:class-domain}
 \end{figure}
 \end{landscape}
 
-\textbf{Cách đọc sơ đồ.} Khối enum nằm ở góc trên trái; mỗi lớp chỉ giữ thuộc tính cốt lõi, còn
-các bảng trung gian (\code{ProductSizePrice}, \code{OrderIngredient}, \code{OrderItemTopping})
-được lược bỏ để sơ đồ gọn mà quan hệ 1--n vẫn đúng. Multiplicity ghi ngay trên đường liên kết:
-một \code{Order} có nhiều \code{OrderItem} nhưng mỗi dòng chỉ thuộc một đơn; \code{Payment} giữ
-\code{providerOrderId} (ánh xạ cột \code{app\_trans\_id} của ZaloPay) có ràng buộc \code{UNIQUE}
-nên một đơn chỉ có tối đa một giao dịch hợp lệ.
+\subsection{Máy trạng thái đơn hàng (Order State Machine)}
 
-\subsection{Tính nhất quán giữa các mô hình}
-
-Tiêu chí nghiệm thu của Task~2 là ba sơ đồ không mâu thuẫn với SRS và đặc tả use-case. Bảng
-dưới đối chiếu sáu khái niệm quan trọng nhất; mỗi dòng chỉ ra nơi khái niệm đó xuất hiện trong
-từng mô hình.
+Vòng đời của đơn hàng trải qua 7 trạng thái với 9 chuyển tiếp hợp lệ được kiểm soát chặt chẽ bởi \code{OrderService.transition()} và cơ chế khóa lạc quan (optimistic locking) qua trường \code{version}:
 
 \begin{table}[H]
-\centering\footnotesize
-\caption{Đối chiếu khái niệm giữa SRS, use-case và ba sơ đồ}
-\label{tabA:consistency}
-\begin{tabularx}{\textwidth}{@{}p{2.85cm} p{1.35cm} p{1.75cm} >{\raggedright\arraybackslash}X@{}}
+\centering\small
+\caption{Bảng 9 chuyển tiếp trạng thái hợp lệ của đơn hàng}
+\label{tab:order-transitions}
+\begin{tabularx}{\textwidth}{@{}c p{3.2cm} p{3.2cm} X@{}}
 \toprule
-\textbf{Khái niệm} & \textbf{SRS} & \textbf{UC-01} & \textbf{Vị trí trong activity / sequence / class} \\
+\textbf{\#} & \textbf{Trạng thái nguồn} & \textbf{Trạng thái đích} & \textbf{Tác nhân / Sự kiện kích hoạt} \\
 \midrule
-Đơn mới ở \code{PENDING} & FR-05 & Bước 4 &
-  Activity: ``Tạo đơn PENDING''; Sequence: \code{INSERT Order}; Class: \code{Order.status}. \\
-Trừ kho theo công thức & FR-09 & Bước 4, E1 &
-  Activity: ``Trừ kho (optimistic lock)''; Sequence: \code{UPDATE ... version}; Class: \code{Ingredient.version}, \code{Recipe}. \\
-Thanh toán idempotent & FR-08 & E2, E3 &
-  Sequence: nhánh \code{alt} theo \code{providerOrderId}; Class: \code{Payment.providerOrderId} có \code{UNIQUE}. \\
-Xác thực JWT & FR-04 & Bước 2, A1 &
-  Activity: quyết định D1; Sequence: \code{JwtAuthGuard}; Class: \code{User.role}. \\
-Điểm loyalty & FR-10 & A2, Bước 10 &
-  Activity: ``+điểm''; Sequence: \code{INSERT LoyaltyTransaction}; Class: \code{LoyaltyTransaction.type}. \\
-Hoàn kho khi hủy & FR-07, FR-09 & E4 &
-  Activity: nhánh hủy hoàn nguyên liệu; Sequence: ngoài phạm vi; Class: \code{OrderStatus.CANCELLED}. \\
+1 & PENDING & PAID & Cổng thanh toán xác nhận thành công (IPN). \\
+2 & PENDING & PAYMENT\_FAILED & Thanh toán bị từ chối hoặc khách hủy tại cổng. \\
+3 & PENDING & CANCELLED & Khách hàng chủ động hủy hoặc Cronjob hủy quá 15 phút. \\
+4 & PAID & PREPARING & Barista nhận đơn và bắt đầu pha chế. \\
+5 & PAID & CANCELLED & Hủy đơn đã thanh toán (cần hoàn tiền thủ công). \\
+6 & PREPARING & READY & Barista hoàn tất pha chế, chuyển sang quầy nhận món. \\
+7 & READY & COMPLETED & Khách hàng nhận món tại quầy, hoàn tất đơn hàng. \\
+8 & PAYMENT\_FAILED & PENDING & Khách hàng chọn thử lại thanh toán với key mới. \\
+9 & PAYMENT\_FAILED & CANCELLED & Khách hàng hủy đơn sau khi thanh toán thất bại. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Hai chỗ ``ngoài phạm vi'' được ghi nhận có chủ đích: sequence diagram chỉ mô tả luồng thành công
-và callback, còn nhánh hủy đơn được đặc tả ở activity diagram và trong \file{order/state-machine.md}.
-Cách phân chia này tránh một sơ đồ tuần tự quá tải mà vẫn giữ được khả năng truy vết.
+\subsection{Kiểm tra tính nhất quán của mô hình}
+
+Để đảm bảo các mô hình thiết kế phản ánh chính xác yêu cầu nghiệp vụ và hiện thực mã nguồn, bảng kiểm tra tính nhất quán đối chiếu các điểm thiết kế then chốt:
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Bảng kiểm tra tính nhất quán giữa Yêu cầu, UML và Mã nguồn}
+\label{tab:model-consistency}
+\begin{tabularx}{\textwidth}{@{}p{3.2cm} p{2.2cm} p{3.6cm} X@{}}
+\toprule
+\textbf{Điểm thiết kế} & \textbf{Yêu cầu SRS} & \textbf{Biểu đồ UML} & \textbf{Điểm hiện thực trong Code} \\
+\midrule
+Xác thực phiên làm việc & FR-01..03 & Activity: check JWT; Sequence: JwtAuthGuard & \file{JwtAuthGuard}, \file{JwtStrategy}, \file{RolesGuard}. \\
+Tính giá server-side & FR-09 & Sequence: calculate() & \file{PricingService.calculate()} đọc giá từ DB. \\
+Trừ kho theo định lượng BOM & FR-14 & Activity/Sequence: trừ kho & Conditional atomic update trên bảng \code{ingredients}. \\
+Chống bán vượt tồn kho & NFR-03 & Activity: nhánh rollback & Transaction ACID rollback khi $stock < need$. \\
+Chống thanh toán trùng & FR-18, NFR-04 & Sequence: check key & Header \code{Idempotency-Key} + bảng \code{Payment}. \\
+Hoàn kho theo snapshot & FR-14, FR-16 & Activity: hoàn snapshot & \file{CancelOrderService} đọc \code{OrderIngredientUsage}. \\
+Tự động hủy đơn 15 phút & FR-16 & Sequence: cron 15m & NestJS \code{@Cron('0 * * * * *')} quét đơn PENDING. \\
+\bottomrule
+\end{tabularx}
+\end{table}

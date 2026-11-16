@@ -1,0 +1,29 @@
+@startuml
+autonumber
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+
+actor "Khách Hàng / Admin" as KH
+participant "Controller" as C
+participant "Service" as S
+database "Database" as DB
+
+KH -> C : Gửi yêu cầu hủy đơn hàng (orderId)
+C -> S : Gọi hàm cancel(orderId)
+
+S -> DB : Tìm thông tin đơn hàng & nguyên liệu tiêu hao
+DB --> S : Trả về thông tin đơn
+
+S -> S : Kiểm tra điều kiện (chỉ cho phép hủy trước khi pha chế)
+
+S -> DB : Cập nhật trạng thái đơn thành CANCELLED & đánh dấu yêu cầu hoàn tiền (nếu đã thanh toán)
+S -> DB : Hoàn trả lại kho nguyên liệu (theo đúng lượng đã trừ)
+S -> DB : Hoàn trả lại kho Topping
+
+S -> DB : Hoàn trả điểm tích lũy & ghi log hoàn điểm (nếu đơn có dùng điểm)
+S -> DB : Ghi log lịch sử trạng thái (OrderStatusHistory: CANCELLED)
+DB --> S : Cập nhật thành công
+
+S --> C : Trả về kết quả hủy đơn (status: CANCELLED, refundStatus)
+C --> KH : Phản hồi hủy đơn thành công (HTTP 200 OK)
+@enduml

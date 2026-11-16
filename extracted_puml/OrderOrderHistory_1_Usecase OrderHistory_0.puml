@@ -1,0 +1,52 @@
+@startuml
+left to right direction
+skinparam usecase {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+}
+
+actor "Khách Hàng" as KH
+actor "Admin" as AD
+
+rectangle "UC - Order History" {
+
+  ' Use case Khách hàng
+  usecase "Xem lịch sử đơn hàng\n(của cá nhân)" as UC_HISTORY
+  usecase "Lọc đơn theo trạng thái\n(PENDING, PAID, CANCELLED...)" as UC_FILTER_CUST
+  usecase "Xem chi tiết đơn hàng" as UC_DETAIL
+  usecase "Theo dõi lịch sử trạng thái\n(statusHistory)" as UC_STATUS_TRACK
+  usecase "Theo dõi tình trạng hoàn tiền\n(refundStatus)" as UC_REFUND_TRACK
+  usecase "Kiểm tra đăng nhập" as UC_AUTH
+
+  ' Use case Admin
+  usecase "Xem tất cả đơn hàng\n(toàn hệ thống)" as UC_ADMIN_ALL
+  usecase "Lọc đơn toàn hệ thống\ntheo trạng thái" as UC_ADMIN_FILTER
+  usecase "Xem chi tiết đơn hàng\n(Admin)" as UC_ADMIN_DETAIL
+
+}
+
+' Tương tác Khách Hàng
+KH --> UC_HISTORY
+KH --> UC_DETAIL
+
+' Tương tác Admin
+AD --> UC_ADMIN_ALL
+AD --> UC_ADMIN_DETAIL
+
+' Mối quan hệ của Khách Hàng
+UC_FILTER_CUST ..> UC_HISTORY : <<extend>>
+UC_HISTORY ..> UC_AUTH : <<include>>
+UC_DETAIL ..> UC_AUTH : <<include>>
+UC_DETAIL ..> UC_STATUS_TRACK : <<include>>
+UC_REFUND_TRACK ..> UC_DETAIL : <<extend>>\n(khi đơn đã hủy)
+
+' Mối quan hệ của Admin
+UC_ADMIN_FILTER ..> UC_ADMIN_ALL : <<extend>>
+UC_ADMIN_DETAIL ..> UC_STATUS_TRACK : <<include>>
+
+@enduml

@@ -1,0 +1,58 @@
+@startuml
+title SEQUENCE 04: USE CASE - SỬA MÓN (SIZE / TOPPING)
+autonumber
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+actor "Khách Hàng" as Customer
+participant "CartPage\n(/cart/page.tsx)" as CartPage
+participant "ProductPurchaseModal\n(Popup chỉnh sửa)" as Modal
+participant "CartStore\n(useCartStore.ts)" as Store
+participant "cart-items.ts\n(replaceCartItem)" as CartLib
+participant "Browser\nLocalStorage" as Storage
+
+Customer -> CartPage: Nhấn icon Cây bút (Sửa dòng món index)
+activate CartPage
+CartPage -> CartPage: setEditingIndex(index)
+CartPage -> Modal: Mở modal với: initialItem = items[index], editingIndex
+activate Modal
+deactivate CartPage
+
+Customer -> Modal: Đổi sang Size khác hoặc chọn lại Topping
+Customer -> Modal: Bấm "Lưu thay đổi"
+
+Modal -> Store: replaceItem(editingIndex, updatedItem)
+activate Store
+
+Store -> CartLib: replaceCartItem(currentItems, editingIndex, updatedItem)
+activate CartLib
+CartLib -> CartLib: 1. Loại bỏ món cũ: filter((_, pos) => pos !== editingIndex)
+CartLib -> CartLib: 2. Gọi addOrMergeCartItem(remainingItems, updatedItem)
+
+alt Món sau khi sửa TRÙNG với một món khác đang có sẵn trong giỏ
+    CartLib -> CartLib: Tự động cộng dồn số lượng vào món kia (quantity += newQty)
+    CartLib --> Store: Danh sách nextItems[] đã được gộp gọn
+else Món sau khi sửa KHÔNG trùng món nào
+    CartLib -> CartLib: Thêm món đã sửa vào mảng
+    CartLib --> Store: Danh sách nextItems[] đã thay thế
+end
+deactivate CartLib
+
+Store -> Storage: setItem('brewlite-cart', JSON.stringify(nextItems))
+activate Storage
+Storage --> Store: Hoàn tất lưu trữ
+deactivate Storage
+
+Store --> Modal: Hoàn tất replaceItem()
+Store --> CartPage: Tự động đồng bộ state.items mới
+deactivate Store
+
+Modal -> CartPage: onSaved() -> Đóng modal, setEditingIndex(null)
+deactivate Modal
+
+activate CartPage
+CartPage -> CartPage: total = items.reduce(estimatedUnitPrice * quantity)
+CartPage --> Customer: Render lại danh sách món sau khi sửa và tổng tiền mới
+deactivate CartPage
+@enduml

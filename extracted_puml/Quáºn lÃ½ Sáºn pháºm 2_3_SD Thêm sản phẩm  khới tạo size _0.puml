@@ -1,0 +1,36 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "ProductsController" as API
+participant "ProductsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Nhập Tên món, Danh mục, Giá gốc & bấm "Lưu sản phẩm"
+activate UI
+UI -> API : POST /api/v1/products + JWT
+activate API
+API -> API : Kiểm tra Guard & Validate CreateProductDto
+
+alt Dữ liệu không hợp lệ
+  API --> UI : 400 Bad Request
+  UI --> Admin : Thông báo lỗi nhập liệu
+else Dữ liệu hợp lệ
+  API -> Svc : create(dto)
+  activate Svc
+  Svc -> DB : INSERT Product & tự động tạo 3 dòng ProductSizePrice (S, M, L)
+  activate DB
+  DB --> Svc : Bản ghi Product mới
+  deactivate DB
+  Svc --> API : Product
+  deactivate Svc
+  API --> UI : 201 Created
+  UI -> UI : Đóng Modal & tải lại danh sách
+  UI --> Admin : Hiển thị sản phẩm mới
+end
+deactivate API
+deactivate UI
+deactivate Admin
+@enduml

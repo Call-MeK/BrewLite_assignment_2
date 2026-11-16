@@ -1,0 +1,33 @@
+@startuml
+title Activity Diagram: Thêm sản phẩm mới
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Nhập tên món;
+:Chọn danh mục và nhập giá gốc;
+:Bấm "Lưu sản phẩm";
+
+|Giao diện (Next.js)|
+:Gửi POST /api/v1/products;
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (CreateProductDto hợp lệ?) then (Không)
+  :Trả về 400 Bad Request;
+else (Có)
+  :Tạo Product và kết nối Category (slug);
+  :Khởi tạo 3 dòng ProductSizePrice\n(S, M, L) với phụ thu = 0;
+  :Trả về 201 Created;
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi 201?) then (Có)
+  :Cập nhật giao diện;
+  :Tải lại danh sách sản phẩm;
+else (Không)
+  :Hiển thị thông báo lỗi;
+endif
+stop
+@enduml

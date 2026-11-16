@@ -1,0 +1,48 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "IngredientsController" as API
+participant "IngredientsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Mở trang Quản lý Nguyên liệu
+activate UI
+UI -> API : GET /api/v1/ingredients (Bearer JWT)
+activate API
+API -> API : Xác thực JwtAuthGuard & AdminGuard
+API -> Svc : findAll()
+activate Svc
+Svc -> DB : findMany(orderBy: createdAt DESC)
+activate DB
+DB --> Svc : Danh sách nguyên liệu
+deactivate DB
+Svc --> API : Ingredient[]
+deactivate Svc
+API --> UI : 200 OK
+deactivate API
+UI --> Admin : Hiển thị danh sách (Cảnh báo đỏ nếu stock <= 0)
+deactivate UI
+
+opt Xem cảnh báo sắp hết hàng (<<extend>>)
+  Admin -> UI : Xem nguyên liệu sắp hết
+  activate UI
+  UI -> API : GET /api/v1/ingredients/stats/low-stock
+  activate API
+  API -> Svc : getLowStock(500)
+  activate Svc
+  Svc -> DB : findMany(where: stock < 500, orderBy: stock ASC)
+  activate DB
+  DB --> Svc : Danh sách nguyên liệu tồn thấp
+  deactivate DB
+  Svc --> API : Ingredient[]
+  deactivate Svc
+  API --> UI : 200 OK
+  deactivate API
+  UI --> Admin : Hiển thị danh sách cảnh báo
+  deactivate UI
+end
+deactivate Admin
+@enduml

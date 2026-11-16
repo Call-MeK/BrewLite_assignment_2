@@ -1,0 +1,42 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "ProductsController" as API
+participant "ProductsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Chỉnh mức phụ thu Size S, M, L & bấm "Lưu phụ thu"
+activate UI
+UI -> API : PUT /api/v1/products/:id/size-prices + JWT
+activate API
+API -> API : Kiểm tra Guard & Validate UpdateSizePricesDto
+API -> Svc : updateSizePrices(id, sizes)
+activate Svc
+Svc -> DB : BEGIN TRANSACTION
+activate DB
+
+loop Từng size (S, M, L)
+  Svc -> DB : UPDATE product_size_prices SET price_adjustment = ...\nWHERE product_id = :id AND size = :size
+  DB --> Svc : updated.count
+end
+
+alt Không tìm thấy sản phẩm hoặc size (updated.count == 0)
+  Svc --> API : 404 NotFoundException (ROLLBACK)
+  API --> UI : 404 Not Found
+  UI --> Admin : Hiển thị thông báo lỗi
+else Hợp lệ
+  Svc -> DB : COMMIT & truy vấn lại getSizePrices(id)
+  DB --> Svc : SizeAdjustment[]
+  Svc --> API : SizeAdjustment[]
+  API --> UI : 200 OK
+  UI --> Admin : Hiển thị "Đã lưu phụ thu"
+end
+deactivate DB
+deactivate Svc
+deactivate API
+deactivate UI
+deactivate Admin
+@enduml

@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam Maincolor #0052cc
+skinparam Backgroundcolor transparent
+
+actor "Quản trị viên" as Admin
+
+rectangle "Phân hệ Quản lý Nguyên liệu" {
+  usecase "Xem danh sách nguyên liệu" as UC_View
+  usecase "Xem cảnh báo sắp hết hàng" as UC_LowStock
+  usecase "Thêm nguyên liệu mới" as UC_Create
+  usecase "Cập nhật thông tin nguyên liệu" as UC_Update
+  usecase "Xóa nguyên liệu" as UC_Delete
+  usecase "Lập phiếu nhập kho" as UC_Import
+  usecase "Xác thực quyền Quản trị" as UC_Auth
+}
+
+Admin --> UC_View
+Admin --> UC_Create
+Admin --> UC_Update
+Admin --> UC_Delete
+Admin --> UC_Import
+
+UC_LowStock .> UC_View : <<extend>>
+
+UC_View ..> UC_Auth : <<include>>
+UC_Create ..> UC_Auth : <<include>>
+UC_Update ..> UC_Auth : <<include>>
+UC_Delete ..> UC_Auth : <<include>>
+UC_Import ..> UC_Auth : <<include>>
+
+@enduml

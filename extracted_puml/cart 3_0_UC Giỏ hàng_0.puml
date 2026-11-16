@@ -1,0 +1,45 @@
+@startuml
+title USE CASE DIAGRAM: PHÂN HỆ GIỎ HÀNG (BREWLITE CART)
+left to right direction
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #1A73E8
+  ArrowColor #333333
+}
+
+actor "Khách Hàng" as Customer
+
+rectangle "Phân hệ Giỏ hàng (BrewLite Cart)" {
+  ' --- 3 Use Case chính gắn trực tiếp với Khách Hàng ---
+  usecase "Thêm món vào giỏ hàng" as UC_Add
+  usecase "Xem chi tiết giỏ hàng" as UC_View
+  usecase "Tiến hành thanh toán" as UC_Checkout
+
+  ' --- Các Use Case mở rộng (Extend) khi đang Xem chi tiết giỏ hàng ---
+  usecase "Tăng giảm số lượng" as UC_Qty
+  usecase "Sửa món (size/topping)" as UC_Edit
+  usecase "Xóa 1 món / xóa tất cả các món" as UC_Remove
+
+  ' --- Use Case bắt buộc (Include) khi Tiến hành thanh toán ---
+  usecase "Đăng nhập" as UC_Login
+}
+
+' --- Quan hệ giữa Actor và các Use Case chính ---
+Customer -- UC_Add
+Customer -- UC_View
+Customer -- UC_Checkout
+
+' --- Quan hệ <<Extend>>: mũi tên trỏ về Use Case gốc (Xem chi tiết giỏ hàng) ---
+UC_View <.. UC_Qty : <<Extend>>
+UC_View <.. UC_Edit : <<Extend>>
+UC_View <.. UC_Remove : <<Extend>>
+
+' --- Quan hệ <<Include>>: mũi tên trỏ sang Use Case bắt buộc (Đăng nhập) ---
+UC_Checkout ..> UC_Login : <<Include>>
+
+@enduml

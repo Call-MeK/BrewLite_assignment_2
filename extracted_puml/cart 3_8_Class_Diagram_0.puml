@@ -1,0 +1,83 @@
+@startuml
+title CLASS DIAGRAM: PHÂN HỆ GIỎ HÀNG (CART DOMAIN MODEL)
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam classAttributeIconSize 0
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1A73E8
+  HeaderBackgroundColor #E8F0FE
+}
+
+enum ProductSize <<enumeration>> {
+  S
+  M
+  L
+}
+
+class User {
+  + id : String
+  + email : String
+  + fullName : String?
+  + loyaltyPoints : Int
+}
+
+class Product {
+  + id : String
+  + name : String
+  + basePrice : Decimal
+  + imageUrl : String?
+  + isAvailable : Boolean
+}
+
+class ProductSizePrice {
+  + id : String
+  + productId : String
+  + size : ProductSize
+  + priceAdjustment : Decimal
+}
+
+class Topping {
+  + id : String
+  + name : String
+  + price : Decimal
+  + stock : Int
+  + isAvailable : Boolean
+}
+
+class Cart {
+  + id : String
+  + userId : String?
+  + createdAt : DateTime
+  + updatedAt : DateTime
+  --
+  + calculateTotal() : Decimal
+  + getTotalQuantity() : Int
+  + clear() : void
+}
+
+class CartItem {
+  + id : String
+  + cartId : String
+  + productId : String
+  + size : ProductSize
+  + toppingIds : List<String>
+  + quantity : Int
+  --
+  + lineTotal() : Decimal
+  + updateQuantity(qty: Int) : void
+  + isSameOption(other: CartItem) : Boolean
+}
+
+User "0..1" -- "0..1" Cart : owns >
+Cart "1" *-- "0..*" CartItem : contains >
+CartItem "0..*" --> "1" Product : references >
+Product "1" *-- "1..3" ProductSizePrice : has sizes >
+ProductSizePrice ..> ProductSize : uses
+CartItem ..> ProductSize : uses
+CartItem "0..*" o-- "0..3" Topping : includes >
+
+@enduml

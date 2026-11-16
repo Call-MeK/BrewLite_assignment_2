@@ -1,0 +1,18 @@
+@startuml
+autonumber
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+
+actor "Admin" as AD
+participant "Controller" as C
+participant "Service" as S
+database "Database" as DB
+
+AD -> C : Chọn cập nhật trạng thái (PREPARING / READY / COMPLETED)
+C -> C : Kiểm tra quyền Admin
+C -> S : Gọi hàm đổi trạng thái đơn
+S -> DB : Cập nhật trạng thái mới & ghi log lịch sử trạng thái
+DB --> S : Cập nhật thành công
+S --> C : Kết quả cập nhật
+C --> AD : Cập nhật thành công (HTTP 200)
+@enduml

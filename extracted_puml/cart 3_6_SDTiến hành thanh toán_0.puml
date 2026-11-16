@@ -1,0 +1,73 @@
+@startuml
+title SEQUENCE 06: USE CASE - TIẾN HÀNH THANH TOÁN (CHECKOUT)
+autonumber
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+actor "Khách Hàng" as Customer
+participant "CartPage / CheckoutPage\n(Frontend Next.js)" as FE
+participant "JwtAuthGuard\n(Xác thực JWT)" as Guard
+participant "OrdersController\n(NestJS API)" as Controller
+participant "OrdersService\n(Nghiệp vụ tạo đơn)" as Service
+database "PostgreSQL\n(Prisma Transaction)" as DB
+
+Customer -> FE: Nhấn "Tiến hành thanh toán" tại trang /cart
+activate FE
+
+FE -> FE: Kiểm tra Token trong LocalStorage
+alt Chưa đăng nhập (Chưa có token)
+    FE --> Customer: Chuyển hướng sang trang Đăng nhập (/login?next=/checkout)
+else Đã đăng nhập
+    FE --> Customer: Điều hướng sang trang Xác nhận đơn (/checkout)
+end
+
+Customer -> FE: Chọn điểm loyalty, nhập mã voucher và bấm "Đặt hàng và thanh toán"
+FE -> FE: Khóa nút bấm (busy = true, cooldown.start())
+FE -> Guard: POST /api/v1/orders\nHeaders: Bearer <token>\nBody: { items, pointsToUse, promotionCode }
+activate Guard
+
+Guard -> Guard: Kiểm tra tính hợp lệ & hạn của Token JWT
+alt Token sai hoặc hết hạn
+    Guard --> FE: HTTP 401 Unauthorized
+    FE --> Customer: Yêu cầu đăng nhập lại
+else Token hợp lệ
+    Guard -> Controller: Cho phép gọi hàm create(req.user.sub, dto)
+    activate Controller
+    Controller -> Service: create(userId, createOrderDto)
+    activate Service
+
+    Service -> DB: Bắt đầu prisma.$transaction()
+    activate DB
+
+    Service -> DB: Query Product, ProductSizePrice, Topping
+    Service -> Service: Tự động tính lại tổng tiền chuẩn từ DB (Bỏ qua giá Client)
+
+    Service -> Service: calculateRequiredIngredients(orderItems)
+    Service -> DB: Duyệt từng nguyên liệu: updateMany(version, stock >= required)
+    
+    alt Kho KHÔNG ĐỦ nguyên liệu pha chế
+        DB --> Service: count = 0 (Thất bại)
+        Service --> Controller: Ném lỗi 409 ConflictException ("Không đủ nguyên liệu")
+        Controller --> FE: HTTP 409 Conflict
+        FE --> Customer: Cảnh báo hết nguyên liệu, giữ nguyên giỏ hàng
+    else ĐỦ nguyên liệu tồn kho
+        Service -> DB: Trừ stock nguyên liệu, tăng version += 1
+        opt Có sử dụng điểm tích lũy
+            Service -> DB: updateMany(loyaltyPoints >= pointsToUse)
+        end
+        Service -> DB: Tạo bản ghi Order (Trạng thái: PENDING)
+        DB --> Service: Bản ghi Order đã tạo
+        Service --> Controller: Trả về đối tượng Order
+        deactivate DB
+        Controller --> FE: HTTP 201 Created { id, orderNumber, finalAmount }
+        deactivate Service
+        deactivate Controller
+
+        FE -> FE: Lưu pendingOrderId vào LocalStorage (Giữ nguyên giỏ hàng)
+        FE --> Customer: Chuyển hướng sang cổng thanh toán (/orders/:id/payment)
+    end
+end
+deactivate Guard
+deactivate FE
+@enduml

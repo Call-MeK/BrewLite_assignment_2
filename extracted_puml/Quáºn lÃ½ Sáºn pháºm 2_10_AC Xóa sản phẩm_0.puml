@@ -1,0 +1,42 @@
+@startuml
+title Activity Diagram: Xóa sản phẩm
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Bấm nút Xóa sản phẩm;
+
+|Giao diện (Next.js)|
+:Hiển thị hộp thoại xác nhận\n("Toàn bộ công thức đi kèm cũng sẽ bị xóa");
+
+|Quản trị viên|
+:Chọn Đồng ý hoặc Hủy;
+
+|Giao diện (Next.js)|
+if (Quản trị viên xác nhận xóa?) then (Hủy)
+  :Đóng hộp thoại;
+  stop
+else (Đồng ý)
+  :Gửi DELETE /api/v1/products/:id;
+endif
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (Sản phẩm đã nằm trong\nĐơn hàng (OrderItem)?) then (Đã có)
+  :CSDL từ chối xóa\n(Foreign Key Restrict);
+  :Trả về lỗi không thể xóa;
+else (Chưa phát sinh đơn)
+  :Xóa bản ghi Product;
+  :Xóa dây chuyền (Cascade)\nProductSizePrice và RecipeIngredient;
+  :Trả về 200 OK;
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi 200?) then (Có)
+  :Cập nhật lại danh sách sản phẩm;
+else (Không)
+  :Hiển thị thông báo\n"Sản phẩm đã có đơn hàng, không thể xóa";
+endif
+stop
+@enduml

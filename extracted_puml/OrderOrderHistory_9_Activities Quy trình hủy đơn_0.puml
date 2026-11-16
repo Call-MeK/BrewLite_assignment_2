@@ -1,0 +1,50 @@
+@startuml
+skinparam backgroundColor White
+skinparam ActivityBackgroundColor White
+skinparam ActivityBorderColor Black
+skinparam ArrowColor Black
+skinparam DecisionBackgroundColor White
+skinparam DecisionBorderColor Black
+
+|Người Dùng (Khách / Admin / Cron)|
+start
+:Gửi yêu cầu hủy đơn hàng;
+
+|Hệ Thống (Backend)|
+|Cơ Sở Dữ Liệu|
+:Tìm thông tin đơn hàng & nguyên liệu đã tiêu hao;
+
+|Hệ Thống (Backend)|
+:Kiểm tra trạng thái đơn hàng;
+if (Đơn đã chuyển sang pha chế?) then (Đúng - Đang pha chế/Đã xong)
+  :Báo lỗi "Chỉ có thể hủy đơn trước khi pha chế";
+  stop
+else (Chưa - PENDING / PAYMENT_FAILED / PAID)
+endif
+
+|Cơ Sở Dữ Liệu|
+:Cập nhật trạng thái đơn thành CANCELLED;
+
+if (Đơn hàng đã thanh toán trước đó?) then (Đúng: status = PAID)
+  :Đánh dấu cờ hoàn tiền: refundStatus = MANUAL_REQUIRED;
+  :Thu hồi điểm thưởng đã cộng (nếu có);
+else (Chưa: status = PENDING/FAILED)
+  :refundStatus = NONE;
+endif
+
+:Hoàn trả số lượng nguyên liệu vào kho (Ingredient);
+:Hoàn trả số lượng topping vào kho (Topping);
+
+if (Đơn có dùng điểm tích lũy?) then (Có)
+  :Cộng trả lại điểm tích lũy cho User;
+  :Ghi log hoàn điểm (LoyaltyTransaction: REFUNDED);
+else (Không)
+endif
+
+:Ghi log lịch sử trạng thái (StatusHistory: CANCELLED);
+
+|Người Dùng (Khách / Admin / Cron)|
+:Nhận thông báo "Hủy đơn hàng thành công";
+stop
+
+@enduml

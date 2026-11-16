@@ -1,0 +1,18 @@
+@startuml
+autonumber
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+
+actor "Khách Hàng" as KH
+participant "Controller" as C
+participant "Service" as S
+database "Database" as DB
+
+KH -> C : Yêu cầu xem chi tiết đơn (mã đơn id)
+C -> C : Kiểm tra đăng nhập
+C -> S : Gọi hàm lấy chi tiết đơn
+S -> DB : Truy vấn đơn kèm món, topping, lịch sử trạng thái, hoàn tiền
+DB --> S : Dữ liệu chi tiết đơn hàng
+S --> C : Thông tin chi tiết đơn
+C --> KH : Hiển thị chi tiết đơn hàng (HTTP 200)
+@enduml

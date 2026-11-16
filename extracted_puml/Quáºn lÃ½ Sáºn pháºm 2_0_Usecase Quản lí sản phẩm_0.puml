@@ -1,0 +1,21 @@
+@startuml
+left to right direction
+skinparam Maincolor #0052cc
+skinparam Backgroundcolor transparent
+
+actor "Quản trị viên" as Admin
+
+rectangle "Phân hệ Quản lý Sản phẩm (Product Management)" {
+  usecase "Xem danh sách sản phẩm\n& Tồn kho khả dụng" as UC_View
+  usecase "Thêm sản phẩm mới" as UC_Create
+  usecase "Cập nhật phụ thu theo Size" as UC_SizePrice
+  usecase "Thiết lập công thức sản phẩm" as UC_Recipe
+  usecase "Xóa sản phẩm" as UC_Delete
+}
+
+Admin --> UC_View
+Admin --> UC_Create
+Admin --> UC_SizePrice
+Admin --> UC_Recipe
+Admin --> UC_Delete
+@enduml

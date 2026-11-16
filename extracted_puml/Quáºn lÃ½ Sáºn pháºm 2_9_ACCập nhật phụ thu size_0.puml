@@ -1,0 +1,38 @@
+@startuml
+title Activity Diagram: Cập nhật phụ thu Size
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Nhập mức phụ thu (>= 0)\ncho Size S, M, L;
+:Bấm "Lưu phụ thu";
+
+|Giao diện (Next.js)|
+:Gửi PUT /api/v1/products/:id/size-prices;
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (UpdateSizePricesDto hợp lệ?) then (Không)
+  :Trả về 400 Bad Request;
+else (Có)
+  :Mở Transaction;
+  :Cập nhật priceAdjustment cho từng Size;
+  if (Sản phẩm và Size tồn tại?) then (Không)
+    :Rollback;
+    :Trả về 404 Not Found;
+  else (Có)
+    :Commit Transaction;
+    :Trả về 200 OK;
+  endif
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi 200?) then (Có)
+  :Cập nhật giao diện;
+  :Tải lại danh sách sản phẩm;
+else (Không)
+  :Hiển thị thông báo lỗi (400 / 404);
+endif
+stop
+@enduml

@@ -1,0 +1,89 @@
+@startuml
+title CLASS DIAGRAM: PHÂN HỆ QUẢN LÝ SẢN PHẨM (PRODUCT DOMAIN MODEL)
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam classAttributeIconSize 0
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1A73E8
+  HeaderBackgroundColor #E8F0FE
+}
+
+enum ProductSize <<enumeration>> {
+  S
+  M
+  L
+}
+
+enum IngredientUnit <<enumeration>> {
+  G
+  ML
+  PIECE
+}
+
+class Category {
+  + id : String
+  + name : String
+  + slug : String
+  + displayOrder : Int
+  + createdAt : DateTime
+  + updatedAt : DateTime
+}
+
+class Product {
+  + id : String
+  + categoryId : String?
+  + name : String
+  + basePrice : Decimal
+  + imageUrl : String?
+  + stock : Int
+  + version : Int
+  + isAvailable : Boolean
+  + createdAt : DateTime
+  + updatedAt : DateTime
+  --
+  + checkAvailability() : Boolean
+}
+
+class ProductSizePrice {
+  + id : String
+  + productId : String
+  + size : ProductSize
+  + priceAdjustment : Decimal
+  --
+  + getUnitPrice(basePrice: Decimal) : Decimal
+  + availableQuantity() : Int
+}
+
+class RecipeIngredient {
+  + productId : String
+  + size : ProductSize
+  + ingredientId : String
+  + quantity : Decimal
+  --
+  + calculateCost(ingredientPrice: Float) : Float
+}
+
+class Ingredient {
+  + id : String
+  + name : String
+  + nameKey : String
+  + unit : IngredientUnit
+  + stock : Float
+  + version : Int
+  + price : Float
+}
+
+Category "0..1" -- "0..*" Product : classifies >
+Product "1" *-- "1..3" ProductSizePrice : has sizes >
+ProductSizePrice "1" *-- "0..*" RecipeIngredient : defines recipe >
+RecipeIngredient "0..*" --> "1" Ingredient : requires >
+
+ProductSizePrice ..> ProductSize : uses
+RecipeIngredient ..> ProductSize : uses
+Ingredient ..> IngredientUnit : uses
+
+@enduml

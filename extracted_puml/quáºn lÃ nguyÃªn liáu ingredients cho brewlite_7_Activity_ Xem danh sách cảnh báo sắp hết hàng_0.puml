@@ -1,0 +1,45 @@
+@startuml
+title Activity Diagram: Xem danh sách & Cảnh báo sắp hết hàng
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Mở trang Quản lý Nguyên liệu;
+
+|Giao diện (Next.js)|
+:Gửi GET /api/v1/ingredients;
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (JWT & quyền Admin hợp lệ?) then (Không)
+  :Trả về 401 / 403;
+else (Có)
+  :Truy vấn danh sách nguyên liệu\n(createdAt DESC);
+  :Trả về danh sách;
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi thành công?) then (Không)
+  :Hiển thị thông báo lỗi quyền truy cập;
+  stop
+else (Có)
+  :Hiển thị bảng nguyên liệu\n(nhãn cảnh báo đỏ nếu stock <= 0);
+endif
+
+|Quản trị viên|
+if (Xem cảnh báo sắp hết hàng?) then (Có)
+  |Giao diện (Next.js)|
+  :Gửi GET /api/v1/ingredients/stats/low-stock;
+
+  |Máy chủ (NestJS + PostgreSQL)|
+  :Lọc nguyên liệu có stock < 500\n(stock ASC);
+  :Trả về danh sách sắp hết;
+
+  |Giao diện (Next.js)|
+  :Hiển thị danh sách nguyên liệu sắp hết;
+else (Không)
+endif
+
+stop
+@enduml

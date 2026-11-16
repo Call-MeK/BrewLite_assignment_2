@@ -1,0 +1,44 @@
+@startuml
+title SEQUENCE 03: USE CASE - TĂNG GIẢM SỐ LƯỢNG MÓN
+autonumber
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+actor "Khách Hàng" as Customer
+participant "CartPage\n(/cart/page.tsx)" as CartPage
+participant "CartStore\n(useCartStore.ts)" as Store
+participant "Browser\nLocalStorage" as Storage
+participant "CartPopover / Header\n(Badge giỏ hàng)" as Header
+
+Customer -> CartPage: Nhấn nút (+) hoặc (-) tại món thứ index
+activate CartPage
+
+alt Nhấn nút Giảm (-)
+    CartPage -> CartPage: nextQty = Math.max(1, currentQty - 1)
+else Nhấn nút Tăng (+)
+    CartPage -> CartPage: nextQty = Math.min(99, currentQty + 1)
+end
+
+CartPage -> Store: setQuantity(index, nextQty)
+activate Store
+Store -> Store: Cập nhật items[index].quantity = nextQty
+
+Store -> Storage: setItem('brewlite-cart', JSON.stringify(items))
+activate Storage
+Storage --> Store: Hoàn tất lưu trữ
+deactivate Storage
+
+Store --> Header: Tự động đồng bộ state.items mới
+activate Header
+Header -> Header: Cập nhật lại tổng số ly trên Badge
+deactivate Header
+
+Store --> CartPage: Trả về state.items mới
+deactivate Store
+
+CartPage -> CartPage: total = items.reduce(estimatedUnitPrice * quantity)
+CartPage -> CartPage: count = items.reduce(quantity)
+CartPage --> Customer: Cập nhật số lượng hiển thị, thành tiền của món\nvà tổng tiền tạm tính mới
+deactivate CartPage
+@enduml

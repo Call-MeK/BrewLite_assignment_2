@@ -1,0 +1,62 @@
+@startuml
+skinparam classBackgroundColor White
+skinparam classBorderColor Black
+skinparam arrowColor Black
+
+class User {
+  - id: String
+  - fullName: String
+  - email: String
+  - loyaltyPoints: Int
+}
+
+class Order {
+  - id: String
+  - orderNumber: Int
+  - status: OrderStatus
+  - totalAmount: Double
+  - finalAmount: Double
+  - createdAt: DateTime
+}
+
+class OrderItem {
+  - id: String
+  - size: String
+  - quantity: Int
+  - unitPrice: Double
+  - lineTotal: Double
+}
+
+class Product {
+  - id: String
+  - name: String
+  - basePrice: Double
+}
+
+class Topping {
+  - id: String
+  - name: String
+  - price: Double
+}
+
+class Promotion {
+  - id: String
+  - code: String
+  - discountPercent: Double
+}
+
+class OrderStatusHistory {
+  - fromStatus: String
+  - toStatus: String
+  - changedBy: String
+  - createdAt: DateTime
+}
+
+' Mối quan hệ thực tế giữa các lớp
+User "1" --> "0..*" Order : đặt hàng
+Order "1" *-- "1..*" OrderItem : gồm các món
+OrderItem "0..*" --> "1" Product : là sản phẩm
+OrderItem "0..*" --> "0..*" Topping : chọn thêm
+Order "1" *-- "0..*" OrderStatusHistory : theo dõi trạng thái
+Order "0..*" --> "0..1" Promotion : áp dụng mã
+@enduml

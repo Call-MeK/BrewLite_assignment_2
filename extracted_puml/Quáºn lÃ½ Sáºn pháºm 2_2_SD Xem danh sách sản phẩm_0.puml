@@ -1,0 +1,29 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI" as UI
+participant "ProductsController" as API
+participant "ProductsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Mở trang Quản lý Sản phẩm
+activate UI
+UI -> API : GET /api/v1/products
+activate API
+API -> Svc : getProducts()
+activate Svc
+Svc -> DB : findMany(include: category, sizePrices.recipeItems.ingredient)
+activate DB
+DB --> Svc : Dữ liệu Product + RecipeIngredient + Ingredient.stock
+deactivate DB
+Svc -> Svc : Tính availableQuantity(size) = floor(min(stock / quantity))
+Svc --> API : ProductSummary[]
+deactivate Svc
+API --> UI : 200 OK
+deactivate API
+UI --> Admin : Hiển thị bảng sản phẩm & trạng thái khả dụng
+deactivate UI
+deactivate Admin
+@enduml

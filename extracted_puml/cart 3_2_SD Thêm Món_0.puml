@@ -1,0 +1,59 @@
+@startuml
+title SEQUENCE 02: USE CASE - THÊM MÓN VÀO GIỎ HÀNG
+autonumber
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+actor "Khách Hàng" as Customer
+participant "ProductPurchaseModal\n(Popup đặt món)" as Modal
+participant "CartStore\n(useCartStore.ts)" as Store
+participant "cart-items.ts\n(addOrMergeCartItem)" as CartLib
+participant "Browser\nLocalStorage" as Storage
+participant "CartPopover / Header\n(Badge giỏ hàng)" as Header
+
+Customer -> Modal: Chọn Size (S/M/L), Topping và Số lượng
+activate Modal
+Customer -> Modal: Nhấn "Thêm vào giỏ hàng"
+
+Modal -> Modal: Kiểm tra số lượng hợp lệ\n(1 <= quantity <= min(99, availableQuantity))
+Modal -> Store: addItem(newItem)
+activate Store
+
+Store -> CartLib: addOrMergeCartItem(currentItems, newItem)
+activate CartLib
+CartLib -> CartLib: Chuẩn hóa toppingIds.sort()\nTìm món có cùng (productId, size, toppingIds)
+
+alt ĐÃ CÓ món trùng cấu hình trong giỏ
+    alt existing.quantity + new.quantity > 99
+        CartLib --> Store: Ném lỗi: "Mỗi món chỉ được tối đa 99 ly"
+        Store --> Modal: Chuyển tiếp ngoại lệ (Error)
+        Modal --> Customer: Hiển thị thông báo lỗi trên Popup
+    else Số lượng hợp lệ (<= 99)
+        CartLib -> CartLib: quantity += new.quantity (Gộp số lượng)
+        CartLib --> Store: nextItems[] đã gộp
+    end
+else Món MỚI chưa có trong giỏ
+    CartLib -> CartLib: Thêm vào mảng: [...currentItems, newItem]
+    CartLib --> Store: nextItems[] mới
+end
+deactivate CartLib
+
+opt Thêm hoặc gộp thành công
+    Store -> Storage: setItem('brewlite-cart', JSON.stringify(nextItems))
+    activate Storage
+    Storage --> Store: Hoàn tất lưu trữ
+    deactivate Storage
+
+    Store --> Header: Tự động đồng bộ state.items mới (Zustand subscription)
+    activate Header
+    Header -> Header: Tính lại tổng số ly & cập nhật Badge
+    Header --> Customer: Nhảy số Badge giỏ hàng trên thanh điều hướng
+    deactivate Header
+
+    Store --> Modal: Hoàn tất addItem()
+    deactivate Store
+    Modal -> Modal: onSaved() (Đóng popup đặt món)
+end
+deactivate Modal
+@enduml

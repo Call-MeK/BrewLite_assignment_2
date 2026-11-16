@@ -1,0 +1,47 @@
+@startuml
+title SEQUENCE 05: USE CASE - XÓA 1 MÓN / XÓA TẤT CẢ
+autonumber
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+actor "Khách Hàng" as Customer
+participant "CartPage\n(/cart/page.tsx)" as CartPage
+participant "CartStore\n(useCartStore.ts)" as Store
+participant "Browser\nLocalStorage" as Storage
+participant "CartPopover / Header\n(Badge giỏ hàng)" as Header
+
+alt Nhánh 1: Xóa 1 món
+    Customer -> CartPage: Bấm icon Thùng rác tại món thứ index
+    activate CartPage
+    CartPage -> Store: removeItem(index)
+    activate Store
+    Store -> Store: nextItems = items.filter((_, pos) => pos !== index)
+else Nhánh 2: Xóa tất cả các món
+    Customer -> CartPage: Bấm nút "Xóa tất cả món đã chọn"
+    CartPage -> Store: clearCart()
+    Store -> Store: nextItems = []
+end
+
+Store -> Storage: setItem('brewlite-cart', JSON.stringify(nextItems))
+activate Storage
+Storage --> Store: Hoàn tất lưu trữ
+deactivate Storage
+
+Store --> Header: Tự động đồng bộ state.items mới
+activate Header
+Header -> Header: Cập nhật lại số ly trên Badge
+deactivate Header
+
+Store --> CartPage: Trả về state.items mới
+deactivate Store
+
+alt nextItems rỗng (đã xóa hết)
+    CartPage --> Customer: Chuyển sang hiển thị giao diện Giỏ hàng rỗng ("Chưa có món nào")
+else Vẫn còn món khác
+    CartPage -> CartPage: total = nextItems.reduce(estimatedUnitPrice * quantity)
+    CartPage --> Customer: Render lại danh sách món còn lại và tổng tiền mới
+end
+
+deactivate CartPage
+@enduml

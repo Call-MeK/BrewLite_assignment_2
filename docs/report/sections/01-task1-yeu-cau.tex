@@ -1,312 +1,429 @@
 ﻿% =====================================================================
 %  Người A -- Task 1: Khai thác và đặc tả yêu cầu
-%  Nguồn: docs/requirements/context-and-scope.md, srs.md, use-case-uc01.md
+%  Nguồn: SW_NhiemVu_(3).docx, docs/requirements/context-and-scope.md, srs.md
 % =====================================================================
 \section{Task 1 -- Khai thác và đặc tả yêu cầu}
 
-\subsection{Task 1.1 -- Bối cảnh, stakeholder và phạm vi}
+\subsection{Bối cảnh, stakeholder và phạm vi dự án}
 
-\paragraph{Vấn đề nghiệp vụ.}
-Tại các quán cà phê phục vụ sinh viên và nhân viên văn phòng, lượng khách dồn vào giờ cao
-điểm khiến quy trình gọi món và thu tiền tại quầy bộc lộ năm vấn đề: (1) ùn ứ hàng chờ;
-(2) sai sót khi tùy chỉnh size S/M/L, topping và tính giá bằng tay; (3) khách không biết
-tiến độ pha chế; (4) nguy cơ bán vượt tồn kho nguyên liệu khi nhiều đơn đến đồng thời;
-(5) rủi ro trùng lặp giao dịch khi mạng chập chờn. BrewLite số hóa toàn bộ chuỗi này bằng
-một ứng dụng web mobile-first kết hợp ZaloPay Sandbox, tự động hóa từ xem thực đơn, trừ kho
-theo công thức đến đối soát và vận hành quầy.
+\subsubsection{Bối cảnh và vấn đề nghiệp vụ}
 
-\paragraph{Stakeholder.}
-Sáu bên liên quan dưới đây quyết định phạm vi và tiêu chí nghiệm thu của sản phẩm. Mã
-\code{STK-xx} được dùng lại trong ma trận truy vết ở mục~8.
+\paragraph{Bối cảnh.}
+BrewLite là hệ thống đặt đồ uống cho một chuỗi cửa hàng cà phê và trà quy mô nhỏ. Thay vì phải xếp hàng chờ đợi, khách hàng có thể chủ động xem thực đơn, tùy chỉnh đồ uống, đặt hàng và thanh toán trực tiếp trên chiếc điện thoại của mình. Điều này giúp cửa hàng tăng hiệu suất phục vụ, giảm thiểu sai sót trong khâu ghi nhận đơn hàng và nâng cao sự hài lòng của khách hàng.
+
+\paragraph{Vấn đề cần giải quyết.}
+Qua khảo sát và phân tích thực tế vận hành tại quầy, hệ thống nhận diện 5 vấn đề cốt lõi cần giải quyết:
 
 \begin{table}[H]
-\centering\scriptsize
-\caption{Stakeholder và kỳ vọng}
-\label{tabA:stakeholder}
-\begin{tabularx}{\textwidth}{@{}p{1.15cm} p{2.4cm} p{4.0cm} X@{}}
+\centering\small
+\caption{Các vấn đề nghiệp vụ cần giải quyết (Business Problems P1--P5)}
+\label{tab:business-problems}
+\begin{tabularx}{\textwidth}{@{}c p{3.6cm} p{3.8cm} X@{}}
 \toprule
-\textbf{Mã} & \textbf{Stakeholder} & \textbf{Vai trò} & \textbf{Kỳ vọng chính} \\
+\textbf{STT} & \textbf{Vấn đề} & \textbf{Hậu quả} & \textbf{Cách giải quyết} \\
 \midrule
-STK-01 & Khách hàng & Người dùng cuối: xem menu, chọn món, thanh toán, theo dõi đơn &
-  Đặt món nhanh, đúng tùy chọn, giá và điểm rõ ràng, không bị trừ tiền lặp. \\
-STK-02 & Nhân viên quầy (Barista) & Tiếp nhận đơn đã thanh toán và cập nhật tiến độ pha chế &
-  Thấy đúng size/topping/số lượng; máy trạng thái chặn chuyển sai. \\
-STK-03 & Quản lý cửa hàng (Admin) & Quản trị thực đơn, kho, công thức, nhập kho, đối soát &
-  Tồn kho không âm, cảnh báo dưới định mức, đối soát ZaloPay minh bạch. \\
-STK-04 & Giảng viên nghiệm thu & Đánh giá tài liệu, mã nguồn, kiểm thử và bản production &
-  Tài liệu đồng bộ, truy vết hai chiều, CI/CD ổn định, hệ thống chạy thật qua HTTPS. \\
-STK-05 & Nhóm phát triển (Nhóm 05) & Phân tích, thiết kế, lập trình, kiểm thử, vận hành &
-  Kiến trúc 9 module dễ bảo trì, TypeScript strict, bộ test tự động. \\
-STK-06 & ZaloPay Sandbox & Hệ thống ngoài xử lý giao dịch và gửi callback &
-  Giao tiếp ký HMAC-SHA256, callback xác thực bằng \code{timingSafeEqual}, hỗ trợ truy vấn. \\
+P1 & Khách phải xếp hàng, chờ gọi món vào giờ cao điểm & Mất thời gian, bỏ về, giảm doanh thu & Đặt đơn trực tuyến thông qua điện thoại. \\
+P2 & Menu giấy/nói miệng, khó thể hiện size, topping, giá & Nhầm món, nhầm giá & Menu số có chi tiết sản phẩm, size, topping, số tiền. \\
+P3 & Ghi đơn thủ công, thanh toán rời rạc & Sai sót, khó đối soát & Đơn hàng và thanh toán lưu tập trung, có trạng thái. \\
+P4 & Khách không biết đơn đã được làm chưa & Hỏi lại nhân viên, trải nghiệm kém & Theo dõi trạng thái đơn hàng thời gian thực. \\
+P5 & Quản lý không có dữ liệu bán hàng, tồn kho & Khó ra quyết định & Lưu lịch sử đơn, cập nhật tồn kho khi đặt đơn. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\paragraph{Phạm vi.}
-Ba khối phạm vi được chốt ngay từ Sprint~0 để tránh mở rộng tràn lan:
+\paragraph{Luồng nghiệp vụ cốt lõi.}
+Toàn bộ hành trình khách hàng trên hệ thống BrewLite tuân theo luồng khép kín:
+\begin{center}
+\textbf{Xem menu} $\longrightarrow$ \textbf{Chọn tùy chọn} $\longrightarrow$ \textbf{Giỏ hàng} $\longrightarrow$ \textbf{Đặt đơn} $\longrightarrow$ \textbf{Thanh toán} $\longrightarrow$ \textbf{Theo dõi đơn}
+\end{center}
 
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Trong phạm vi MVP:} thực đơn 8 món kèm lọc danh mục và tìm kiếm tiếng Việt
-        không dấu; chi tiết chọn size S/M/L, topping và giới hạn số ly theo tồn kho; giỏ hàng
-        lưu cục bộ và đối chiếu \code{/cart}; đăng ký/đăng nhập JWT (bcrypt), phân quyền
-        \code{CUSTOMER}/\code{ADMIN}; đặt đơn, áp voucher và điểm, thanh toán ZaloPay Sandbox;
-        máy trạng thái 7 trạng thái; trừ kho theo công thức; kiểm thử tự động; CI và production.
-  \item \textbf{Phạm vi mở rộng đã hoàn thành:} khu quản trị \code{/admin} gồm tổng quan vận
-        hành, quản lý thực đơn, kho nguyên liệu có cảnh báo định mức, phiếu nhập kho theo lô,
-        công thức theo từng size, xử lý đơn và đối soát giao dịch.
-  \item \textbf{Ngoài phạm vi:} thanh toán tiền mặt và kết nối máy in hóa đơn/POS; cổng thanh
-        toán thu tiền thật; giao hàng tận nơi và định vị tài xế; đa chi nhánh, hóa đơn điện tử,
-        ứng dụng native iOS/Android, chat và thông báo push/email/SMS.
+\subsubsection{Stakeholder và kỳ vọng}
+
+Sáu nhóm bên liên quan dưới đây quyết định trực tiếp phạm vi, kiến trúc kỹ thuật và tiêu chí nghiệm thu của sản phẩm:
+
+\begin{table}[H]
+\centering\small
+\caption{Các bên liên quan (Stakeholders) và kỳ vọng}
+\label{tab:stakeholders}
+\begin{tabularx}{\textwidth}{@{}p{3.2cm} p{3.2cm} p{3.8cm} X@{}}
+\toprule
+\textbf{Stakeholder} & \textbf{Vai trò} & \textbf{Mục tiêu} & \textbf{Kỳ vọng} \\
+\midrule
+Khách hàng & Người dùng cuối, đặt và thanh toán đơn & Đặt đồ uống nhanh, đúng ý, biết tiến độ đơn hàng & Giao diện dễ dùng, tải nhanh, giá rõ ràng, thanh toán an toàn, xem được lịch sử đơn. \\
+Nhân viên quầy & Nhận và chuẩn bị đơn hàng & Biết đơn mới, cập nhật trạng thái dễ dàng & Danh sách đơn rõ ràng, đổi trạng thái (\textit{Đã nhận} $\rightarrow$ \textit{Đang pha chế} $\rightarrow$ \textit{Sẵn sàng} $\rightarrow$ \textit{Hoàn tất}) ít thao tác, ít nhầm lẫn. \\
+Quản lý cửa hàng & Chủ sở hữu nghiệp vụ, quản lý menu và vận hành & Tăng doanh thu, kiểm soát đơn và tồn kho & Dữ liệu đơn chính xác, quản lý được sản phẩm/giá/khuyến mãi, giảm sai sót. \\
+Giảng viên / Khách hàng nghiệm thu & Đánh giá sản phẩm và quy trình kỹ thuật & Kiểm chứng đúng yêu cầu của đề tài & Đủ tạo phẩm đúng thứ tự, truy vết rõ, production chạy được, lịch sử commit minh bạch. \\
+Nhóm phát triển & Phân tích, thiết kế, hiện thực, triển khai & Hoàn thành đúng hạn, đạt chất lượng cam kết & Yêu cầu rõ ràng, phạm vi khả thi, công cụ CI/CD ổn định. \\
+Đơn vị thanh toán (mô phỏng / ZaloPay) & Xử lý thanh toán Ví/Thẻ & Nhận yêu cầu thanh toán hợp lệ, không trùng lặp & Giao tiếp qua API chuẩn, hỗ trợ idempotency, trả kết quả thành công/thất bại rõ ràng. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{note}[Phân biệt Stakeholder và Actor]
+Stakeholder đại diện cho quyền lợi trong dự án; không phải stakeholder nào cũng là actor trực tiếp trong sơ đồ use-case (ví dụ: Giảng viên và Nhóm phát triển là các bên nghiệm thu và thi công, không tham gia tương tác runtime với hệ thống).
+\end{note}
+
+\subsubsection{Phạm vi sản phẩm}
+
+\paragraph{Trong phạm vi (In-Scope).}
+Yêu cầu tối thiểu của luồng nghiệp vụ khép kín bao gồm:
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Xem menu:} Hiển thị danh sách đồ uống phân theo danh mục (Cà phê, Trà \& Trái cây, Đá xay).
+  \item \textbf{Chọn tùy chọn:} Cho phép tùy chỉnh size (S, M, L), mức đá, mức đường, topping kèm theo.
+  \item \textbf{Giỏ hàng:} Quản lý các món đã chọn, gộp món trùng cấu hình, tính tổng tiền tạm tính tự động.
+  \item \textbf{Đặt đơn \& Thanh toán:} Xác nhận thông tin, trừ kho theo công thức (BOM), xử lý thanh toán (Ví điện tử ZaloPay Sandbox / Mock).
+  \item \textbf{Theo dõi đơn:} Xem chi tiết trạng thái đơn hàng (chờ xử lý, đang chuẩn bị, sẵn sàng nhận, hoàn tất).
+  \item \textbf{Giao diện:} Mobile-first / PWA phát triển bằng Next.js (App Router), hỗ trợ responsive.
+  \item \textbf{Backend \& Database:} RESTful API phát triển bằng NestJS, quản lý cơ sở dữ liệu quan hệ PostgreSQL thông qua Prisma ORM.
 \end{itemize}
 
-\paragraph{Giả định, ràng buộc và rủi ro.}
-Bảng dưới ghi lại các giả định (\code{ASM}), ràng buộc (\code{CON}) và rủi ro (\code{RSK})
-cùng biện pháp kiểm soát tương ứng. Cột cuối chính là đầu vào cho phần kiểm thử ở Task~5.
+\paragraph{Ngoài phạm vi (Out-of-Scope).}
+Để đảm bảo chất lượng và tiến độ giao nộp sản phẩm, các tính năng sau được xác định nằm ngoài phạm vi MVP:
+\begin{itemize}[leftmargin=1.5em]
+  \item Tích hợp hệ thống giao hàng và định vị của bên thứ ba (Ahamove, GrabExpress).
+  \item Hệ thống quản lý khách hàng thân thiết phức tạp vượt quá mức cơ bản (như hạng thẻ kim cương, voucher cá nhân hóa theo thuật toán).
+  \item Giao diện Admin quản trị chuỗi đa chi nhánh phức tạp.
+  \item Phân tích dữ liệu lớn (Big Data) và gợi ý đồ uống thông minh bằng trí tuệ nhân tạo (AI Recommendation).
+\end{itemize}
+
+\paragraph{Giả định, ràng buộc và rủi ro ban đầu.}
+Hệ thống hoạt động dưới giả định người dùng sử dụng trình duyệt hiện đại có kết nối Internet và hỗ trợ \code{localStorage}. Về ràng buộc kiến trúc, backend chịu trách nhiệm toàn diện trong việc tính toán số tiền và trừ kho nguyên liệu; frontend tuyệt đối không quyết định giá. Bảng rủi ro và giải pháp tương ứng được tổng hợp dưới đây:
 
 \begin{table}[H]
 \centering\footnotesize
-\caption{Giả định, ràng buộc và rủi ro ban đầu}
-\label{tabA:risk}
-\begin{tabularx}{\textwidth}{@{}p{2.1cm} p{1.4cm} X X@{}}
+\caption{Rủi ro ban đầu và biện pháp giảm thiểu (Risks \& Mitigation)}
+\label{tab:risks}
+\begin{tabularx}{\textwidth}{@{}p{1.4cm} p{3.2cm} p{3.5cm} X@{}}
 \toprule
-\textbf{Loại} & \textbf{Mã} & \textbf{Nội dung} & \textbf{Tác động / biện pháp kiểm soát} \\
+\textbf{Mã} & \textbf{Rủi ro} & \textbf{Ảnh hưởng} & \textbf{Giải pháp kỹ thuật} \\
 \midrule
-Giả định & ASM-01 & Khách dùng trình duyệt hiện đại, có JavaScript, localStorage và Internet &
-  Nếu chặn localStorage, giỏ hàng chưa đăng nhập không giữ được khi tải lại trang. \\
-Giả định & ASM-02 & Mô hình đặt trước -- nhận tại quầy (pick-up at counter) &
-  Muốn thêm giao hàng phải mở rộng địa chỉ, phí ship và trạng thái giao vận. \\
-Giả định & ASM-03 & Thanh toán qua ZaloPay Sandbox mô phỏng đầy đủ luồng callback &
-  Lên môi trường thật chỉ cần thay \code{APP\_ID}/\code{KEY1}/\code{KEY2} qua biến môi trường. \\
-Ràng buộc & CON-01 & Stack cố định: Next.js (Vercel), NestJS + Prisma (Render Docker), PostgreSQL (Neon) &
-  Tuân thủ cấu trúc monorepo \file{apps/web}, \file{apps/api}, \file{docs/}. \\
-Ràng buộc & CON-02 & Không lưu bí mật trong Git hay log CI &
-  Toàn bộ cấu hình qua biến môi trường; chỉ commit \file{.env.example}. \\
-Ràng buộc & CON-03 & Mọi tính giá, chiết khấu, trừ kho và đổi trạng thái thực thi ở backend &
-  Client chỉ hiển thị tạm tính; server tính lại trong transaction. \\
-Rủi ro & RSK-01 & Bán vượt tồn kho khi đặt đồng thời (mức cao) &
-  Transaction \code{Serializable} + optimistic locking bằng trường \code{version}. \\
-Rủi ro & RSK-02 & Callback lặp hoặc giả mạo chữ ký ZaloPay (mức cao) &
-  Ràng buộc \code{UNIQUE} trên \code{Payment} và xác thực MAC bằng \code{crypto.timingSafeEqual}. \\
-Rủi ro & RSK-03 & Cold start của Render gói miễn phí (mức trung bình) &
-  Ghi nhận trong phép đo hiệu năng; smoke test có retry; đề xuất cron ping \code{/health}. \\
+RK-01 & Nhiều khách đặt cùng lúc & Có thể bán vượt tồn kho nguyên liệu & Sử dụng Database Transaction và Optimistic Locking / Atomic Conditional Update. \\
+RK-02 & Yêu cầu thanh toán gửi lặp & Phát sinh giao dịch hoặc trạng thái trùng & Cơ chế Idempotency-Key, kiểm tra request hash, xác minh callback/IPN độc lập. \\
+RK-03 & API/DB gặp sự cố gián đoạn & Menu hoặc đơn hàng không tải được & Trạng thái Loading/Empty/Error rõ ràng, health check endpoint, logging tập trung. \\
+RK-04 & Lệch pha giữa thiết kế và code & Lỗi nghiệm thu, mất tính truy vết & Rà soát Acceptance Criteria định kỳ, PR review có đối chiếu hợp đồng API. \\
+RK-05 & CI/CD hoặc deploy thất bại & Mất liên kết bàn giao, không có URL & Tự động hóa kiểm thử trên CI, kiểm tra smoke test và quy trình rollback 1-click. \\
+RK-06 & Rò rỉ thông tin cấu hình nhạy cảm & Nguy cơ bảo mật và lộ credential & Quản lý secrets qua biến môi trường, quét lịch sử Git, không lưu secret trong repo. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\subsection{Task 1.2 -- Yêu cầu chức năng và phi chức năng}
+\subsection{Danh mục yêu cầu phần mềm}
 
-Hệ thống có 12 yêu cầu chức năng và 9 yêu cầu phi chức năng. Mỗi yêu cầu được gán mức ưu tiên
-theo MoSCoW (\emph{Must} bắt buộc cho MVP, \emph{Should} nên có, \emph{Could} có thì tốt) và
-kèm tiêu chí chấp nhận (AC) kiểm chứng được. Mã \code{FR-xx}/\code{NFR-xx} là khóa nối giữa
-use-case, sơ đồ, mã nguồn và kiểm thử.
+Hệ thống quản lý 22 yêu cầu chức năng (FR-01 $\dots$ FR-22) và 8 yêu cầu phi chức năng (NFR-01 $\dots$ NFR-08) chuẩn hóa theo MoSCoW:
 
-{\footnotesize
-\begin{longtable}{@{}p{1.05cm} p{3.0cm} p{1.7cm} p{7.75cm}@{}}
-\caption{Yêu cầu chức năng của BrewLite}\label{tabA:fr}\\
+\begin{table}[H]
+\centering\footnotesize
+\caption{Danh mục yêu cầu chức năng (Functional Requirements)}
+\label{tab:fr-summary}
+\begin{tabularx}{\textwidth}{@{}p{1.4cm} X p{2.4cm} p{3.0cm}@{}}
 \toprule
-\textbf{Mã} & \textbf{Chức năng} & \textbf{MoSCoW} & \textbf{Tiêu chí chấp nhận (AC)} \\
+\textbf{Mã} & \textbf{Tên yêu cầu} & \textbf{Mức độ} & \textbf{Phân hệ phụ trách} \\
 \midrule
-\endfirsthead
-\toprule
-\textbf{Mã} & \textbf{Chức năng} & \textbf{MoSCoW} & \textbf{Tiêu chí chấp nhận (AC)} \\
-\midrule
-\endhead
+FR-01 & Đăng ký tài khoản thành viên & Must Have & Xác thực \\
+FR-02 & Đăng nhập hệ thống \& cấp phát JWT token & Must Have & Xác thực \\
+FR-03 & Bảo vệ tuyến API \& phân quyền truy cập (RBAC) & Must Have & Xác thực / Quản lý Users \\
+FR-04 & Xem danh mục sản phẩm (Category Browsing) & Must Have & Thực đơn \\
+FR-05 & Xem danh sách món uống đang mở bán & Must Have & Thực đơn \\
+FR-06 & Tìm kiếm món uống theo tên (tiếng Việt không dấu) & Should Have & Thực đơn \\
+FR-07 & Xem chi tiết thông tin sản phẩm \& hồ sơ rang & Must Have & Chi tiết món \\
+FR-08 & Tùy biến kích cỡ (S/M/L) và Topping (tối đa 3 loại) & Must Have & Chi tiết món \\
+FR-09 & Tính giá linh hoạt \& Xác thực giá phía Backend & Must Have & Chi tiết món \\
+FR-10 & Thêm, sửa, xóa món trong giỏ hàng & Must Have & Giỏ hàng \\
+FR-11 & Tính tổng tiền giỏ hàng tự động & Must Have & Giỏ hàng \\
+FR-12 & Lưu trữ giỏ bền vững (localStorage) \& Giữ giỏ khi lỗi & Must Have & Giỏ hàng \\
+FR-13 & Tạo đơn hàng mới (Atomic Transaction) & Must Have & Đặt hàng \\
+FR-14 & Trừ tồn kho nguyên liệu theo công thức \& chống âm kho & Must Have & Đặt hàng / BOM \\
+FR-15 & Áp dụng mã khuyến mãi \& Tích điểm thưởng Loyalty & Should Have & Đặt hàng \\
+FR-16 & Quản lý vòng đời trạng thái đơn (State Machine) & Must Have & Đặt hàng \\
+FR-17 & Thanh toán Mock \& Tích hợp cổng ZaloPay Sandbox & Must Have & Thanh toán \\
+FR-18 & Cơ chế chống trùng lặp thanh toán (Idempotency-Key) & Must Have & Thanh toán \\
+FR-19 & Xử lý lỗi thanh toán \& Khôi phục trạng thái đơn & Must Have & Thanh toán \\
+FR-20 & Xác nhận thanh toán \& Biên nhận giao dịch & Must Have & Thanh toán \\
+FR-21 & Xem danh sách lịch sử đơn hàng cá nhân & Must Have & Lịch sử \\
+FR-22 & Theo dõi chi tiết \& trạng thái đơn thời gian thực & Must Have & Lịch sử \\
 \bottomrule
-\endfoot
-FR-01 & Menu, tìm kiếm, lọc danh mục & Must &
-  \code{GET /products} trả $\ge$ 8 món đang bán kèm ảnh, giá theo size; từ khóa có dấu và không
-  dấu cho cùng kết quả; lọc danh mục chỉ trả món thuộc danh mục; có trạng thái loading/empty/error. \\
-FR-02 & Chi tiết, size, topping & Must &
-  Đổi size/topping cập nhật giá tức thì; size hết nguyên liệu bị vô hiệu; số lượng bị chặn ngoài
-  1--99 và theo giới hạn tồn kho; dòng giỏ giữ đúng \code{product + size + topping}. \\
-FR-03 & Giỏ hàng & Must &
-  Tải lại trang vẫn giữ giỏ; tổng tiền = tạm tính $-$ voucher $-$ điểm; tạo đơn hoặc thanh toán
-  lỗi vẫn còn giỏ; giỏ chỉ rỗng sau khi đơn \code{PAID}. \\
-FR-04 & Xác thực, phân quyền & Must &
-  Thiếu/sai JWT trả \code{401}; role \code{USER} gọi route admin trả \code{403}; token cũ bị từ
-  chối sau khi đổi mật khẩu; response không chứa \code{passwordHash}. \\
-FR-05 & Tạo đơn và thanh toán & Must &
-  \code{POST /orders} trả \code{201} với \code{status = PENDING} trong transaction; \code{finalAmount}
-  do server tính, client gửi sai bị bỏ qua; callback thành công chuyển \code{PAID} và cộng điểm
-  đúng một lần. \\
-FR-06 & Xác nhận và lịch sử đơn & Must &
-  Khách chỉ thấy đơn của mình; truy cập đơn người khác trả \code{404}; chi tiết đủ dòng hàng,
-  giảm giá, điểm, trạng thái, mã giao dịch; danh sách phân trang. \\
-FR-07 & Máy trạng thái đơn & Must &
-  Bảy trạng thái với bảng chuyển tiếp tường minh; chuyển sai trả \code{409}; hai request đồng
-  thời không ghi đè trạng thái; hủy đơn hoàn kho và điểm đúng một lần. \\
-FR-08 & Thanh toán idempotent & Must &
-  Thiếu \code{Idempotency-Key} trả \code{400}; lặp key cùng payload trả giao dịch cũ; khác
-  payload trả \code{409}; hai request song song chỉ sinh một giao dịch. \\
-FR-09 & Kiểm soát tồn kho & Must &
-  Hai đơn tranh chấp cùng nguyên liệu chỉ một đơn thành công; tồn kho không âm; hủy đơn hoàn
-  đúng lượng đã trừ theo ảnh chụp định lượng. \\
-FR-10 & Khuyến mãi và loyalty & Should &
-  Voucher sai điều kiện bị từ chối kèm lý do; điểm cộng theo \code{floor(finalAmount/1000)} và
-  chỉ một lần mỗi đơn; hủy đơn hoàn điểm đã dùng và thu hồi điểm đã tích. \\
-FR-11 & Quản trị & Should &
-  Admin CRUD được sản phẩm/kho/công thức; chuyển trạng thái đơn đúng luật; bảng đối soát lọc
-  theo nguồn/trạng thái/ngày và đồng bộ lại trạng thái từ ZaloPay. \\
-FR-12 & Thông báo và phản hồi trạng thái & Could &
-  Mọi lỗi hiển thị thông điệp tiếng Việt, không lộ stack trace; trang đơn chờ tự làm mới mỗi
-  15 giây và có nút kiểm tra kết quả. \\
-\end{longtable}
-}
+\end{tabularx}
+\end{table}
 
-\paragraph{Sơ đồ use-case tổng quát.}
-Sơ đồ gồm năm actor (Khách hàng, Barista, Admin, Cron Job, ZaloPay Sandbox) và 15 use-case
-nhóm theo tám mảng chức năng: thực đơn, chi tiết món, giỏ hàng, xác thực, đặt và thanh toán,
-lịch sử đơn, hủy đơn/hoàn kho và quản trị. Các quan hệ \code{include} thể hiện phần dùng chung
-(xác thực JWT, kiểm tra công thức và trừ kho, xử lý callback); \code{extend} thể hiện phần tùy
-chọn (áp voucher và dùng điểm). Tệp nguồn \file{docs/diagrams/usecase-overall.puml} đi kèm ảnh
-kết xuất \file{usecase-overall.svg} đúng yêu cầu lưu cả nguồn và ảnh.
+\begin{table}[H]
+\centering\footnotesize
+\caption{Yêu cầu phi chức năng (Non-Functional Requirements)}
+\label{tab:nfr-summary}
+\begin{tabularx}{\textwidth}{@{}p{1.6cm} p{2.8cm} p{2.8cm} X@{}}
+\toprule
+\textbf{Mã} & \textbf{Thuộc tính} & \textbf{Tiêu chuẩn} & \textbf{Chỉ số định lượng cụ thể} \\
+\midrule
+NFR-01 & Hiệu năng & ISO/IEC 25010 & Thời gian phản hồi p95 $< 500$ms đối với xem menu; p95 $< 800$ms khi tạo đơn. \\
+NFR-02 & Bảo mật dữ liệu & Security & Mật khẩu băm bcrypt (salt 10); JWT HS256 hạn 7 ngày; không lộ secret trên Git. \\
+NFR-03 & Toàn vẹn dữ liệu & Data Integrity & Tạo đơn và trừ nguyên liệu nằm trong một ACID Transaction; tồn kho không âm ($stock \ge 0$). \\
+NFR-04 & Độ tin cậy & Idempotency & Trùng Idempotency-Key trả kết quả cũ (HTTP 200); không ghi nhận giao dịch trùng. \\
+NFR-05 & Tương thích PWA & Compatibility & Đạt chuẩn Installable PWA; hiển thị tốt trên Chrome, Safari iOS, Edge. \\
+NFR-06 & Đóng gói container & Deployability & Backend build từ Docker image chuẩn Node 22-slim; deploy Render/Vercel/Supabase. \\
+NFR-07 & Tự động hóa CI & CI/CD & 100\% PR phải vượt qua 3 job CI (api, web, integration) trước khi merge vào main. \\
+NFR-08 & Khả năng phục hồi & Recoverability & Hỗ trợ rollback 1-click về bản ổn định trước đó; thời gian phục hồi RTO $< 5$ phút. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Đặc tả chi tiết Use Case trọng tâm: UC-ORD-01 -- Đặt đơn hàng mới và Hủy đơn hàng}
+\label{sec:uc-ord-01}
+
+Use-case này mô tả quy trình cốt lõi khép kín từ khi khách hàng xác nhận giỏ hàng, trừ tồn kho nguyên liệu theo định lượng (BOM), xử lý thanh toán, cho đến khi hủy đơn hợp lệ hoặc tự động hủy do quá hạn.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{../figures/diagrams/BrewLite-UseCase-Overall.png}
-\caption{Sơ đồ use-case tổng quát của BrewLite}
-\label{figA:usecase-overall}
+\includegraphics[width=0.88\textwidth]{../figures/diagrams/uc-order.png}
+\caption{Sơ đồ Use Case phân hệ Đặt hàng và Hủy đơn hàng (UC - Order)}
+\label{fig:uc-order-diagram}
 \end{figure}
 
-{\footnotesize
-\begin{longtable}{@{}p{1.6cm} p{2.6cm} p{1.7cm} p{7.55cm}@{}}
-\caption{Yêu cầu phi chức năng của BrewLite}\label{tabA:nfr}\\
-\toprule
-\textbf{Mã} & \textbf{Thuộc tính} & \textbf{MoSCoW} & \textbf{Tiêu chí chấp nhận (AC)} \\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Mã} & \textbf{Thuộc tính} & \textbf{MoSCoW} & \textbf{Tiêu chí chấp nhận (AC)} \\
-\midrule
-\endhead
-\bottomrule
-\endfoot
-NFR-01 & Hiệu năng & Must &
-  Endpoint đọc phản hồi $<500$~ms khi dịch vụ đã thức; đo thực tế 5 lượt trên production đạt
-  trung vị 81--182~ms, tối đa 194~ms. \\
-NFR-02 & Bảo mật & Must &
-  Mật khẩu bcrypt; JWT có thời hạn và role guard; validate DTO; không lộ lỗi nội bộ; chữ ký
-  ZaloPay so sánh bằng \code{timingSafeEqual}. \\
-NFR-03 & Tương thích & Must &
-  Hiển thị chuẩn trên Chromium ở 390$\times$844 (8 tuyến đường) và 1440$\times$900 (5 tuyến
-  đường), không cuộn ngang. \\
-NFR-04 & Toàn vẹn dữ liệu & Must &
-  Transaction \code{Serializable} cho tạo đơn, cập nhật kho có điều kiện (optimistic lock),
-  \code{UNIQUE} chống trùng thanh toán; kiểm thử tranh chấp song song đạt 100\%. \\
-NFR-05 & Khả dụng & Must &
-  Đầy đủ trạng thái loading/empty/error; thao tác nguy hiểm (hủy đơn, xóa tất cả) có hộp thoại
-  xác nhận. \\
-NFR-06 & Bảo trì & Must &
-  TypeScript strict, 9 domain module độc lập; tài liệu API, thiết kế CSDL và ADR đầy đủ trong
-  \file{docs/}. \\
-NFR-07 & Kiểm thử & Must &
-  49 kiểm thử backend và 10 kiểm thử frontend (\code{node:test}) đạt 100\%; build và lint chạy
-  trong CI trên \code{main}, chặn merge khi lỗi. \\
-NFR-08 & Cấu hình & Must &
-  Không có bí mật trong mã nguồn hay lịch sử Git; toàn bộ cấu hình qua biến môi trường, có
-  \file{.env.example}. \\
-NFR-09 & Khả năng triển khai & Should &
-  Chạy được bằng \code{docker compose up}; frontend/API production truy cập qua HTTPS; có
-  endpoint \code{/health}. \\
-\end{longtable}
-}
-
-\subsection{Task 1.3 -- Đặc tả use-case trọng tâm: đặt và thanh toán đơn hàng}
-
-UC-01 được chọn làm use-case trọng tâm vì nó đi qua gần như toàn bộ yêu cầu \emph{Must}:
-xác thực, giỏ hàng, tính tiền, trừ kho, máy trạng thái, thanh toán và idempotency. Đặc tả đầy
-đủ nằm trong \file{docs/requirements/use-case-uc01.md}; dưới đây là bản rút gọn dùng cho báo cáo.
+\subsubsection{Thông tin ca sử dụng (Use Case Specification)}
 
 \begin{table}[H]
 \centering\small
-\caption{Thông tin cơ bản UC-01}
-\label{tabA:uc01}
+\caption{Đặc tả ca sử dụng UC-ORD-01: Đặt đơn hàng và Hủy đơn}
+\label{tab:uc-ord-spec}
 \begin{tabularx}{\textwidth}{@{}p{3.2cm} X@{}}
 \toprule
-\textbf{Thuộc tính} & \textbf{Nội dung} \\
+\textbf{Mục} & \textbf{Nội dung} \\
 \midrule
-Mã và tên & UC-01: Đặt và thanh toán đơn hàng \\
-Actor chính & Khách hàng (\code{CUSTOMER} có JWT hợp lệ) \\
-Actor phụ & ZaloPay Sandbox; Hệ thống (cron hủy đơn quá hạn) \\
-Trigger & Khách nhấn ``Tiến hành thanh toán'' từ màn hình giỏ hàng \\
-Tiền điều kiện & Giỏ có ít nhất một món hợp lệ; phiên JWT hợp lệ; nguyên liệu theo công thức còn đủ \\
-Hậu điều kiện thành công & Đơn chuyển \code{PAID} và ghi lịch sử trạng thái; nguyên liệu bị trừ kèm ảnh chụp;
-  giao dịch lưu duy nhất; điểm loyalty cập nhật; giỏ hàng được xóa \\
-Hậu điều kiện thất bại & Thiếu nguyên liệu/lệch version: rollback và giữ giỏ; thanh toán thất bại hoặc quá hạn:
-  đơn \code{CANCELLED}, hoàn kho và hoàn điểm đã giữ \\
-Liên kết & FR-03, FR-04, FR-05, FR-06, FR-07, FR-08, FR-09, FR-10; NFR-01, NFR-02, NFR-04 \\
+\textbf{Mã ca sử dụng} & \textbf{UC-ORD-01} (Tích hợp luồng Đặt hàng và Hủy đơn) \\
+\textbf{Tên ca sử dụng} & Đặt đơn hàng mới và Hủy đơn hàng \\
+\textbf{Tác nhân chính} & Khách hàng (Primary Actor) \\
+\textbf{Tác nhân phụ} & Nhân viên quầy (Barista), Cổng thanh toán (ZaloPay Sandbox / Mock), Cronjob hệ thống \\
+\textbf{Mục tiêu ca sử dụng} & Khách hàng đặt mua thành công các món uống đã chọn trong giỏ hàng; hệ thống đảm bảo trừ kho nguyên liệu theo định lượng và ghi nhận doanh thu chính xác; hỗ trợ hủy đơn an toàn khi chưa pha chế. \\
+\textbf{Tiền điều kiện} & 
+1. Khách hàng đã đăng nhập và sở hữu JWT Token hợp lệ (FR-01..03).\\
+& 2. Giỏ hàng có tối thiểu 1 món; mỗi món có size, số lượng (1..99) và danh sách topping hợp lệ (FR-10..12).\\
+& 3. Kho nguyên liệu đáp ứng đủ định lượng theo công thức (BOM) của các món đã chọn. \\
+\textbf{Hậu điều kiện} & 
+1. Đơn hàng mới được ghi nhận trong cơ sở dữ liệu với trạng thái \code{PAID} (hoặc \code{PENDING} nếu thanh toán sau).\\
+& 2. Tồn kho nguyên liệu bị trừ chính xác và ghi lại bản ghi snapshot \code{OrderIngredientUsage}.\\
+& 3. Điểm thưởng Loyalty được tích lũy cho khách hàng (nếu đơn thành công).\\
+& 4. Giỏ hàng trên thiết bị khách hàng được làm trống an toàn. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\paragraph{Luồng chính.}
-Bảng~\ref{tabA:uc01-main} ghép bước tạo đơn với bước thanh toán thành một luồng liên tục, đúng
-như những gì người dùng thấy trên màn hình.
+\subsubsection{Luồng sự kiện chính (Sunny Day Scenario -- 14 bước)}
 
-\begin{table}[H]
-\centering\small
-\caption{Luồng chính UC-01}
-\label{tabA:uc01-main}
-\begin{tabularx}{\textwidth}{@{}p{1.2cm} p{2.5cm} X@{}}
-\toprule
-\textbf{Bước} & \textbf{Actor} & \textbf{Hành động} \\
-\midrule
-1 & Khách hàng & Kiểm tra giỏ và nhấn ``Tiến hành thanh toán''. \\
-2 & Hệ thống & Xác thực JWT; hiển thị điểm hiện có, ô nhập voucher và tổng tiền dự kiến. \\
-3 & Khách hàng & Chọn số điểm muốn dùng, nhập voucher (tùy chọn) và xác nhận đặt đơn. \\
-4 & NestJS API & Validate DTO, mở transaction \code{Serializable}: tính lại giá, kiểm tra voucher/hạn mức
-  điểm, truy vấn công thức và trừ kho bằng optimistic locking, tạo đơn \code{PENDING} kèm ảnh
-  chụp định lượng. \\
-5 & Khách hàng & Chọn ví ZaloPay và nhấn ``Tạo thanh toán ZaloPay Sandbox''. \\
-6 & NestJS API & Kiểm tra quyền sở hữu đơn, sinh \code{app\_trans\_id}, ký HMAC-SHA256 và gọi
-  Create API của ZaloPay. \\
-7 & ZaloPay & Tạo giao dịch và trả về liên kết \code{openinapp}; API lưu \code{Payment} trạng thái
-  \code{PENDING}. \\
-8 & Khách hàng & Thực hiện thanh toán trên giao diện ZaloPay Sandbox. \\
-9 & ZaloPay & Gửi callback HTTPS kèm chữ ký \code{mac}. \\
-10 & NestJS API & Xác thực MAC bằng \code{timingSafeEqual}, kiểm tra idempotency, cập nhật
-  \code{Payment} thành công, chuyển đơn sang \code{PAID}, cộng điểm loyalty và ghi lịch sử trạng thái. \\
-11 & Next.js UI & Polling 15 giây hoặc nút ``Kiểm tra kết quả'' cập nhật trạng thái \code{PAID} và
-  hiển thị xác nhận đơn. \\
-12 & Khách hàng & Theo dõi tiến trình pha chế và nhận món tại quầy. \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\begin{enumerate}[label=\textbf{Bước \arabic*:}, leftmargin=4.2em]
+  \item Khách hàng mở trang Giỏ hàng (\file{/cart}), rà soát danh sách món uống, số lượng và tổng tiền tạm tính.
+  \item Khách hàng nhấn nút \textbf{``Tiến hành đặt hàng''} để điều hướng sang trang Thanh toán (\file{/checkout}).
+  \item Khách hàng chọn phương thức thanh toán (ví dụ: ZaloPay Sandbox hoặc Ví điện tử mô phỏng), nhập mã giảm giá (nếu có), và nhấn \textbf{``Xác nhận đặt hàng''}.
+  \item Giao diện gửi yêu cầu \code{POST /api/v1/orders} kèm header \code{Authorization: Bearer <JWT>} và \code{Idempotency-Key: <UUIDv4>}.
+  \item Tuyến API xác thực JWT Token hợp lệ, trích xuất \code{userId} của khách hàng.
+  \item Hệ thống kiểm tra tính hợp lệ của DTO đầu vào (kích cỡ hợp lệ, số lượng $>0$, danh sách topping không trùng).
+  \item Backend mở một Transaction ACID trong cơ sở dữ liệu PostgreSQL.
+  \item Backend đọc công thức pha chế (BOM) của từng món, gom nhóm và tính toán tổng lượng nguyên liệu cần tiêu hao.
+  \item Backend thực hiện atomic conditional update trên từng nguyên liệu theo thứ tự ID tăng dần (\code{UPDATE ingredients SET stock = stock - qty WHERE id = ? AND stock >= qty}).
+  \item Backend tính toán lại đơn giá từng dòng và tổng tiền đơn hàng dựa trên bảng giá chuẩn trong cơ sở dữ liệu; kiểm tra điều kiện mã giảm giá (nếu có).
+  \item Backend ghi nhận bản ghi \code{Order} mới (trạng thái \code{PENDING}), các dòng \code{OrderItem}, danh sách topping và lưu bản chụp định lượng vào bảng \code{OrderIngredientUsage}.
+  \item Hệ thống gọi dịch vụ thanh toán để tạo phiên giao dịch, nhận kết quả thanh toán thành công (\code{SUCCESS}), cập nhật trạng thái đơn sang \code{PAID}.
+  \item Transaction được COMMIT thành công. Điểm tích lũy Loyalty được cộng tự động vào tài khoản khách hàng.
+  \item Giao diện khách hàng nhận mã phản hồi \code{201 Created}, làm rỗng giỏ hàng cục bộ và chuyển hướng khách hàng sang trang Theo dõi đơn hàng (\file{/orders/:id}).
+\end{enumerate}
 
-\paragraph{Luồng thay thế và ngoại lệ.}
-Các nhánh A1--A3 và E1--E4 dưới đây là những gì hệ thống phải xử lý ngoài luồng chính; mỗi
-nhánh gắn với yêu cầu chức năng tương ứng để tiện truy vết khi kiểm thử.
+\subsubsection{Các luồng sự kiện rẽ nhánh (Alternative Flows)}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Alt-1: Khách hàng áp dụng mã giảm giá hợp lệ:} Tại bước 3, khách hàng nhập mã voucher. Backend kiểm tra điều kiện giá trị đơn tối thiểu, hạn sử dụng và số lượt còn lại; nếu thỏa mãn thì áp dụng chiết khấu và ghi nhận mã giảm giá vào đơn hàng.
+  \item \textbf{Alt-2: Thanh toán thất bại hoặc hủy ngang trên cổng thanh toán:} Tại bước 12, cổng thanh toán báo lỗi giao dịch hoặc người dùng bấm hủy. Backend ghi nhận trạng thái đơn là \code{PAYMENT\_FAILED}, nguyên liệu trong kho vẫn được giữ chỗ tạm thời; khách hàng nhận được thông báo lỗi kèm nút \textbf{``Thử lại thanh toán''} trong vòng 15 phút.
+  \item \textbf{Alt-3: Khách hàng chủ động hủy đơn chưa chuẩn bị:} Khi đơn hàng ở trạng thái \code{PENDING} hoặc \code{PAYMENT\_FAILED}, khách hàng nhấn nút \textbf{``Hủy đơn''}. Tuyến API \code{POST /api/v1/orders/:id/cancel} kiểm tra quyền chủ đơn, chuyển trạng thái đơn sang \code{CANCELLED}, đọc bảng snapshot \code{OrderIngredientUsage} và hoàn trả chính xác số lượng nguyên liệu vào kho (\code{UPDATE ingredients SET stock = stock + usageQty}).
+  \item \textbf{Alt-4: Tự động hủy đơn quá hạn 15 phút chưa thanh toán:} Định kỳ mỗi phút, tác vụ nền (\code{OrderCleanupCronjob}) quét các đơn hàng có trạng thái \code{PENDING} hoặc \code{PAYMENT\_FAILED} được tạo quá 15 phút trước. Hệ thống tự động chuyển đơn sang \code{CANCELLED} và hoàn trả nguyên liệu vào kho tương tự Alt-3.
+\end{itemize}
+
+\subsubsection{Các luồng sự kiện ngoại lệ (Exception Flows)}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Exc-1: Phiên đăng nhập hết hạn (401 Unauthorized):} Tại bước 5, nếu JWT token hết hạn hoặc không hợp lệ, hệ thống từ chối yêu cầu và chuyển hướng người dùng về trang đăng nhập mà không thực hiện bất kỳ thao tác nào với giỏ hàng hay kho.
+  \item \textbf{Exc-2: Dữ liệu đặt hàng không hợp lệ (400 Bad Request):} Tại bước 6, nếu giỏ hàng rỗng, số lượng ly bằng 0, hoặc tùy chọn size không khớp với danh mục, hệ thống ném ngoại lệ \code{ValidationPipe} và hủy bỏ yêu cầu.
+  \item \textbf{Exc-3: Không đủ nguyên liệu trong kho (400 Out of Stock):} Tại bước 9, nếu bất kỳ nguyên liệu nào không đủ định lượng (\code{stock < qty}), lệnh atomic update trả về 0 dòng bị ảnh hưởng. Backend lập tức \textbf{ROLLBACK} toàn bộ transaction, kho nguyên liệu giữ nguyên vẹn, và trả thông báo chi tiết: \textit{``Món [Tên món] hiện đã hết nguyên liệu, vui lòng chọn món khác''}.
+  \item \textbf{Exc-4: Tranh chấp ly đồ uống cuối cùng (Race Condition / Concurrency):} Khi hai khách hàng cùng đặt ly đồ uống cuối cùng tại cùng một tích tắc, cơ chế atomic conditional update đảm bảo chỉ một transaction trừ kho thành công (nhận HTTP 201), giao dịch còn lại sẽ bị từ chối với lỗi hết hàng (HTTP 400), ngăn chặn hoàn toàn hiện tượng âm kho.
+  \item \textbf{Exc-5: Mã giảm giá không đủ điều kiện (400 Invalid Coupon):} Tại bước 10, nếu mã giảm giá đã hết hạn, hết ngân sách hoặc tổng tiền đơn hàng chưa đạt mức tối thiểu, hệ thống từ chối áp dụng và trả thông báo lỗi cụ thể.
+  \item \textbf{Exc-6: Lỗi trùng lặp yêu cầu đặt hàng (Idempotency Violation):} Nếu khách hàng nhấn đúp nút đặt hàng, yêu cầu thứ hai gửi cùng \code{Idempotency-Key}. Backend nhận diện key đã được xử lý thành công, lập tức trả về kết quả của đơn hàng trước đó (HTTP 200) mà không tạo thêm đơn mới và không trừ kho lần hai.
+  \item \textbf{Exc-7: Lỗi kết nối cơ sở dữ liệu (500 Database Error):} Nếu có sự cố đứt kết nối mạng hoặc timeout cơ sở dữ liệu trong quá trình xử lý transaction, toàn bộ các bước đã thực hiện đều tự động ROLLBACK; kho nguyên liệu và trạng thái thanh toán không bị sai lệch dữ liệu dạng nửa vời.
+  \item \textbf{Exc-8: Yêu cầu hủy đơn khi món đã bắt đầu pha chế (409 Conflict):} Nếu khách hàng gửi yêu cầu hủy đơn nhưng nhân viên quầy đã chuyển trạng thái đơn sang \code{PREPARING}, hệ thống từ chối hủy với thông báo: \textit{``Đơn hàng đang được pha chế, không thể hủy''}.
+  \item \textbf{Exc-9: Chuyển trạng thái đơn không hợp lệ:} Bất kỳ yêu cầu chuyển trạng thái nào vi phạm 9 chuyển tiếp hợp lệ của máy trạng thái (ví dụ: \code{PENDING} $\rightarrow$ \code{COMPLETED}) đều bị hàm \code{assertTransition} chặn lại với mã lỗi \code{409 Conflict}.
+  \item \textbf{Exc-10: IPN thành công đến sau khi đơn đã bị hủy:} Trong trường hợp đơn hàng đã chuyển \code{CANCELLED} (do khách hủy hoặc quá 15 phút) nhưng sau đó cổng thanh toán lại gửi IPN báo thanh toán thành công, Backend cập nhật \code{Payment} là \code{SUCCESS}, đánh dấu đơn cần \textbf{hoàn tiền thủ công} (\code{refundStatus = MANUAL\_REQUIRED}), giữ nguyên đơn ở \code{CANCELLED} và không cộng điểm loyalty.
+\end{itemize}
+
+\subsubsection{Ánh xạ tiêu chí chấp nhận và liên kết kiểm thử}
+
+Bảng dưới đây ánh xạ các kịch bản kiểm chứng của use-case UC-ORD-01 với các mã kiểm thử (Test Case ID) trong bộ test tự động:
 
 \begin{table}[H]
 \centering\footnotesize
-\caption{Luồng thay thế và ngoại lệ UC-01}
-\label{tabA:uc01-alt}
-\begin{tabularx}{\textwidth}{@{}p{0.9cm} p{1.25cm} X p{2.6cm}@{}}
+\caption{Ánh xạ kiểm thử của use-case UC-ORD-01}
+\label{tab:uc-order-mapping}
+\begin{tabularx}{\textwidth}{@{}p{1.7cm} X p{2.2cm} p{2.7cm}@{}}
 \toprule
-\textbf{Mã} & \textbf{Bước} & \textbf{Điều kiện và xử lý} & \textbf{Liên kết} \\
+\textbf{Mã AC} & \textbf{Kịch bản kiểm chứng} & \textbf{Loại kiểm thử} & \textbf{Test Case ID} \\
 \midrule
-A1 & 2 & Chưa đăng nhập: lưu giỏ cục bộ, chuyển tới \code{/login?next=/checkout}; sau khi đăng nhập tự
-  quay lại thanh toán. & FR-04 \\
-A2 & 3 & Áp voucher và dùng điểm: backend kiểm tra hạn mức (10 điểm $=$ 1.000đ) và khấu trừ trước
-  khi gọi ZaloPay. & FR-10 \\
-A3 & 11 & Callback chưa về kịp: khách nhấn ``Kiểm tra kết quả'' để API gọi Query API đồng bộ trạng thái. & FR-05 \\
-E1 & 4 & Hết nguyên liệu hoặc lệch \code{version}: rollback transaction, trả \code{409 Conflict},
-  giữ nguyên giỏ hàng. & FR-09, NFR-04 \\
-E2 & 9--10 & Callback lặp lại: phát hiện trùng khóa thanh toán, trả \code{return\_code = 1} ngay,
-  không tạo giao dịch hay cộng điểm lần hai. & FR-08 \\
-E3 & 10 & Sai chữ ký callback: \code{timingSafeEqual} trả \code{false}, từ chối cập nhật và trả
-  \code{return\_code = -1}. & FR-08, NFR-02 \\
-E4 & 12 & Hủy đơn hoặc quá hạn thanh toán: chuyển \code{CANCELLED}, hoàn nguyên liệu theo ảnh chụp
-  và hoàn điểm đã giữ. & FR-07, FR-09 \\
+AC-UC-01 & Luồng chính: tạo đơn, trừ kho BOM, thanh toán PAID, cộng điểm & E2E / Integration & TC-UC-01, TC-ORDER-01, TC-ORDER-26 \\
+AC-UC-02 & Chưa đăng nhập: trả 401 Unauthorized, không tạo đơn & Integration & TC-ORDER-11, TC-AUTH-06 \\
+AC-UC-03 & Dữ liệu không hợp lệ (size/topping/số lượng sai): trả 400 & Integration / DTO & TC-ORDER-08, TC-ORDER-09, TC-ORDER-16 \\
+AC-UC-04 & Thiếu nguyên liệu: rollback toàn bộ, không tạo đơn, kho không đổi & Integration & TC-ORDER-02, TC-ORDER-21 \\
+AC-UC-05 & Tranh chấp ly cuối: 2 request đồng thời $\rightarrow$ 1 thành công 201, 1 báo lỗi 400 & Concurrency & TC-ORDER-03, TC-ORDER-22 \\
+AC-UC-06 & Voucher không đủ điều kiện tối thiểu: từ chối 400, không trừ kho & Integration & TC-ORDER-28, TC-ORDER-31 \\
+AC-UC-07 & Thanh toán lỗi: đơn sang PAYMENT\_FAILED, giữ giỏ và kho & Component / Int & TC-PAY-05, TC-PAY-17, TC-CART-04 \\
+AC-UC-08 & Thử lại thanh toán: đơn về PENDING, giữ kho, không trừ lần hai & Integration & TC-ORDER-42, TC-PAY-09 \\
+AC-UC-09 & Hủy đơn hàng hợp lệ: đơn CANCELLED, hoàn kho đúng snapshot BOM & Integration & TC-ORDER-23, TC-ORDER-43 \\
+AC-UC-10 & Hủy lần hai hoặc hủy đơn PAID: trả lỗi 409 Conflict & Integration & TC-ORDER-24, TC-ORDER-44 \\
+AC-UC-11 & Cronjob hủy đơn quá 15 phút: tự động CANCELLED và hoàn kho & Unit / Int & TC-ORDER-48, TC-CRON-01 \\
+AC-UC-12 & Idempotency: lặp cùng key trả kết quả cũ, không tạo payment trùng & Concurrency / Int & TC-PAY-02, TC-PAY-03, TC-ORDER-34 \\
+AC-UC-13 & IPN thành công đến sau CANCELLED: ghi nhận hoàn tiền thủ công & Integration & TC-PAY-18 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\begin{note}[Truy vết]
-Mỗi bước trong luồng chính xuất hiện lại dưới dạng một thông điệp trong sequence diagram
-(Hình~\ref{figA:sequence}) và một quyết định trong activity diagram
-(Hình~\ref{figA:activity}). Nhờ vậy, thay đổi yêu cầu ở bảng~\ref{tabA:fr} có thể lan truyền
-tới sơ đồ và mã nguồn một cách có kiểm soát.
+\begin{note}[Quy tắc bất biến cần giữ nhất quán]
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Backend là nguồn sự thật duy nhất về giá:} Giá cơ sở, phụ thu size và topping đều do \code{PricingService} đọc từ PostgreSQL và tính toán; mọi giá trị tiền client gửi lên đều bị bỏ qua.
+  \item \textbf{Nguyên tử hóa tồn kho theo BOM:} Toàn bộ quá trình kiểm tra và trừ nguyên liệu diễn ra trong transaction ACID với atomic conditional update. Tồn kho nguyên liệu tuyệt đối không bao giờ âm.
+  \item \textbf{Snapshot định lượng khi hoàn kho:} Khi hủy đơn, hệ thống đọc lượng nguyên liệu cần hoàn từ bảng snapshot \code{OrderIngredientUsage}, không tính lại theo công thức hiện hành để đảm bảo tính nhất quán lịch sử.
+\end{enumerate}
 \end{note}
 
+\subsection{Đặc tả chi tiết Use Case: UC-PRD-01 -- Xem chi tiết món và tùy biến}
+\label{sec:uc-prd-01}
+
+Use-case này mô tả quy trình khách hàng xem trang chi tiết của một đồ uống, tùy biến kích thước (size), lựa chọn các loại topping kèm theo, điều chỉnh số lượng và thêm vào giỏ hàng cục bộ trên trình duyệt.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{../figures/diagrams/uc-product-detail-custom.png}
+\caption{Sơ đồ Use Case: Chi tiết sản phẩm và tùy biến món (BrewLite -- Product Detail)}
+\label{fig:uc-product-detail-full}
+\end{figure}
+
+\subsubsection{Thông tin cơ bản của Use Case UC-PRD-01}
+
+\begin{table}[H]
+\centering\small
+\caption{Đặc tả ca sử dụng UC-PRD-01: Xem chi tiết món và tùy biến}
+\label{tab:uc-prd-01-spec}
+\begin{tabularx}{\textwidth}{@{}p{3.2cm} X@{}}
+\toprule
+\textbf{Mục} & \textbf{Nội dung} \\
+\midrule
+\textbf{Mã ca sử dụng} & \textbf{UC-PRD-01} (Product Detail \& Customization) \\
+\textbf{Tên ca sử dụng} & Xem chi tiết sản phẩm, tùy biến và thêm vào giỏ hàng \\
+\textbf{Tác nhân chính} & Khách hàng (Primary Actor) \\
+\textbf{Mục tiêu ca sử dụng} & Khách hàng xem thông tin chi tiết của món, lựa chọn kích cỡ phù hợp, chọn topping theo sở thích, theo dõi giá tạm tính tức thì và thêm sản phẩm vào giỏ hàng. \\
+\textbf{Tiền điều kiện} & 
+1. Khách hàng đã mở ứng dụng BrewLite và chọn một món đồ uống từ thực đơn.\\
+& 2. Món đồ uống có ID hợp lệ và đang ở trạng thái kinh doanh (\code{isAvailable = true}). \\
+\textbf{Hậu điều kiện} & 
+1. Món đồ uống với đầy đủ thuộc tính (size, danh sách topping, số lượng) được lưu trữ an toàn trong \code{localStorage} (\code{brewlite-cart}).\\
+& 2. Giao diện phát sự kiện \code{cart-changed}, cập nhật số lượng hiển thị trên biểu tượng giỏ hàng.\\
+& 3. Khách hàng nhận được thông báo phản hồi trực quan (Toast thông báo thành công). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Luồng sự kiện chính (Sunny Day Scenario)}
+
+\begin{enumerate}[label=\textbf{Bước \arabic*:}, leftmargin=4.2em]
+  \item Khách hàng điều hướng đến trang chi tiết sản phẩm thông qua đường dẫn \file{/products/:id}.
+  \item Frontend trích xuất mã nhận diện món ăn (\code{id}) từ URL bằng hook \code{useParams()}.
+  \item Hook \code{useProductDetail} kích hoạt trạng thái \code{setLoading(true)}, đặt \code{error = null} và gửi yêu cầu \code{getProductById(id)} qua \code{ApiClient}.
+  \item Backend API tiếp nhận yêu cầu \code{GET /products/:id}, truy vấn cơ sở dữ liệu PostgreSQL và trả về dữ liệu \code{ProductDetail} (mã trạng thái HTTP 200).
+  \item Frontend xác thực cấu trúc dữ liệu trả về thông qua hàm kiểm định \code{isValidProduct(data)}.
+  \item Frontend lưu thông tin sản phẩm vào bộ nhớ state (\code{setProduct(data)}), tự động gán kích thước mặc định (kích thước đầu tiên trong mảng sizes), khởi tạo danh sách topping rỗng (\code{setSelectedToppings([])}), tắt hiệu ứng chờ (\code{setLoading(false)}) và hiển thị toàn bộ giao diện chi tiết món.
+  \item Khách hàng lựa chọn kích thước đồ uống (ví dụ: Size M). Frontend gọi hàm \code{setSelectedSize(size)} và kích hoạt tính toán lại giá dự kiến.
+  \item Khách hàng chọn topping mong muốn. Frontend gọi hàm \code{toggleTopping(toppingId)}, xác nhận số lượng topping hiện tại $< 3$, thêm topping vào danh sách và kích hoạt tính toán lại giá dự kiến.
+  \item Khách hàng điều chỉnh số lượng ly cần mua (mặc định là 1 ly). Frontend gọi hàm \code{setQuantity(quantity)} và kích hoạt tính toán lại giá dự kiến.
+  \item Frontend tính toán giá dự kiến (\code{estimatedPrice}) và cập nhật hiển thị theo công thức:
+  \begin{equation}
+    \text{estimatedPrice} = \left(\text{basePrice} + \text{sizePriceAdjustment} + \sum_{k=1}^{n} \text{toppingPrice}_k\right) \times \text{quantity}
+  \end{equation}
+  \item Khách hàng nhấn nút \textbf{``Thêm vào giỏ hàng''}.
+  \item Frontend kiểm tra các điều kiện tiên quyết: sản phẩm còn mở bán, kích cỡ đã chọn hợp lệ, số lượng $\ge 1$.
+  \item Frontend bật cờ \code{setIsAdding(true)}, khởi tạo đối tượng dữ liệu \code{CartItemDraft}.
+  \item Frontend truy xuất dữ liệu giỏ hàng từ \code{localStorage.getItem("brewlite-cart")}, giải mã chuỗi JSON qua \code{JSON.parse()} và xác minh mảng dữ liệu qua \code{Array.isArray(items)}.
+  \item Frontend thực hiện hàm gộp giỏ hàng \code{addToCartMerge(cartItems, newItem)}: nếu giỏ hàng đã có món cùng ID, cùng kích cỡ và cùng bộ topping thì cộng dồn số lượng; nếu không thì thêm một phần tử mới vào mảng.
+  \item Frontend lưu mảng giỏ hàng mới vào \code{localStorage.setItem("brewlite-cart", JSON.stringify(items))}.
+  \item Frontend kích hoạt sự kiện tùy biến \code{window.dispatchEvent(new Event("cart-changed"))} để đồng bộ hóa số đếm trên thanh điều hướng.
+  \item Frontend hiển thị thông báo Toast ``Đã thêm sản phẩm vào giỏ hàng'', tắt cờ \code{setIsAdding(false)} và giữ nguyên trang chi tiết để khách hàng tiếp tục thao tác hoặc chuyển trang.
+\end{enumerate}
+
+\subsubsection{Các luồng sự kiện rẽ nhánh (Alternative Flows)}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Alt-1: Thay đổi kích cỡ món:} Tại bước 7, khách hàng nhấp chọn kích cỡ khác (ví dụ: chuyển từ Size S sang Size L). Hệ thống cập nhật \code{selectedSize}, đọc mức giá chênh lệch (\code{sizePriceAdjustment}) tương ứng từ dữ liệu sản phẩm, tính toán lại giá dự kiến và cập nhật ngay lập tức trên nút bấm thêm vào giỏ.
+  \item \textbf{Alt-2: Bỏ chọn topping đã chọn trước đó:} Tại bước 8, khách hàng nhấp vào một loại topping đã có trong danh sách lựa chọn. Hàm \code{toggleTopping()} phát hiện topping đã tồn tại, tiến hành loại bỏ topping đó khỏi danh sách \code{selectedToppings}, trừ chi phí topping tương ứng và cập nhật lại giá tạm tính.
+  \item \textbf{Alt-3: Điều chỉnh số lượng bằng nút tăng/giảm:} Tại bước 9, khách hàng nhấn nút ``+'' hoặc ``-'' để tăng hoặc giảm số lượng ly. Hệ thống ràng buộc số lượng tối thiểu là 1; mỗi thay đổi số lượng lập tức nhân đơn giá tạm tính của 1 ly với hệ số mới để hiển thị số tiền chính xác.
+  \item \textbf{Alt-4: Món đã có trong giỏ hàng (Gộp dòng tự động):} Tại bước 15, thuật toán \code{addToCartMerge} duyệt qua danh sách giỏ hàng hiện tại và nhận thấy đã có một mục có cùng \code{productId}, cùng \code{sizeId} và mảng \code{toppingIds} trùng khớp 100\%. Thay vì tạo thêm một dòng riêng biệt, hệ thống tăng thuộc tính \code{quantity} của mục đã có, giúp giỏ hàng luôn gọn gàng và chuẩn xác.
+\end{itemize}
+
+\subsubsection{Các luồng sự kiện ngoại lệ (Exception Flows)}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Exc-1: Không tìm thấy sản phẩm hoặc sản phẩm bị xóa (Lỗi 404):} Tại bước 4, Backend trả về mã trạng thái \code{404 Not Found}. Hook \code{useProductDetail} bắt ngoại lệ thông qua khối \code{catch(e)}, thiết lập \code{setProduct(null)}, đặt thông điệp \code{setError("Không tìm thấy sản phẩm này")}, tắt tải \code{setLoading(false)} và render màn hình báo lỗi kèm nút điều hướng quay về trang thực đơn.
+  \item \textbf{Exc-2: Dữ liệu sản phẩm bị sai lệch hoặc không đầy đủ:} Tại bước 5, dữ liệu trả về từ API thiếu các trường dữ liệu quan trọng (như thiếu giá cơ sở \code{basePrice} hoặc mảng kích thước \code{sizes} rỗng). Hàm \code{isValidProduct(data)} trả về kết quả \code{false}, ném ra ngoại lệ \code{throw Error("Dữ liệu không hợp lệ")}. Hệ thống dừng xử lý, hiển thị cảnh báo lỗi dữ liệu cho người dùng.
+  \item \textbf{Exc-3: Khách hàng chọn vượt quá giới hạn 3 loại topping:} Tại bước 8, khách hàng cố gắng nhấp chọn loại topping thứ 4 khi danh sách đã chứa đủ 3 loại. Hàm \code{toggleTopping()} kiểm tra điều kiện kích thước danh sách $\ge 3$, lập tức ngăn chặn thêm mới, gọi \code{setError("Tối đa 3 topping")} và hiển thị cảnh báo trên giao diện mà không làm thay đổi giá tiền.
+  \item \textbf{Exc-4: Sản phẩm tạm ngưng bán hoặc hết hàng:} Tại bước 12, nếu trường \code{isAvailable = false}, giao diện hiển thị trạng thái ``Tạm ngưng phục vụ'', nút ``Thêm vào giỏ hàng'' bị vô hiệu hóa (\code{disabled = true}). Nếu khách hàng cố tình kích hoạt thông qua mã lệnh, hàm kiểm tra điều kiện tại bước 12 lập tức \code{return} sớm và không ghi bất kỳ dữ liệu nào vào \code{localStorage}.
+  \item \textbf{Exc-5: Dữ liệu giỏ hàng trong localStorage bị hỏng:} Tại bước 14, nếu chuỗi lưu trữ trong \code{localStorage} bị can thiệp dẫn đến sai cú pháp JSON hoặc kết quả phân tích không phải là mảng (\code{!Array.isArray}), khối \code{try...catch} sẽ bắt lỗi, tự động đặt lại giỏ hàng thành mảng rỗng mới \code{[]}, bảo vệ hệ thống không bị crash và tiếp tục lưu món ăn hợp lệ vừa thêm.
+\end{itemize}
+
+\subsubsection{Ánh xạ tiêu chí chấp nhận và liên kết kiểm thử của UC-PRD-01}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Ánh xạ kiểm thử của use-case UC-PRD-01}
+\label{tab:uc-prd-01-mapping}
+\begin{tabularx}{\textwidth}{@{}p{1.7cm} X p{2.2cm} p{2.7cm}@{}}
+\toprule
+\textbf{Mã AC} & \textbf{Kịch bản kiểm chứng} & \textbf{Loại kiểm thử} & \textbf{Test Case ID} \\
+\midrule
+AC-PRD-01 & Tải chi tiết sản phẩm hợp lệ, hiển thị size mặc định, topping rỗng & Component / UI & TC-PRD-01, TC-E2E-02 \\
+AC-PRD-02 & Gọi sản phẩm không tồn tại (404) hiển thị thông báo lỗi thân thiện & Integration & TC-PRD-02, TC-API-04 \\
+AC-PRD-03 & Tính giá tạm tính thời gian thực khi chọn size, topping, số lượng & Unit / Component & TC-PRD-03, TC-CALC-01 \\
+AC-PRD-04 & Chặn chọn topping thứ 4 và hiển thị cảnh báo tối đa 3 loại & Component / UI & TC-PRD-04, TC-UI-05 \\
+AC-PRD-05 & Thêm sản phẩm vào giỏ và lưu trữ thành công vào localStorage & Unit / Integration & TC-CART-01, TC-CART-02 \\
+AC-PRD-06 & Gộp số lượng khi thêm sản phẩm trùng cấu hình (ID, size, topping) & Unit Test & TC-CART-03, TC-CALC-02 \\
+AC-PRD-07 & Phát sự kiện cart-changed và hiển thị toast thông báo thành công & Component / E2E & TC-UI-06, TC-E2E-03 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Danh mục mở rộng Use Case theo phân hệ backend (ZaloPay, Users, Recipes)}
+\label{sec:uc-extended-modules}
+
+Nhằm đảm bảo tính bao phủ toàn diện giữa yêu cầu phần mềm và các phân hệ thực tế đã triển khai trong mã nguồn, hệ thống định nghĩa bổ sung 18 ca sử dụng thuộc 3 phân hệ trọng yếu: Cổng thanh toán ZaloPay Sandbox (ZP01--ZP07), Quản lý người dùng và vai trò (UM01--UM05), cùng Quản lý định lượng và công thức (RC01--RC06):
+
+\begin{table}[H]
+\centering\small
+\caption{Tổng hợp 18 Use Case thuộc các phân hệ ZaloPay, Users và Recipes}
+\label{tab:uc-extended-summary}
+\begin{tabularx}{\textwidth}{@{}l p{4.2cm} p{3.2cm} X@{}}
+\toprule
+\textbf{Mã UC} & \textbf{Tên Use Case} & \textbf{Tác nhân (Actor)} & \textbf{Mục tiêu \& Ràng buộc chính} \\
+\midrule
+\multicolumn{4}{@{}l}{\textbf{Phân hệ Cổng thanh toán ZaloPay Sandbox (Phụ lục~\ref{app:zalopay-sandbox})}} \\
+ZP01 & Xem khả năng sử dụng sandbox & Khách hàng, Quản trị viên & Kiểm tra trạng thái kích hoạt cổng thanh toán qua API config. \\
+ZP02 & Tạo yêu cầu thanh toán & Khách hàng (Chủ đơn) & Chống trùng bằng \code{Idempotency-Key}, tạo bản ghi Payment \code{PENDING}. \\
+ZP03 & Mở cổng / thanh toán thử nghiệm & Khách hàng & Điều hướng sang cổng ZaloPay Sandbox; không tự đổi trạng thái khi redirect. \\
+ZP04 & Xem giao dịch mới nhất & Khách hàng, Quản trị viên & Đọc trạng thái thanh toán từ DB; polling cục bộ mỗi 15 giây. \\
+ZP05 & Đồng bộ kết quả từ ZaloPay & Khách hàng, Quản trị viên & Chủ động đối soát với ZaloPay Server khi giao dịch chưa thành công. \\
+ZP06 & Tiếp nhận callback thanh toán & ZaloPay Sandbox & Webhook xác thực MAC (HMAC-SHA256); chuyển đơn sang \code{PAID} trong transaction. \\
+ZP07 & Tạo lượt thanh toán lại & Khách hàng (Chủ đơn) & Thanh toán lại cho đơn \code{PENDING} hoặc \code{PAYMENT\_FAILED}. \\
+\midrule
+\multicolumn{4}{@{}l}{\textbf{Phân hệ Quản lý người dùng và phân quyền (Phụ lục~\ref{app:user-mgmt})}} \\
+UM01 & Xem ID và vai trò bản thân & Người dùng đã đăng nhập & Đọc thông tin phiên đăng nhập qua \code{JwtAuthGuard}. \\
+UM02 & Xem danh sách người dùng & Quản trị viên (ADMIN) & Hiển thị thành viên và số đơn qua Transaction mức \code{RepeatableRead}. \\
+UM03 & Tìm kiếm / lọc theo vai trò & Quản trị viên (ADMIN) & Tìm kiếm không dấu theo tên/email, lọc theo CUSTOMER/ADMIN. \\
+UM04 & Phân trang danh sách & Quản trị viên (ADMIN) & Phân trang an toàn (10--50 dòng/trang), sắp xếp theo thời gian tạo. \\
+UM05 & Đổi vai trò CUSTOMER / ADMIN & Quản trị viên (ADMIN) & Cấm tự đổi quyền; dùng PostgreSQL Advisory Lock chống race condition. \\
+\midrule
+\multicolumn{4}{@{}l}{\textbf{Phân hệ Quản lý định lượng và công thức (Phụ lục~\ref{app:recipe-mgmt})}} \\
+RC01 & Xem danh mục sản phẩm / nguyên liệu & Quản trị viên (ADMIN) & Xem sản phẩm, size và nguyên liệu kèm số lượng sử dụng (\code{recipeCount}). \\
+RC02 & Thêm nguyên liệu & Quản trị viên (ADMIN) & Tên chuẩn hóa Unicode NFC, đơn vị chuẩn; tên không trùng hoa/thường. \\
+RC03 & Sửa tên / đơn vị nguyên liệu & Quản trị viên (ADMIN) & Cấm đổi đơn vị nếu nguyên liệu đang được dùng trong công thức (409 Conflict). \\
+RC04 & Xóa nguyên liệu chưa sử dụng & Quản trị viên (ADMIN) & Chỉ cho phép xóa khi \code{recipeCount == 0}; cấm xóa cascade. \\
+RC05 & Xem công thức theo sản phẩm / size & Quản trị viên (ADMIN) & Xem chi tiết định lượng thành phần cho từng cặp \code{(productId, size)}. \\
+RC06 & Lưu / làm rỗng công thức & Quản trị viên (ADMIN) & Thay thế nguyên tử toàn bộ BOM; khóa \code{FOR SHARE} và \code{FOR UPDATE}. \\
+\bottomrule
+\end{tabularx}
+\end{table}

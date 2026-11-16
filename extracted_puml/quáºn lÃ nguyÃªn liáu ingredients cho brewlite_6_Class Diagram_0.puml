@@ -1,0 +1,86 @@
+@startuml
+title CLASS DIAGRAM: PHÂN HỆ QUẢN LÝ NGUYÊN LIỆU (INGREDIENT DOMAIN MODEL)
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam classAttributeIconSize 0
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1A73E8
+  HeaderBackgroundColor #E8F0FE
+}
+
+enum IngredientUnit <<enumeration>> {
+  G
+  ML
+  PIECE
+}
+
+enum ProductSize <<enumeration>> {
+  S
+  M
+  L
+}
+
+class Ingredient {
+  + id : String
+  + name : String
+  + nameKey : String
+  + unit : IngredientUnit
+  + stock : Float
+  + version : Int
+  + price : Float
+  + createdAt : DateTime
+  + updatedAt : DateTime
+  --
+  + isLowStock(threshold: Float) : Boolean
+  + incrementVersion() : void
+}
+
+class StockImport {
+  + id : String
+  + importNumber : Int
+  + supplier : String?
+  + note : String?
+  + totalAmount : Decimal
+  + createdBy : String?
+  + createdAt : DateTime
+  --
+  + calculateTotalAmount() : Decimal
+}
+
+class StockImportItem {
+  + id : String
+  + importId : String
+  + ingredientId : String
+  + quantity : Float
+  + unitPrice : Float
+  + lineTotal : Decimal
+  --
+  + calculateLineTotal() : Decimal
+}
+
+class RecipeIngredient {
+  + productId : String
+  + size : ProductSize
+  + ingredientId : String
+  + quantity : Decimal
+}
+
+class OrderIngredient {
+  + orderId : String
+  + ingredientId : String
+  + quantity : Float
+}
+
+Ingredient ..> IngredientUnit : uses
+RecipeIngredient ..> ProductSize : uses
+
+StockImport "1" *-- "1..*" StockImportItem : contains >
+Ingredient "1" <-- "0..*" StockImportItem : imports <
+Ingredient "1" <-- "0..*" RecipeIngredient : used in recipe <
+Ingredient "1" <-- "0..*" OrderIngredient : reserved by order <
+
+@enduml

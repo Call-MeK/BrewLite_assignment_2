@@ -1,0 +1,66 @@
+@startuml
+skinparam backgroundColor White
+skinparam ActivityBackgroundColor White
+skinparam ActivityBorderColor Black
+skinparam ArrowColor Black
+skinparam DecisionBackgroundColor White
+skinparam DecisionBorderColor Black
+
+|Khách Hàng|
+start
+:Chọn món, size, topping vào giỏ hàng;
+:Nhập mã khuyến mãi & số điểm muốn dùng (nếu có);
+:Nhấn nút "Đặt hàng";
+
+|Hệ Thống (Backend)|
+:Kiểm tra đăng nhập (JWT);
+if (Đã đăng nhập?) then (Không)
+  :Yêu cầu đăng nhập;
+  stop
+else (Có)
+  :Kiểm tra điểm tích lũy sử dụng;
+  if (Điểm là bội số của 10?) then (Không)
+    :Báo lỗi điểm không hợp lệ;
+    stop
+  else (Hợp lệ)
+  endif
+endif
+
+|Cơ Sở Dữ Liệu|
+:Tra cứu công thức pha chế (Recipe) theo món & size;
+:Tính tổng lượng nguyên liệu cần tiêu hao;
+:Kiểm tra số lượng tồn kho nguyên liệu & topping;
+
+|Hệ Thống (Backend)|
+if (Còn đủ nguyên liệu & topping?) then (Không)
+  :Báo lỗi "Không đủ nguyên liệu/topping";
+  stop
+else (Đủ tồn kho)
+endif
+
+if (Có nhập mã khuyến mãi?) then (Có)
+  :Kiểm tra hạn dùng & điều kiện đơn tối thiểu;
+  :Tính số tiền giảm giá;
+else (Không)
+endif
+
+if (Có dùng điểm tích lũy?) then (Có)
+  :Tính tiền giảm từ điểm (10 điểm = 1.000đ);
+  |Cơ Sở Dữ Liệu|
+  :Trừ điểm tích lũy của User;
+  :Ghi log giao dịch điểm (SPENT);
+else (Không)
+endif
+
+|Cơ Sở Dữ Liệu|
+:Trừ tồn kho nguyên liệu (Optimistic Lock: version + 1);
+:Trừ tồn kho Topping;
+:Tạo đơn hàng mới (Trạng thái: PENDING);
+:Ghi log lịch sử trạng thái (StatusHistory: PENDING);
+
+|Khách Hàng|
+:Nhận thông báo "Đặt hàng thành công";
+:Chuyển hướng sang màn hình thanh toán;
+stop
+
+@enduml

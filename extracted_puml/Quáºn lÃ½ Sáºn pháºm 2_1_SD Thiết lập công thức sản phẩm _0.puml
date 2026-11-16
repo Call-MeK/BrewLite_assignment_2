@@ -1,0 +1,70 @@
+@startuml
+autonumber
+skinparam shadowing false
+actor "Quản trị viên" as Admin
+participant "Next.js UI\n(/admin/products)" as UI
+participant "ProductsController" as API
+participant "ProductsService" as Svc
+database "PostgreSQL" as DB
+
+activate Admin
+Admin -> UI : Mở Modal Công thức của sản phẩm
+activate UI
+UI -> API : GET /api/v1/products/:id/recipe + JWT
+activate API
+API -> Svc : getRecipe(productId)
+activate Svc
+Svc -> DB : findMany(where: { productId }, include: ingredient)
+activate DB
+DB --> Svc : RecipeIngredient[]
+deactivate DB
+Svc --> API : RecipeIngredient[]
+deactivate Svc
+API --> UI : 200 OK
+deactivate API
+UI --> Admin : Hiển thị thành phần & tính Tổng giá vốn (COGS)
+deactivate UI
+
+opt Thêm nguyên liệu vào công thức sản phẩm
+  Admin -> UI : Chọn Nguyên liệu, nhập Định lượng & bấm "Thêm"
+  activate UI
+  UI -> API : POST /api/v1/products/:id/recipe + JWT
+  activate API
+  API -> Svc : addRecipeItem(productId, ingredientId, quantity)
+  activate Svc
+  Svc -> DB : BEGIN & Lấy danh sách Size của sản phẩm (productSizePrice.findMany)
+  activate DB
+  DB --> Svc : Các size [S, M, L]
+  loop Cho từng Size của sản phẩm
+    Svc -> DB : recipeIngredient.upsert(productId, size, ingredientId, quantity)
+  end
+  DB --> Svc : COMMIT
+  deactivate DB
+  Svc --> API : Kết quả
+  deactivate Svc
+  API --> UI : 201 Created
+  deactivate API
+  UI --> Admin : Tải lại công thức & cập nhật Tổng giá vốn
+  deactivate UI
+end
+
+opt Xóa nguyên liệu khỏi công thức
+  Admin -> UI : Bấm nút Xóa nguyên liệu khỏi công thức
+  activate UI
+  UI -> API : DELETE /api/v1/products/:id/recipe/:ingredientId + JWT
+  activate API
+  API -> Svc : removeRecipeItem(productId, ingredientId)
+  activate Svc
+  Svc -> DB : recipeIngredient.deleteMany({ productId, ingredientId })
+  activate DB
+  DB --> Svc : Xóa thành công
+  deactivate DB
+  Svc --> API : Hoàn tất
+  deactivate Svc
+  API --> UI : 200 OK
+  deactivate API
+  UI --> Admin : Cập nhật lại bảng thành phần
+  deactivate UI
+end
+deactivate Admin
+@enduml

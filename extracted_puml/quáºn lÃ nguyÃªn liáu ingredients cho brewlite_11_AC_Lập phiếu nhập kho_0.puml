@@ -1,0 +1,48 @@
+@startuml
+title Activity Diagram: Lập phiếu nhập kho nguyên liệu
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Bấm "Tạo phiếu nhập";
+:Điền Nhà cung cấp và Ghi chú;
+:Chọn nguyên liệu, số lượng nhập\nvà đơn giá;
+:Bấm "Lưu phiếu nhập";
+
+|Giao diện (Next.js)|
+if (Form hợp lệ?\n(có dòng nhập, không trùng NL, SL > 0)) then (Không)
+  :Hiển thị lỗi trên biểu mẫu;
+  stop
+else (Có)
+  :Gửi POST /api/v1/admin/stock-imports;
+endif
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (CreateStockImportDto hợp lệ?\n(@ArrayUnique, quantity >= 0.001)) then (Không)
+  :Trả về 400 Bad Request;
+else (Có)
+  :Mở Transaction;
+  :Khóa các nguyên liệu theo thứ tự id\n(SELECT ... ORDER BY id FOR UPDATE);
+  if (Tất cả nguyên liệu tồn tại?) then (Không)
+    :Rollback;
+    :Trả về 400\n("Có nguyên liệu không tồn tại");
+  else (Có)
+    :Tạo phiếu nhập (StockImport)\nvà chi tiết (StockImportItem);
+    :Với từng nguyên liệu:\n- Cộng tồn kho (stock += quantity)\n- Cập nhật giá vốn (price = unitPrice)\n- Tăng version (+1);
+    :Commit Transaction;
+    :Trả về 201 Created;
+  endif
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi 201?) then (Có)
+  :Đóng hộp thoại;
+  :Hiển thị thông báo thành công;
+  :Tải lại danh sách phiếu nhập;
+else (Không)
+  :Hiển thị lỗi trên biểu mẫu;
+endif
+stop
+@enduml

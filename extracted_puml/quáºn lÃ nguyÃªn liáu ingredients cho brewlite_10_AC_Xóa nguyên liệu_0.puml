@@ -1,0 +1,41 @@
+@startuml
+title Activity Diagram: Xóa nguyên liệu
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+|Quản trị viên|
+start
+:Bấm nút Xóa trên dòng nguyên liệu;
+
+|Giao diện (Next.js)|
+:Hiển thị hộp thoại xác nhận xóa;
+
+|Quản trị viên|
+:Chọn Đồng ý hoặc Hủy;
+
+|Giao diện (Next.js)|
+if (Quản trị viên xác nhận xóa?) then (Hủy)
+  :Đóng hộp thoại;
+  stop
+else (Đồng ý)
+  :Gửi DELETE /api/v1/ingredients/:id;
+endif
+
+|Máy chủ (NestJS + PostgreSQL)|
+if (Nguyên liệu đã gắn với\nCông thức / Đơn hàng / Phiếu nhập?) then (Đã gắn)
+  :CSDL chặn xóa\n(Foreign Key Restrict);
+  :Trả về lỗi không thể xóa;
+else (Chưa sử dụng)
+  :Xóa bản ghi nguyên liệu;
+  :Trả về 200 OK;
+endif
+
+|Giao diện (Next.js)|
+if (Phản hồi 200?) then (Có)
+  :Cập nhật lại danh sách nguyên liệu;
+else (Không)
+  :Hiển thị cảnh báo\n"Không thể xóa nguyên liệu lúc này";
+endif
+stop
+@enduml
