@@ -1,81 +1,63 @@
 @startuml sequence-checkout
-title BrewLite – Luồng đặt hàng và thanh toán ZaloPay Sandbox
-
-actor "Khách hàng" as Customer
-participant "Next.js\nFrontend" as FE
+autonumber
+actor "Customer" as C
+participant "Next.js UI" as UI
 participant "NestJS API" as API
-database "PostgreSQL" as DB
-participant "ZaloPay\nSandbox" as ZLP
+database "PostgreSQL\n(Neon)" as DB
+participant "ZaloPay Sandbox" as ZP
 
-== 1. Chọn món và chuẩn bị đơn ==
+== Giai đoạn 1: Tạo đơn hàng & Giữ kho theo công thức ==
+C -> UI : Nhấn "Đặt hàng và thanh toán"\n(voucher, points)
+UI -> API : POST /api/v1/orders\n(Bearer JWT, items, voucherCode, pointsUsed)
+API -> API : JwtAuthGuard xác thực JWT & ValidationPipe DTO
 
-Customer -> FE: Mở menu / chi tiết sản phẩm
-FE -> API: GET /products, GET /products/:id
-API -> DB: Đọc sản phẩm, size, topping, tồn kho
-DB --> API: Dữ liệu
-API --> FE: Giá và tùy chọn khả dụng
-Customer -> FE: Thêm vào giỏ, chọn size/topping/số lượng
-FE -> FE: Lưu giỏ cục bộ, giữ pendingOrderId
-
-== 2. Tạo đơn ==
-
-Customer -> FE: Đặt hàng (có thể dùng điểm/mã giảm giá)
-FE -> API: POST /orders + Bearer JWT
-API -> DB: BEGIN
-API -> DB: Kiểm tra user, tồn kho, khuyến mãi, điểm
-API -> DB: Trừ nguyên liệu, tạo Order PENDING + snapshot giá
-API -> DB: COMMIT
-DB --> API: Order
-API --> FE: 201 Order PENDING
-Note over FE: Giỏ hàng vẫn được giữ, chưa xóa
-
-== 3. Tạo giao dịch ZaloPay ==
-
-Customer -> FE: Chọn Ví ZaloPay / Thẻ nội địa
-FE -> API: POST /payments/zalopay (Idempotency-Key, orderId, method)
-API -> DB: Khóa đơn, kiểm tra trạng thái + key, tạo Payment PENDING
-API -> ZLP: create (HMAC-SHA256, app_trans_id, amount, embed_data)
-ZLP --> API: return_code=1 + order_url
-API -> DB: Lưu paymentUrl
-API --> FE: Payment PENDING + paymentUrl
-FE --> Customer: Mở trang thanh toán ZaloPay
-
-== 4. Xác nhận kết quả ==
-
-alt Callback được cấu hình
-  ZLP -> API: POST /payments/zalopay/callback (data, mac)
-  API -> API: Xác thực MAC bằng key2 (timing-safe)
-else Không có callback
-  FE -> API: POST /payments/zalopay/:id/sync
-  API -> ZLP: query(app_trans_id)
-  ZLP --> API: return_code + zp_trans_id + amount
+API -> DB : BEGIN TRANSACTION (ISOLATION LEVEL SERIALIZABLE)
+API -> DB : Truy vấn Product, Recipe, Ingredient, Promotion, User
+alt Hết nguyên liệu hoặc xung đột version (Optimistic Lock)
+  API -> DB : ROLLBACK
+  API --> UI : 409 Conflict (Không đủ nguyên liệu / Xung đột tồn kho)
+  UI --> C : Hiển thị thông báo lỗi & giữ nguyên giỏ hàng
+else Đủ nguyên liệu
+  API -> DB : UPDATE ingredients SET stock = stock - qty, version = version + 1\nWHERE id = ... AND version = ... AND stock >= qty
+  API -> DB : INSERT Order (status=PENDING), OrderItems, OrderStatusHistory
+  API -> DB : COMMIT
+  API --> UI : 201 Created (orderId, totalAmount, status=PENDING)
+  UI --> C : Chuyển sang bước 3/3 chọn ZaloPay Sandbox
 end
 
-API -> DB: BEGIN
-API -> DB: Khóa đơn, đối chiếu giao dịch + số tiền
-alt Hợp lệ
-  API -> DB: Payment SUCCESS, Order PAID, cộng điểm, ghi history
-  API -> DB: COMMIT
-  API --> FE: Payment SUCCESS
-  FE -> FE: Xóa giỏ và pendingOrderId
-  FE --> Customer: Hiển thị thanh toán thành công
-else Sai tiền / trùng mã / đơn đã hủy
-  API -> DB: Payment SUCCESS + reviewReason, Order giữ nguyên
-  API -> DB: COMMIT
-  Note over API: Admin đối soát tại /admin/payments
+== Giai đoạn 2: Khởi tạo giao dịch ZaloPay Sandbox ==
+C -> UI : Nhấn "Tạo thanh toán ZaloPay Sandbox"
+UI -> API : POST /api/v1/payments/zalopay/create (orderId)
+API -> DB : Kiểm tra quyền sở hữu & trạng thái đơn hợp lệ
+API -> API : Tạo app_trans_id & ký MAC (HMAC-SHA256)
+API -> ZP : POST /v2/create (order info, mac)
+ZP --> API : Trả về order_url (openinapp)
+API -> DB : Lưu Payment (status=PENDING, appTransId)
+API --> UI : 200 OK (openinapp URL)
+UI -> C : Mở liên kết ZaloPay Sandbox & bắt đầu polling mỗi 15s
+
+== Giai đoạn 3: Callback Idempotent & Hoàn tất đơn ==
+ZP -> API : POST /api/v1/payments/zalopay/callback (data, mac)
+API -> API : Kiểm tra chữ ký MAC bằng crypto.timingSafeEqual
+alt Chữ ký MAC không hợp lệ
+  API --> ZP : return_code = -1 (mac not equal)
+else Chữ ký hợp lệ
+  API -> DB : BEGIN TRANSACTION
+  API -> DB : Kiểm tra Payment theo appTransId (Idempotency Check)
+  alt Giao dịch đã xử lý trước đó (Payment.status == SUCCESS)
+    API -> DB : ROLLBACK / COMMIT (No-op)
+    API --> ZP : return_code = 1 (Idempotent OK - không ghi trùng)
+  else Giao dịch mới hợp lệ
+    API -> DB : UPDATE Payment SET status = SUCCESS
+    API -> DB : UPDATE Order SET status = PAID + INSERT OrderStatusHistory
+    API -> DB : INSERT LoyaltyTransaction (cộng điểm thưởng)
+    API -> DB : COMMIT
+    API --> ZP : return_code = 1 (success)
+  end
 end
 
-== 5. Thất bại và thử lại ==
-
-alt Khách hủy hoặc ZaloPay báo hết hạn
-  FE -> API: POST /payments/zalopay/:id/cancel (hoặc sync thấy -54)
-  API -> ZLP: cancel(app_trans_id)
-  ZLP --> API: return_code=1
-  API -> DB: Payment FAILED, Order PAYMENT_FAILED
-  FE --> Customer: Giữ giỏ, cho phép thử lại
-  Customer -> FE: Thử lại
-  FE -> API: POST /payments/zalopay với Idempotency-Key mới
-  API -> DB: Order PAYMENT_FAILED → PENDING, tạo lượt mới
-end
-
+UI -> API : GET /api/v1/orders/:id (polling 15s / Kiểm tra kết quả)
+API -> DB : Truy vấn đơn hàng & lịch sử trạng thái
+API --> UI : 200 OK (status=PAID)
+UI --> C : Xóa giỏ hàng & hiển thị xác nhận đơn thành công
 @enduml

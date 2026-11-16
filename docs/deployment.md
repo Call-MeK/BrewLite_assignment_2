@@ -2,7 +2,8 @@
 
 > **Trạng thái:** đã triển khai demo công khai bằng **Vercel** (frontend) + **Render**
 > (backend Docker, Free, Singapore) + **Neon** (PostgreSQL, Singapore). CI chạy trên
-> nhánh `main`. ZaloPay Sandbox đã bật trên môi trường demo với bộ key sandbox công khai
+> nhánh `main`; CD tự động sau khi CI xanh (deploy đúng commit, smoke test, rollback).
+> ZaloPay Sandbox đã bật trên môi trường demo với bộ key sandbox công khai
 > (`app_id=2554`); không dùng tiền thật.
 
 | Thành phần | URL |
@@ -106,6 +107,64 @@ Không commit `.env`. Chỉ commit `.env.example` với giá trị rỗng/giả.
 
 Test backend dùng schema PostgreSQL riêng qua `PAYMENT_TEST_DATABASE_URL`; test không gọi
 mạng ZaloPay. Nếu CI đỏ, không merge vào `main`.
+
+### 5.1. CD tự động trên `main`
+
+`.github/workflows/cd.yml` chạy khi workflow **BrewLite CI** của một push vào `main` kết thúc
+thành công, hoặc khi bấm **Run workflow** (`workflow_dispatch`). Một job duy nhất giữ thứ tự
+các bước để dễ đọc log và rollback đúng bản:
+
+```mermaid
+flowchart LR
+  A[Push lên main] --> B[CI: lint, test, build]
+  B -->|đỏ| X[Không deploy]
+  B -->|xanh| C[Kiểm tra commit vẫn là HEAD]
+  C --> D[prisma migrate deploy]
+  D --> E[Render deploy đúng commit]
+  E --> F[Smoke API /health]
+  F -->|ok| G[Vercel deploy / xác minh]
+  G --> H[Smoke trang chủ]
+  H -->|ok| I[Production]
+  F -->|lỗi| R[Render rollback]
+  H -->|lỗi| S[Vercel rollback]
+```
+
+| # | Bước | Cách làm | Khi lỗi |
+|---|---|---|---|
+| 1 | Quality gate | Chỉ chạy sau khi `ci.yml` xanh; kiểm tra commit vẫn là HEAD của `main` | Bỏ qua, không deploy commit cũ |
+| 2 | Migration | `npx prisma migrate deploy` với `PROD_DATABASE_URL` (nếu đã khai báo) | Dừng trước khi deploy |
+| 3 | Deploy API | Render API: dùng lại deploy cùng commit nếu Auto-Deploy đã tạo; nếu chưa có thì `POST /services/{id}/deploys` với `commitId` | Job đỏ, bản cũ vẫn chạy |
+| 4 | Chờ deploy | Poll trạng thái tới `live` (tối đa khoảng 15 phút) | Job đỏ |
+| 5 | Smoke API | `GET /api/v1/health`, yêu cầu `data.status = ok`, retry để chịu cold start | Tự rollback Render |
+| 6 | Deploy web | Gọi `VERCEL_DEPLOY_HOOK` nếu có; nếu có `VERCEL_TOKEN` thì chờ deployment đúng SHA | Job đỏ |
+| 7 | Smoke web | `GET` trang chủ, cần HTTP 200 và có shell BrewLite | Tự rollback Vercel |
+
+Secret khai báo trong **Settings → Secrets and variables → Actions**:
+
+| Secret | Bắt buộc | Dùng cho |
+|---|---|---|
+| `RENDER_API_KEY` | Có | Trigger deploy, poll trạng thái, rollback backend |
+| `PROD_DATABASE_URL` | Không | Chạy migration từ CD. Bỏ trống thì container Render tự chạy `prisma migrate deploy` khi khởi động |
+| `VERCEL_TOKEN` | Không | Poll deployment Vercel đúng SHA và rollback frontend |
+| `VERCEL_DEPLOY_HOOK` | Không | Trigger production deployment từ CD (Vercel → Settings → Git → Deploy Hooks) |
+
+Có thể override địa chỉ bằng **Variables** (cùng màn hình): `API_BASE_URL`, `WEB_URL`,
+`RENDER_SERVICE_ID`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`. Nếu không khai báo, workflow dùng
+giá trị mặc định đang chạy demo.
+
+Lưu ý vận hành:
+
+- Render vẫn bật **Auto-Deploy** thì mỗi push đã tạo deployment trước khi CI xong. Workflow
+  nhận diện deploy cùng commit và chỉ chờ/smoke test, không tạo bản trùng. Muốn CD là cổng
+  duy nhất, tắt Auto-Deploy (Render → Settings → Auto-Deploy → No).
+- Vercel Git integration vẫn build khi push. Khai báo `VERCEL_TOKEN` để CD chờ đúng
+  deployment của commit; hoặc tạo Deploy Hook và khai báo `VERCEL_DEPLOY_HOOK`.
+- Rollback tự động chỉ chạy khi **smoke test** thất bại (bản mới đã lên nhưng lỗi), không chạy
+  khi build/migration lỗi — bản cũ vẫn đang phục vụ.
+- Chạy tay (`workflow_dispatch`) luôn tạo deploy Render mới cho commit HEAD, kể cả khi commit
+  đó đã live — dùng sau khi đổi biến môi trường trên Render.
+- Theo tài liệu Render, rollback **không** tắt Auto-Deploy; một auto-deploy sau đó có thể ghi
+  đè bản vừa rollback. Tắt Auto-Deploy nếu cần rollback bền.
 
 ## 6. Triển khai Vercel + Render
 
@@ -248,19 +307,21 @@ Lưu ý khi vận hành lại:
 - Project Vercel mặc định bật SSO Protection; tắt bằng
   `PATCH /v9/projects/{id}` với `{"ssoProtection": null}` nếu cần link công khai.
 - `prisma db seed` **xoá dữ liệu cũ** trước khi tạo lại; chỉ chạy trên database mới.
-- CD backend: sau khi cài **Render GitHub App** và nối repo `Call-MeK/BrewLite_assignment`
-  (branch `main`), Render tự deploy mỗi lần push — Deploy History ghi `trigger = new_commit`.
-  Nếu chưa nối, trigger thủ công:
-  `POST https://api.render.com/v1/services/<service-id>/deploys` với header
-  `Authorization: Bearer <RENDER_API_KEY>`.
+- CD backend: **Render GitHub App** đã nối repo `Call-MeK/BrewLite_assignment_2`
+  (branch `main`) nên Render tự deploy mỗi lần push — Deploy History ghi `trigger = new_commit`.
+  Workflow `cd.yml` sau đó chờ đúng deployment của commit đã test, chạy smoke test và rollback
+  nếu cần; nếu Auto-Deploy bị tắt, workflow tự trigger deploy qua API.
 
 ## 7. Rollback
 
 ### 7.1. Ứng dụng
 
-- **Frontend (Vercel):** “Instant Rollback” về deployment trước, hoặc deploy lại commit ổn định.
-- **Backend (Render):** chọn deploy trước trong Deploy History và rollback; hoặc revert commit
-  trên `main` để Render tự deploy lại. Không sửa tay image đang chạy.
+- **Frontend (Vercel):** `cd.yml` tự rollback khi smoke test frontend thất bại và có
+  `VERCEL_TOKEN`; ngoài ra dùng “Instant Rollback” về deployment trước, hoặc deploy lại commit
+  ổn định.
+- **Backend (Render):** `cd.yml` tự gọi `POST /services/{id}/rollback` khi smoke test API thất
+  bại; ngoài ra chọn deploy trước trong Deploy History và rollback, hoặc revert commit trên
+  `main` để Render tự deploy lại. Không sửa tay image đang chạy.
 - **VM:** giữ bản release trước trong thư mục riêng và symlink `current`; đổi symlink rồi
   restart service.
 
@@ -290,6 +351,8 @@ Lưu ý khi vận hành lại:
 
 - ZaloPay Sandbox không đại diện đầy đủ hợp đồng merchant production (hạn mức, đối soát, hoàn tiền).
 - `ZALOPAY_ALLOW_PUBLIC_SANDBOX=true` chỉ phù hợp demo; phải tắt khi không cần.
-- Chưa có E2E trình duyệt tự động; smoke test mục 6.5 đang thực hiện thủ công.
+- Chưa đẩy image lên registry (GHCR); Render build trực tiếp từ `apps/api/Dockerfile` theo commit.
+- Chưa có E2E trình duyệt tự động; smoke test mục 6.5 vẫn thực hiện thủ công.
+- Frontend chỉ được CD xác minh đầy đủ khi khai báo `VERCEL_TOKEN` hoặc `VERCEL_DEPLOY_HOOK`.
 - Tồn kho của đơn bỏ dở chỉ được giải phóng khi cron hủy hoặc khách hủy.
 - Render Free ngủ khi không có traffic; UptimeRobot chỉ giảm thiểu, không đảm bảo SLA.

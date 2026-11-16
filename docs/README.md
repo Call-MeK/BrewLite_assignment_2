@@ -26,7 +26,7 @@ Muốn chạy thử dự án: xem [README gốc](../README.md).
 | 2 – Mô hình hóa | [diagrams/](diagrams/): use-case, activity, sequence, class, state machine (`order/state-machine.md`) |
 | 3 – Kiến trúc | [architecture/](architecture/): 2 ADR + deployment diagram; [database-design.md](database-design.md) |
 | 4 – Sprint 1 | [requirements/product-backlog.md](requirements/product-backlog.md), [git-convention.md](git-convention.md), `.github/workflows/ci.yml` |
-| 5 – Sprint 2 & CD | [deployment.md](deployment.md), [test-scenarios/test-scenarios.md](test-scenarios/test-scenarios.md) |
+| 5 – Sprint 2 & CD | [deployment.md](deployment.md), `.github/workflows/cd.yml`, [test-scenarios/test-scenarios.md](test-scenarios/test-scenarios.md) |
 | Truy vết | [traceability-matrix.md](traceability-matrix.md) |
 
 ---
@@ -37,11 +37,15 @@ Chi tiết từng mục, nguồn đọc và hình cần lấy: **[REPORT-SOURCE-
 
 | Người | Phần | File LaTeX |
 |---|---|---|
-| **A** | Ch.1 Tổng quan + Task 1 + Task 2 | `report/sections/00`, `01`, `02` |
-| **B** | Task 3 + Task 4 + mục 9 | `report/sections/03`, `04`, `09` |
-| **C** | Task 5 + mục 8 truy vết + kết luận | `report/sections/05`, `08`, `10` |
+| **A** – Dương Anh Khoa (3124410154) | Ch.1 Tổng quan + Task 1 + Task 2 | `report/sections/00`, `01`, `02` |
+| **B** – Võ Thị Thuỷ (3124410351) | Task 3 + Task 4 + mục 9 | `report/sections/03`, `04`, `09` |
+| **C** – Võ Quốc Anh (3124410010) | Task 5 + mục 8 truy vết + kết luận | `report/sections/05`, `08`, `10` |
 
 Build báo cáo: `cd docs/report` rồi `latexmk -pdf as2.tex`.
+
+**Trạng thái bản thảo (27 trang, build sạch):** phần A (Chương 1 + Task 1 + Task 2) đã xong,
+trang in 3–16. Phần B và C còn khung `TODO` trong `03`, `04`, `05`, `08`, `09`, `10`.
+Bảng thành viên ở `sections/00-thanh-vien.tex` vẫn để chỗ trống họ tên/MSSV.
 
 ---
 

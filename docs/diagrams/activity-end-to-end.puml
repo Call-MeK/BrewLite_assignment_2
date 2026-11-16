@@ -1,0 +1,80 @@
+@startuml activity-end-to-end
+skinparam defaultFontSize 12
+skinparam wrapWidth 170
+skinparam padding 4
+
+|Khách hàng|
+start
+:Xem thực đơn (FR-01);
+:Chọn size/topping,\nthêm vào giỏ (FR-02, FR-03);
+:Tiến hành thanh toán;
+
+|Next.js UI|
+if (Có JWT hợp lệ?) then (Chưa)
+  :Lưu giỏ, chuyển\n/login?next=/checkout;
+  |Khách hàng|
+  :Đăng nhập;
+  |NestJS API|
+  :Cấp JWT (FR-04);
+  |Next.js UI|
+  :Quay lại thanh toán;
+else (Rồi)
+endif
+
+|Khách hàng|
+:Chọn voucher, điểm\nvà xác nhận đặt đơn;
+
+|NestJS API|
+:Mở transaction\nSerializable;
+:Tính giá, kiểm voucher,\ncông thức, hạn mức điểm;
+if (Đủ kho & đúng version?) then (Không)
+  :Rollback, trả 409;
+  |Next.js UI|
+  :Báo lỗi tồn kho;
+  |Khách hàng|
+  :Sửa giỏ;
+  stop
+else (Có)
+  :Trừ kho\n(optimistic lock);
+  :Tạo đơn PENDING\n+ ảnh chụp định lượng;
+  :Commit;
+endif
+
+|Next.js UI|
+:Chọn ZaloPay,\ngọi tạo giao dịch;
+
+|NestJS API|
+:Ký HMAC-SHA256,\ngọi /v2/create;
+
+|ZaloPay Sandbox|
+:Tạo giao dịch,\ntrả openinapp;
+
+|Khách hàng|
+:Thanh toán;
+
+|ZaloPay Sandbox|
+if (Thành công?) then (Có)
+  :Callback (data, mac);
+  |NestJS API|
+  :Verify MAC,\nkiểm idempotency;
+  :Payment SUCCESS,\nOrder PAID, +điểm;
+  |Next.js UI|
+  :Polling 15s\n→ hiện PAID;
+  |Khách hàng|
+  :Nhận món tại quầy;
+  stop
+else (Không)
+  |Khách hàng|
+  if (Hủy hoặc quá hạn?) then (Có)
+    |NestJS API|
+    :CANCELLED,\nhoàn kho và điểm;
+    |Next.js UI|
+    :Hiện "Đã hủy";
+    stop
+  else (Thử lại)
+    |Next.js UI|
+    :Cho gọi lại thanh toán;
+    stop
+  endif
+endif
+@enduml

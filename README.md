@@ -57,7 +57,7 @@ BrewLite/
 │   ├── traceability-matrix.md
 │   └── checklist-review.md   # Tiêu chí review code trước khi merge
 ├── tests/e2e/                # End-to-end: menu → đặt đơn → xác nhận
-├── .github/workflows/        # CI và keep-alive
+├── .github/workflows/        # CI, CD và keep-alive
 ├── docker-compose.yml        # PostgreSQL + API + Web
 ├── .env.example              # Mẫu biến môi trường
 └── README.md
@@ -92,6 +92,13 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
 
 - CI chạy trên nhánh `main` qua `.github/workflows/ci.yml`: PostgreSQL service → Prisma
   generate/migrate → test backend → lint/test/build `apps/web`.
+- CD chạy sau khi CI xanh qua `.github/workflows/cd.yml`: áp migration (nếu có
+  `PROD_DATABASE_URL`) → deploy Render đúng commit đã test → smoke test `/health` → xác minh
+  deployment Vercel và smoke test trang chủ → tự rollback khi smoke test thất bại. Có thể
+  phát hành lại thủ công bằng **Actions → BrewLite CD → Run workflow**.
+- Secret cần khai báo trong **Settings → Secrets and variables → Actions**: `RENDER_API_KEY`
+  (bắt buộc); `PROD_DATABASE_URL`, `VERCEL_TOKEN`, `VERCEL_DEPLOY_HOOK` (tuỳ chọn, xem
+  [docs/deployment.md](docs/deployment.md) mục 5.1).
 - Chạy local bằng Docker: `docker compose up --build -d`.
 - Kiểm thử: unit ở `apps/web/tests` + `apps/api/test`, end-to-end ở `tests/e2e`
   (xem [tests/README.md](tests/README.md)).
@@ -100,7 +107,7 @@ Trước khi bắt tay vào code các tính năng tiếp theo, tất cả thành
   - Frontend: <https://brewlite-acme-1b6f1.vercel.app>
   - API: <https://brewlite-api-u2jb.onrender.com/api/v1> (health: `/health`)
   - Database: Neon PostgreSQL (Singapore), migrate + seed bằng Prisma.
-- Cập nhật gần nhất: 13/11/2026 (kiểm tra CD backend).
+- Cập nhật gần nhất: 16/11/2026 (thêm workflow CD, smoke test sau deploy và rollback tự động).
 - Thanh toán chỉ dùng ZaloPay Sandbox; mock payment đã được gỡ (xem ADR-002). Trên môi trường
   demo, sandbox đã bật bằng bộ key sandbox công khai (`app_id=2554`); giao dịch tạo được
   `paymentUrl` và đối soát ở `/admin/payments`. Callback công khai có thể không được app demo

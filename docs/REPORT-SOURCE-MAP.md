@@ -8,28 +8,33 @@ Ký hiệu: ✅ có sẵn · 🟡 cần bổ sung/viết mới · 🔴 chưa có
 
 ---
 
-## Người A — Chương 1 + Task 1 + Task 2
+## Người A — Dương Anh Khoa (3124410154): Chương 1 + Task 1 + Task 2
 
 | Mục LaTeX | Nội dung | Nguồn đọc | Hình / bảng | Trạng thái | Prefix |
 |---|---|---|---|---|---|
 | `00-tong-quan` §1.1 | Bài toán, mục tiêu, phạm vi MVP, công nghệ | `requirements/context-and-scope.md` | — | ✅ | `secA:` |
-| §1.2 | Luồng end-to-end một dòng + bảng thành phần hệ thống | `requirements/context-and-scope.md`, `README.md` | bảng thành phần | ✅ | `tabA:` |
-| §1.3 | URL production, tài khoản demo, cách tái lập | `architecture/deployment.md` (đang ở `docs/deployment.md`) | bảng môi trường | ✅ | `tabA:` |
-| `01-task1` §2.1 | Bối cảnh, 6 stakeholder + kỳ vọng, in/out-scope, giả định–ràng buộc–rủi ro | `requirements/context-and-scope.md` | bảng stakeholder, bảng rủi ro | ✅ | `tabA:` |
-| §2.2 | SRS rút gọn: FR-01…12 + NFR-01…09, cột **MoSCoW** + AC | `requirements/srs.md` | 2 bảng | ✅ (đã thêm MoSCoW) | `tabA:` |
-| §2.2 | Sơ đồ use-case tổng quát | `diagrams/usecase-overall.puml` | `figures/diagrams/BrewLite-UseCase-Overall.png` | ✅ | `figA:` |
-| §2.3 | Đặc tả UC-01: actor, trigger, pre/post, luồng chính/thay thế/ngoại lệ, map FR | `requirements/use-case-uc01.md` | bảng luồng, use-case order | 🟡 UC hiện **chỉ có tạo đơn**, A phải bổ sung nhánh thanh toán (FR-05, FR-08) | `tabA:` |
-| `02-task2` §3.1 | Activity end-to-end: swimlane, decision/merge, hết hàng, chưa login, payment fail | `diagrams/activity-*.puml`, `order/state-machine.md` | activity diagram + ảnh | 🟡 gộp 7 activity thành 1 end-to-end có swimlane | `figA:` |
-| §3.2 | Sequence checkout: 5 lifeline, JWT, validate, transaction, alt payment, idempotency | `diagrams/sequence-checkout.puml` | `figures/diagrams/BrewLite-Checkout.png` + `diagrams/sequence-checkout.svg` | ✅ | `figA:` |
-| §3.3 | Class diagram domain: User, Product, Order, OrderItem, Payment, Promotion, LoyaltyTransaction + enum + multiplicity | `database-design.md`, `apps/api/prisma/schema.prisma` | diagram draw.io | 🔴 A vẽ từ link draw.io | `figA:` |
-| §3.4 | Bảng nhất quán 3 sơ đồ với SRS/use-case (tiêu chí nghiệm thu Task 2) | tự tổng hợp | bảng đối chiếu | 🟡 | `tabA:` |
+| §1.2 | Bảng thành phần hệ thống (lớp ↔ công nghệ ↔ vai trò) | `requirements/context-and-scope.md`, `README.md` | `tabA:stack` | ✅ | `tabA:` |
+| §1.3 | URL production, tài khoản demo, cách tái lập | `deployment.md`, `README.md` | `tabA:env` | ✅ | `tabA:` |
+| §1.4 | 4 bước tái lập local (docker compose → seed → dev) | `deployment.md` | — | ✅ | — |
+| `01-task1` §2.1 | Bối cảnh, 6 stakeholder, in/out-scope, ASM–CON–RSK | `requirements/context-and-scope.md` | `tabA:stakeholder`, `tabA:risk` | ✅ | `tabA:` |
+| §2.2 | FR-01…12 + NFR-01…09, cột **MoSCoW** + AC | `requirements/srs.md` | `tabA:fr`, `tabA:nfr` | ✅ | `tabA:` |
+| §2.2 | Sơ đồ use-case tổng quát (5 actor, 15 UC) | `diagrams/usecase-overall.puml` | `figures/diagrams/BrewLite-UseCase-Overall.png` + `.svg/.puml` | ✅ | `figA:` |
+| §2.3 | UC-01 “Đặt và thanh toán đơn hàng”: 12 bước rút gọn, A1–A3/E1–E4, map FR | `requirements/use-case-uc01.md` v2.0 | `tabA:uc01`, `tabA:uc01-main`, `tabA:uc01-alt` | ✅ đã gộp nhánh ZaloPay + `409` | `tabA:` |
+| `02-task2` §3.1 | Activity end-to-end 4 làn, 4 quyết định, 3 kết thúc | `diagrams/activity-end-to-end.puml` | `figures/diagrams/activity-end-to-end.png` + `.svg/.puml`, `tabA:activity-decision` | ✅ | `figA:` |
+| §3.2 | Sequence checkout 5 lifeline, 3 giai đoạn, alt idempotency | `diagrams/sequence-checkout.puml` | `figures/diagrams/BrewLite-Checkout.png` + `.svg/.puml` | ✅ | `figA:` |
+| §3.3 | Class diagram domain 11 lớp + 9 enum + multiplicity | `apps/api/prisma/schema.prisma`, `database-design.md` | `figures/diagrams/class-domain.png` + `.svg/.puml`, `tabA:enum` | ✅ PlantUML (không dùng draw.io) | `figA:` |
+| §3.4 | Bảng nhất quán 3 sơ đồ với SRS/use-case | tự tổng hợp | `tabA:consistency` | ✅ | `tabA:` |
 
-**Việc riêng của A:** export 3 sơ đồ ra `.svg` (kèm `.puml`/nguồn draw.io) theo đúng yêu cầu đề;
-bổ sung payment flow vào UC-01; viết bảng nhất quán.
+**Trạng thái build (A):** `latexmk` sạch, **27 trang**, phần A = trang in 3–16. Ba sơ đồ nằm trong
+`docs/diagrams/` (`.puml` nguồn + `.svg` + `.png`); bản PNG dùng cho LaTeX nằm ở
+`docs/report/figures/diagrams/`. Activity diagram in riêng một trang dọc, class diagram in trên
+trang ngang (`pdflscape`).
+
+**Việc còn lại của A:** điền họ tên/MSSV vào `sections/00-thanh-vien.tex` (đang là chỗ trống).
 
 ---
 
-## Người B — Task 3 + Task 4 + mục 9
+## Người B — Võ Thị Thuỷ (3124410351): Task 3 + Task 4 + mục 9
 
 | Mục LaTeX | Nội dung | Nguồn đọc | Hình / bảng | Trạng thái | Prefix |
 |---|---|---|---|---|---|
@@ -47,7 +52,7 @@ deployment `.svg`.
 
 ---
 
-## Người C — Task 5 + mục 8 + kết luận
+## Người C — Võ Quốc Anh (3124410010): Task 5 + mục 8 + kết luận
 
 | Mục LaTeX | Nội dung | Nguồn đọc | Hình / bảng | Trạng thái | Prefix |
 |---|---|---|---|---|---|
@@ -55,7 +60,7 @@ deployment `.svg`.
 | §6.1 | Ảnh giao diện khách + admin, mobile + desktop | `figures/as2/view/*.png`, `figures/as2/14-16*.png` | 16 ảnh | ✅ | `figC:` |
 | §6.2 | Test 3 tầng: 49 backend, 10 frontend, E2E HTTP; bảng kết quả; Docker Compose; migration/seed; `/health` | `apps/api/test/`, `apps/web/tests/`, `tests/e2e/`, `docker-compose.yml` | bảng test, bảng kết quả | ✅ (tái dùng từ `as2.tex` cũ) | `tabC:` |
 | §6.2 | Đo hiệu năng production | `as2.tex` cũ mục 7 | bảng 5 lần đo, cold start | ✅ | `tabC:` |
-| §6.3 | CD: quality gate → image tag → registry → deploy → migration → smoke test → rollback | `.github/workflows/ci.yml`, `deployment.md` | sơ đồ pipeline | 🟡 repo **chưa có `cd.yml`** — mô tả hiện trạng thật (CI + Git integration + redeploy tag trước) và ghi rõ phần chưa tự động | `figC:` |
+| §6.3 | CD: quality gate → image tag → registry → deploy → migration → smoke test → rollback | `.github/workflows/ci.yml`, `.github/workflows/cd.yml`, `deployment.md` | sơ đồ pipeline | ✅ CD tự động trừ registry/image tag (Render build từ Git) | `figC:` |
 | §6.4 | URL production, tài khoản demo, release notes, Sprint Review/Retro, video demo | `deployment.md`, GitHub Releases | bảng URL, release notes | 🟡 release notes/retro/video chưa có | `tabC:` |
 | `08-truy-vet` §7 | FR → Use-case/US → Thiết kế/Sơ đồ → Code/API → Test, đúng mẫu đề | `traceability-matrix.md` | bảng lớn | 🟡 viết lại theo mẫu đề (thêm cột US, Diagram, Test ID) | `tabC:` |
 | `10-ket-luan` §8 | Kết quả đạt được, hạn chế, hướng phát triển | `srs.md` mục 4 | — | ✅ | `secC:` |
@@ -72,7 +77,7 @@ viết release notes + retro.
 | `docs/diagrams/usecase-overall.svg` | `usecase-overall.puml` | A |
 | `docs/diagrams/activity-end-to-end.svg` | `activity-*.puml` (gộp) | A |
 | `docs/diagrams/sequence-checkout.svg` | `sequence-checkout.puml` | A |
-| `docs/diagrams/class-domain.svg` | draw.io | A |
+| `docs/diagrams/class-domain.svg` | `class-domain.puml` | A |
 | `docs/architecture/deployment-diagram.svg` | `deployment-diagram.puml` | B |
 | `docs/report/figures/ci-pass.png`, `ci-fail.png` | GitHub Actions | B |
 

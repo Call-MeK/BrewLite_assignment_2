@@ -125,24 +125,44 @@
 % TODO(C): GET /api/v1/health trả JSON trạng thái API + DB; dùng cho smoke test và keep-alive.
 
 \subsection{Task 5.3 -- Continuous Delivery/Deployment}
-% TODO(C): QUAN TRỌNG -- repo hiện chỉ có .github/workflows/ci.yml + keepalive.yml,
-% CHƯA có workflow CD. Viết trung thực:
-%   - quality gate: lint + test + build (ci.yml);
-%   - đóng gói: Dockerfile API; deploy: Render build từ Docker, Vercel Git integration;
-%   - migration: prisma migrate deploy;
-%   - smoke test: gọi /health sau deploy (thủ công/keep-alive);
-%   - rollback: redeploy commit/tag trước trên Render/Vercel;
-%   - phần chưa tự động: chưa có image tag GHCR, chưa có smoke test tự động, chưa rollback tự động.
-% Nếu kịp: thêm cd.yml và chụp minh chứng; nếu không, ghi vào hạn chế.
+
+Pipeline CD nằm trong \path{.github/workflows/cd.yml}. Workflow được kích hoạt bằng
+\texttt{workflow\_run} khi \path{ci.yml} của một push vào \texttt{main} kết thúc thành công,
+hoặc chạy tay bằng \texttt{workflow\_dispatch}. Job kiểm tra commit còn là HEAD của
+\texttt{main}, áp migration Prisma, deploy backend qua Render API theo đúng \texttt{commitId}
+đã test, chờ trạng thái \texttt{live}, gọi \texttt{GET /api/v1/health} và kiểm tra trang chủ
+Vercel. Nếu smoke test thất bại sau khi bản mới đã lên, workflow tự gọi rollback của Render
+(và Vercel khi có \texttt{VERCEL\_TOKEN}) về deployment trước; lỗi build hoặc migration thì
+dừng trước khi đổi traffic.
+
+Các secret cần khai báo: \texttt{RENDER\_API\_KEY} (bắt buộc), \texttt{PROD\_DATABASE\_URL},
+\texttt{VERCEL\_TOKEN}, \texttt{VERCEL\_DEPLOY\_HOOK} (tuỳ chọn). Nếu Render vẫn bật
+Auto-Deploy, workflow nhận diện deployment cùng commit thay vì tạo bản trùng; muốn CD là cổng
+duy nhất thì tắt Auto-Deploy. Phần chưa làm: chưa đẩy image lên registry và chưa có E2E trình
+duyệt trong pipeline.
+
 \begin{table}[H]
 \centering\small
 \caption{Đối chiếu 7 yêu cầu pipeline CD của đề với hiện trạng}
 \label{tabC:cd}
-\begin{tabularx}{\textwidth}{@{}c X l@{}}
+\begin{tabularx}{\textwidth}{@{}c X X@{}}
 \toprule
 \textbf{\#} & \textbf{Yêu cầu} & \textbf{Hiện trạng} \\
 \midrule
-% TODO(C): 7 dòng
+1 & Quality gate: lint, test, build trước khi phát hành &
+  \textbf{Đạt} -- \path{ci.yml} chạy trước; \path{cd.yml} chỉ chạy khi CI xanh \\
+2 & Đóng gói image từ commit đã test &
+  \textbf{Một phần} -- Render build \path{apps/api/Dockerfile}; chưa gắn tag riêng \\
+3 & Đẩy image lên registry &
+  \textbf{Chưa} -- không dùng GHCR; Render build trực tiếp từ Git \\
+4 & Deploy tự động &
+  \textbf{Đạt} -- Render API theo \texttt{commitId}; Vercel deploy hook/Git integration \\
+5 & Migration cơ sở dữ liệu &
+  \textbf{Đạt} -- \texttt{prisma migrate deploy} trong CI, CD (tuỳ chọn) và lúc container start \\
+6 & Smoke test sau deploy &
+  \textbf{Đạt} -- \texttt{/health} + trang chủ, retry cold start \\
+7 & Rollback &
+  \textbf{Đạt} -- Render tự rollback khi smoke API lỗi; Vercel cần \texttt{VERCEL\_TOKEN}; có thể rollback tay \\
 \bottomrule
 \end{tabularx}
 \end{table}

@@ -1,0 +1,63 @@
+% =====================================================================
+%  Trang thành viên nhóm (đủ 6 người theo yêu cầu của đề)
+%  A = Dương Anh Khoa · B = Võ Thị Thuỷ · C = Võ Quốc Anh
+% =====================================================================
+\section*{Thành viên nhóm và phân công}
+\addcontentsline{toc}{section}{Thành viên nhóm và phân công}
+
+Nhóm 05 gồm sáu thành viên. Ba thành viên A, B, C biên soạn báo cáo theo ba khối nội dung của
+đề; ba thành viên còn lại phụ trách các module kho -- công thức, đơn hàng -- lược đồ dữ liệu,
+cùng phần kiểm thử và thu thập minh chứng (ảnh giao diện, log CI, video demo).
+
+\begin{table}[H]
+\centering\small
+\caption{Danh sách thành viên và phần phụ trách}
+\label{tab:members}
+\begin{tabularx}{\textwidth}{@{}c p{3.5cm} p{2.0cm} X@{}}
+\toprule
+\textbf{STT} & \textbf{Họ và tên} & \textbf{MSSV} & \textbf{Phần phụ trách} \\
+\midrule
+1 & Dương Anh Khoa & 3124410154 &
+  Chương 1, Task 1 (yêu cầu), Task 2 (sơ đồ activity, sequence, class);
+  module đơn hàng, thanh toán ZaloPay và khu quản trị \\
+2 & Võ Thị Thuỷ & 3124410351 &
+  Task 3 (kiến trúc, ADR, deployment), Task 4 (Sprint 1, CI), mục 9;
+  module thực đơn và chi tiết sản phẩm \\
+3 & Võ Quốc Anh & 3124410010 &
+  Task 5 (Sprint 2, kiểm thử, CD), mục 8 (truy vết), kết luận;
+  module giỏ hàng và thực đơn \\
+4 & Lê Hoàng An & 3124560001 &
+  Module kho nguyên liệu, công thức theo size và khu quản trị \\
+5 & Lưu Tấn Nin & 3124410259 &
+  Module đơn hàng, lược đồ Prisma và migration cơ sở dữ liệu \\
+6 & Hà Đức Phúc & 3124410281 &
+  Kiểm thử, thu thập minh chứng (ảnh giao diện, log CI, video demo) và rà soát chéo \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\vspace{2pt}
+{\footnotesize\itshape
+Ghi chú: cột ``Phần phụ trách'' ghi cả phần báo cáo (A/B/C) và module mã nguồn từng người đảm
+nhiệm, để đối chiếu với bảng truy vết ở mục~8 và lịch sử commit trên GitHub.}
+
+\vspace{4pt}
+\begin{table}[H]
+\centering\small
+\caption{Phân công theo hạng mục của báo cáo}
+\label{tab:members-section}
+\begin{tabularx}{\textwidth}{@{}p{6.2cm} p{2.0cm} X@{}}
+\toprule
+\textbf{Hạng mục} & \textbf{Người phụ trách} & \textbf{Sản phẩm nộp kèm} \\
+\midrule
+Chương 1 -- Tổng quan & A & Bảng thành phần hệ thống, môi trường production, cách tái lập \\
+Task 1 -- Yêu cầu & A & 6 stakeholder, FR-01…12, NFR-01…09, UC-01, sơ đồ use-case \\
+Task 2 -- Mô hình hóa & A & Activity, sequence, class diagram (kèm \file{.puml} và ảnh) \\
+Task 3 -- Kiến trúc & B & ADR, sơ đồ triển khai, mô tả 9 module \\
+Task 4 -- Sprint 1 \& CI & B & Product backlog, DoD, ảnh CI pass/fail \\
+Task 5 -- Sprint 2 \& CD & C & Ảnh giao diện, bảng kiểm thử, pipeline CD, release notes \\
+Mục 8 -- Truy vết & C & Ma trận FR $\rightarrow$ use-case $\rightarrow$ code $\rightarrow$ test \\
+Mục 9 -- Checklist repo & B & Cây repository và bảng đối chiếu 9.1 \\
+\bottomrule
+\end{tabularx}
+\end{table}

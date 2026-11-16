@@ -1,51 +1,98 @@
 % =====================================================================
 %  Người A -- Chương 1: Tổng quan
-%  Nguồn: docs/requirements/context-and-scope.md, docs/README.md
-%  Ngân sách: ~1,5 trang
+%  Nguồn: docs/requirements/context-and-scope.md, docs/deployment.md, README.md
 % =====================================================================
 \section{Tổng quan}
 
 \subsection{Mục tiêu của báo cáo}
-% TODO(A): 3-4 câu. Nêu báo cáo chứng minh chuỗi "yêu cầu -> mô hình -> kiến trúc ->
-% Sprint 1 -> Sprint 2 -> CI/CD -> production", không chỉ mô tả tính năng.
-% Nhấn: mọi kết luận đều có bằng chứng trong repo (test, ảnh, log, URL).
+
+Báo cáo này chứng minh một chuỗi phát triển phần mềm khép kín của BrewLite: từ khai thác
+yêu cầu (Task~1), mô hình hóa bằng UML (Task~2), thiết kế kiến trúc và hạ tầng (Task~3),
+triển khai Sprint~1 kèm CI (Task~4) đến hoàn thiện Sprint~2, kiểm thử, CD và vận hành
+production (Task~5). Trọng tâm không phải là liệt kê tính năng, mà là chứng minh \emph{mỗi}
+kết luận đều có bằng chứng trong kho mã nguồn: mã yêu cầu truy vết tới sơ đồ, tới lớp xử lý,
+tới tệp kiểm thử và tới một URL chạy thật.
+
+Báo cáo cũng ghi nhận trung thực những phần chưa hoàn thiện (ví dụ pipeline CD chưa có
+registry image, cold start của gói miễn phí) để người đọc đánh giá đúng mức độ hoàn thành thay vì
+chỉ thấy mặt tích cực.
 
 \subsection{Phạm vi sản phẩm và công nghệ}
-% TODO(A): 1 đoạn + Bảng thành phần.
-% Luồng tối thiểu: Xem menu -> Chọn size/topping -> Giỏ -> Đặt đơn -> ZaloPay -> Theo dõi đơn.
-% Công nghệ bắt buộc: Next.js (mobile-first/PWA), NestJS, PostgreSQL; bổ sung Docker, ZaloPay Sandbox.
+
+BrewLite là ứng dụng web đặt cà phê \textbf{không dùng tiền mặt} cho một quán duy nhất. Luồng
+tối thiểu mà đồ án phải chạy được end-to-end là: xem thực đơn $\rightarrow$ chọn size/topping
+$\rightarrow$ giỏ hàng $\rightarrow$ đặt đơn $\rightarrow$ thanh toán ZaloPay Sandbox
+$\rightarrow$ theo dõi trạng thái đơn. Giao diện được thiết kế mobile-first (chuẩn 390$\times$844)
+và vẫn dùng được trên desktop 1440$\times$900.
 
 \begin{table}[H]
 \centering\small
 \caption{Thành phần hệ thống BrewLite}
 \label{tabA:stack}
-\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\begin{tabularx}{\textwidth}{@{}p{2.35cm} p{5.3cm} X@{}}
 \toprule
 \textbf{Lớp} & \textbf{Công nghệ} & \textbf{Vai trò} \\
 \midrule
-% TODO(A): điền 6 dòng: Frontend, Backend, Database, Payment, CI, Deploy
+Frontend & Next.js 15 (App Router), TypeScript, Tailwind CSS &
+  Giao diện khách và khu quản trị; gọi API qua lớp \file{lib/}; bộ lọc tiếng Việt không dấu
+  tách riêng trong \file{menu-filter.ts}. \\
+Backend & NestJS 11, TypeScript strict, Prisma 6 &
+  Modular monolith với 9 domain module; toàn bộ tính tiền, trừ kho, đổi trạng thái và xác thực
+  chữ ký thanh toán thực thi tại đây. \\
+Cơ sở dữ liệu & PostgreSQL 16 (Neon, SSL) &
+  Lưu người dùng, sản phẩm, công thức, nguyên liệu, đơn, giao dịch và điểm loyalty; migration
+  forward-only qua Prisma. \\
+Thanh toán & ZaloPay Sandbox (HMAC-SHA256) &
+  Tạo giao dịch, nhận callback và truy vấn trạng thái; không phát sinh tiền thật. \\
+CI & GitHub Actions (\file{.github/workflows/ci.yml}) &
+  Cài đặt $\rightarrow$ lint $\rightarrow$ kiểm thử $\rightarrow$ build trên mỗi push/PR vào
+  \code{main}. \\
+Triển khai & Vercel (web), Render (API Docker), Neon (DB) &
+  HTTPS tự động, deploy từ Git; môi trường demo công khai dùng gói miễn phí. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \subsection{Môi trường triển khai và tài khoản demo}
-% TODO(A): Bảng 6 dòng lấy từ docs/deployment.md (Vercel, Render, Neon, ZaloPay, GitHub).
-% Thêm 2 tài khoản seed: demo@brewlite.test / Demo@12345 và admin@brewlite.test / Admin@12345.
-% Ghi rõ đây là tài khoản sandbox, không phải người dùng thật.
+
+Ba nền tảng dưới đây đều dùng gói miễn phí nên có giới hạn (Render ngủ đông khi không có
+truy cập), nhưng đủ để chứng minh hệ thống chạy thật qua HTTPS.
 
 \begin{table}[H]
 \centering\small
-\caption{Môi trường production}
+\caption{Môi trường production của BrewLite}
 \label{tabA:env}
-\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\begin{tabularx}{\textwidth}{@{}p{2.35cm} p{4.0cm} >{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Thành phần} & \textbf{Nền tảng} & \textbf{Địa chỉ / ghi chú} \\
 \midrule
-% TODO(A)
+Frontend & Vercel & \url{https://brewlite-acme-1b6f1.vercel.app} \\
+API & Render (Docker, Free, Singapore) &
+  \url{https://brewlite-api-u2jb.onrender.com/api/v1} \\
+Health check & Render & \url{https://brewlite-api-u2jb.onrender.com/api/v1/health} \\
+Cơ sở dữ liệu & Neon PostgreSQL & Nội bộ, chỉ API truy cập qua \code{DATABASE\_URL} có SSL \\
+Thanh toán & ZaloPay Sandbox & \code{app\_id=2554}; callback công khai có thể không tới app
+  demo nên giao diện có nút ``Kiểm tra kết quả'' (gọi \code{sync}). \\
+Mã nguồn & GitHub & Monorepo \file{apps/web}, \file{apps/api}, \file{docs/}, \file{tests/} \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+Hai tài khoản seed dùng cho kiểm thử và chấm bài (chỉ tồn tại ở môi trường local/test):
+\textbf{khách hàng} \code{demo@brewlite.test} / \code{Demo@12345} (có sẵn 120 điểm loyalty) và
+\textbf{quản trị} \code{admin@brewlite.test} / \code{Admin@12345}. Đây không phải người dùng
+thật và không được dùng mật khẩu này trên môi trường có dữ liệu thật.
+
 \subsection{Cách tái lập}
-% TODO(A): 4 bước: npm install -> docker compose / prisma migrate deploy -> prisma:seed -> start:dev + dev.
-% Lưu ý prisma:seed xoá toàn bộ dữ liệu cũ. Viết thành danh sách sau khi soạn nội dung.
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.6em]
+  \item Cài dependencies: \code{npm install} ở thư mục gốc (workspace monorepo).
+  \item Khởi động hạ tầng: \code{docker compose up --build -d} (PostgreSQL 16, API, web);
+        backend tự chạy \code{prisma migrate deploy} khi container khởi động.
+  \item Nạp dữ liệu mẫu: \code{docker compose exec backend npx prisma db seed}. Lưu ý lệnh
+        seed \textbf{xoá toàn bộ dữ liệu cũ} trước khi tạo 8 sản phẩm, nguyên liệu, công thức
+        và hai tài khoản demo.
+  \item Chạy khi không dùng Docker: \code{docker compose up -d postgres}, sau đó
+        \code{npm run start:dev} trong \file{apps/api} (cổng 4000) và \code{npm run dev}
+        trong \file{apps/web} (cổng 3000).
+\end{enumerate}
