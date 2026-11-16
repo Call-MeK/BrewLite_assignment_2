@@ -1,0 +1,51 @@
+% =====================================================================
+%  Người A -- Chương 1: Tổng quan
+%  Nguồn: docs/requirements/context-and-scope.md, docs/README.md
+%  Ngân sách: ~1,5 trang
+% =====================================================================
+\section{Tổng quan}
+
+\subsection{Mục tiêu của báo cáo}
+% TODO(A): 3-4 câu. Nêu báo cáo chứng minh chuỗi "yêu cầu -> mô hình -> kiến trúc ->
+% Sprint 1 -> Sprint 2 -> CI/CD -> production", không chỉ mô tả tính năng.
+% Nhấn: mọi kết luận đều có bằng chứng trong repo (test, ảnh, log, URL).
+
+\subsection{Phạm vi sản phẩm và công nghệ}
+% TODO(A): 1 đoạn + Bảng thành phần.
+% Luồng tối thiểu: Xem menu -> Chọn size/topping -> Giỏ -> Đặt đơn -> ZaloPay -> Theo dõi đơn.
+% Công nghệ bắt buộc: Next.js (mobile-first/PWA), NestJS, PostgreSQL; bổ sung Docker, ZaloPay Sandbox.
+
+\begin{table}[H]
+\centering\small
+\caption{Thành phần hệ thống BrewLite}
+\label{tabA:stack}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Lớp} & \textbf{Công nghệ} & \textbf{Vai trò} \\
+\midrule
+% TODO(A): điền 6 dòng: Frontend, Backend, Database, Payment, CI, Deploy
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Môi trường triển khai và tài khoản demo}
+% TODO(A): Bảng 6 dòng lấy từ docs/deployment.md (Vercel, Render, Neon, ZaloPay, GitHub).
+% Thêm 2 tài khoản seed: demo@brewlite.test / Demo@12345 và admin@brewlite.test / Admin@12345.
+% Ghi rõ đây là tài khoản sandbox, không phải người dùng thật.
+
+\begin{table}[H]
+\centering\small
+\caption{Môi trường production}
+\label{tabA:env}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Thành phần} & \textbf{Nền tảng} & \textbf{Địa chỉ / ghi chú} \\
+\midrule
+% TODO(A)
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Cách tái lập}
+% TODO(A): 4 bước: npm install -> docker compose / prisma migrate deploy -> prisma:seed -> start:dev + dev.
+% Lưu ý prisma:seed xoá toàn bộ dữ liệu cũ. Viết thành danh sách sau khi soạn nội dung.

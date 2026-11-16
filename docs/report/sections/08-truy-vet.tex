@@ -1,0 +1,54 @@
+% =====================================================================
+%  Người C -- Ma trận truy vết (mục 8 của đề)
+%  Nguồn: docs/traceability-matrix.md (VIẾT LẠI theo đúng mẫu đề)
+%  Ngân sách: ~2 trang
+% =====================================================================
+\section{Ma trận truy vết yêu cầu}
+
+% TODO(C): 1 câu dẫn: mỗi FR truy vết được từ yêu cầu -> user story/use-case -> sơ đồ
+% -> code/API -> test; cột Test dùng mã API-Txx/INT-Txx/E2E-Txx hoặc tên tệp test thật.
+% Mẫu đề: Mã yêu cầu | Use-case/User Story | Thiết kế/Sơ đồ | Code/API | Test
+
+\begin{longtable}{@{}p{1.1cm} p{3.1cm} p{3.4cm} p{3.6cm} p{2.6cm}@{}}
+\caption{Truy vết yêu cầu chức năng}
+\label{tabC:trace-fr}\\
+\toprule
+\textbf{Mã} & \textbf{Use-case / User story} & \textbf{Thiết kế / Sơ đồ} & \textbf{Code / API} & \textbf{Test} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Mã} & \textbf{Use-case / User story} & \textbf{Thiết kế / Sơ đồ} & \textbf{Code / API} & \textbf{Test} \\
+\midrule
+\endhead
+FR-01 & US-01, US-02 & Activity-01, UseCase-Menu & \code{GET /products} & \file{products.test.cjs}, \file{menu-filter.test.mjs} \\
+FR-02 & US-03 & Activity-01, Class-Product & \code{GET /products/:id} & TS-FR-02-01..06 \\
+FR-03 & US-04 & Activity-02, Class-Order & \file{cart-items.ts} & \file{cart-items.test.mjs} \\
+FR-04 & US-05 & Sequence-JWT, Class-User & \code{POST /auth/login} & \file{auth-profile.test.cjs} \\
+FR-05 & UC-01, US-06, US-07 & Sequence-Checkout & \code{POST /orders}, \code{POST /payments/zalopay} & \file{orders-integration.test.cjs} \\
+FR-06 & US-08 & UseCase-History & \code{GET /orders} & \file{orders-integration.test.cjs} \\
+FR-07 & US-10 & StateMachine-Order, Class-Order & \code{PATCH /orders/:id/status} & \file{admin-flow.test.cjs} \\
+FR-08 & US-07 & Sequence-Payment & \code{POST /payments/zalopay} & \file{payment-idempotency.test.cjs} \\
+FR-09 & US-06 & Activity-Stock, Class-Recipe & \file{orders.service.ts} & \file{ingredient-reservation.test.cjs} \\
+FR-10 & US-09 & Activity-Checkout & \code{POST /orders} (points) & \file{promotions.test.cjs} \\
+FR-11 & US-10, US-11, US-12 & UseCase-Admin & \code{/admin/*} & TS-FR-11 (thủ công) \\
+FR-12 & US-08 & Activity-Order & polling 15 s & TS-FR-12 (thủ công) \\
+% TODO(C): kiểm tra lại toàn bộ mã và tên tệp test cho khớp repo hiện tại.
+\bottomrule
+\end{longtable}
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Truy vết yêu cầu phi chức năng}
+\label{tabC:trace-nfr}
+\begin{tabularx}{\textwidth}{@{}p{1.2cm} p{2.6cm} X p{3.2cm}@{}}
+\toprule
+\textbf{Mã} & \textbf{Thuộc tính} & \textbf{Thiết kế / cách kiểm chứng} & \textbf{Bằng chứng} \\
+\midrule
+% TODO(C): NFR-01..09
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Tính đầy đủ.}
+% TODO(C): 2-3 câu: 12/12 FR có test hoặc kiểm tra thủ công; những chỗ "một phần" nêu rõ
+% (E2E trình duyệt chưa có, NFR đo thủ công). Không tô hồng.

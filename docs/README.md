@@ -1,67 +1,47 @@
-# Đọc tài liệu BrewLite
+# Đọc tài liệu BrewLite – Assignment 2
 
-BrewLite là app đặt cà phê: **Next.js** (frontend) + **NestJS** (backend) + **PostgreSQL**, thanh toán **ZaloPay Sandbox**.
+BrewLite là app đặt cà phê: **Next.js** (frontend) + **NestJS** (backend) + **PostgreSQL**,
+thanh toán **ZaloPay Sandbox**. Tài liệu đã được gọn lại theo đúng 5 task của đề Assignment 2.
 
-Nếu chỉ có 10 phút, đọc theo thứ tự: **file này → [SRS](requirements/srs.md) → [Ma trận truy vết](traceability-matrix.md)**.
-Muốn chạy thử: xem [README gốc](../README.md).
-
----
-
-## 1. Muốn biết gì thì đọc file nào
-
-| Câu hỏi | File |
-|---|---|
-| Hệ thống làm được gì, yêu cầu FR-01…FR-11 | [requirements/srs.md](requirements/srs.md) |
-| Phạm vi, actor, cái gì không làm | [requirements/context-and-scope.md](requirements/context-and-scope.md) |
-| Yêu cầu nào ứng với code/test nào | [traceability-matrix.md](traceability-matrix.md) |
-| Có những bảng DB nào | [database-design.md](database-design.md) |
-| Chạy/deploy/rollback thế nào | [deployment.md](deployment.md) |
-| Đặt tên API, DB, file | [naming-convention.md](naming-convention.md) |
-| Nhánh và commit thế nào | [git-convention.md](git-convention.md) |
-| Review code cần kiểm gì | [checklist-review.md](checklist-review.md) |
-| Vì sao chọn monorepo / bỏ mock payment | [architecture/adr/](architecture/adr/) |
-| Sơ đồ activity / use-case / sequence | [diagrams/](diagrams/) |
+Muốn chạy thử dự án: xem [README gốc](../README.md).
 
 ---
 
-## 2. Luồng nghiệp vụ chính (một dòng)
+## 1. Đọc gì trước (10 phút)
 
-```
-Menu → Chi tiết sản phẩm (size + topping) → Giỏ hàng → Checkout
-     → Tạo đơn PENDING → ZaloPay → PAID → PREPARING → READY → COMPLETED
-```
-
-Nhánh lỗi: `PENDING → PAYMENT_FAILED → PENDING` (thử lại) hoặc `→ CANCELLED` (hủy, hoàn nguyên liệu + điểm).
-
-Trạng thái đơn nằm trong `apps/api/src/modules/orders/order-state.ts` — đây là nguồn đúng, docs chỉ mô tả lại.
+| Thứ tự | File | Nội dung |
+|---|---|---|
+| 1 | [requirements/context-and-scope.md](requirements/context-and-scope.md) | Bối cảnh, 6 stakeholder, in/out-scope, giả định, ràng buộc, rủi ro |
+| 2 | [requirements/srs.md](requirements/srs.md) | FR-01…12, NFR-01…09, MoSCoW, tiêu chí chấp nhận |
+| 3 | [requirements/use-case-uc01.md](requirements/use-case-uc01.md) | Đặc tả use-case trọng tâm: đặt và thanh toán đơn |
+| 4 | [traceability-matrix.md](traceability-matrix.md) | FR → use-case → sơ đồ → code → test |
 
 ---
 
-## 3. Tài liệu theo từng chức năng
+## 2. Theo task của đề
 
-Mỗi thư mục là **một chức năng**. Sơ đồ PlantUML của mọi chức năng nằm chung ở
-[`diagrams/`](diagrams/) (Task 2), tài liệu đặc tả giữ theo chức năng:
-
-| File | Nội dung |
+| Task | Tài liệu |
 |---|---|
-| `usecase-*.md` | Actor, luồng, điều kiện trước/sau |
-| `api-contract*.md` | Endpoint, request/response, mã lỗi |
-| `db-mapping*.md` | Dữ liệu FE ↔ bảng DB |
-| `fe-be-skeleton*.md` | Cấu trúc code gợi ý cho FE/BE |
-| `*test-cases*.md` | Kịch bản kiểm thử của chức năng |
+| 1 – Yêu cầu | [requirements/](requirements/): context-and-scope, srs, use-case-uc01, product-backlog |
+| 2 – Mô hình hóa | [diagrams/](diagrams/): use-case, activity, sequence, class, state machine (`order/state-machine.md`) |
+| 3 – Kiến trúc | [architecture/](architecture/): 2 ADR + deployment diagram; [database-design.md](database-design.md) |
+| 4 – Sprint 1 | [requirements/product-backlog.md](requirements/product-backlog.md), [git-convention.md](git-convention.md), `.github/workflows/ci.yml` |
+| 5 – Sprint 2 & CD | [deployment.md](deployment.md), [test-scenarios/test-scenarios.md](test-scenarios/test-scenarios.md) |
+| Truy vết | [traceability-matrix.md](traceability-matrix.md) |
 
-Thứ tự đọc một chức năng: **usecase → api-contract → db-mapping**. Chỉ mở skeleton khi cần viết code.
+---
 
-| Chức năng | Thư mục |
-|---|---|
-| Xác thực | [auth/](auth/) |
-| Menu sản phẩm | [product-catalog/](product-catalog/) |
-| Chi tiết sản phẩm | [product-detail/](product-detail/) |
-| Giỏ hàng | [cart/](cart/) |
-| Đặt hàng | [order/](order/) |
-| Thanh toán | [payment/](payment/) |
-| Lịch sử đơn | [order-history/](order-history/) |
-| Kiểm thử toàn hệ thống | [test-scenarios/](test-scenarios/) |
+## 3. Chia việc viết báo cáo (3 người)
+
+Chi tiết từng mục, nguồn đọc và hình cần lấy: **[REPORT-SOURCE-MAP.md](REPORT-SOURCE-MAP.md)**.
+
+| Người | Phần | File LaTeX |
+|---|---|---|
+| **A** | Ch.1 Tổng quan + Task 1 + Task 2 | `report/sections/00`, `01`, `02` |
+| **B** | Task 3 + Task 4 + mục 9 | `report/sections/03`, `04`, `09` |
+| **C** | Task 5 + mục 8 truy vết + kết luận | `report/sections/05`, `08`, `10` |
+
+Build báo cáo: `cd docs/report` rồi `latexmk -pdf as2.tex`.
 
 ---
 
@@ -71,4 +51,10 @@ Thứ tự đọc một chức năng: **usecase → api-contract → db-mapping*
 2. **Thanh toán idempotent**: bắt buộc `Idempotency-Key`, callback lặp không tạo giao dịch/điểm trùng.
 3. **Không commit secret**: chỉ commit `.env.example`; giá trị thật để trong `.env` / `apps/api/.env`.
 
-Chi tiết đầy đủ ở [SRS](requirements/srs.md) mục 2 và [checklist-review.md](checklist-review.md).
+---
+
+## 5. Tài liệu lưu trữ
+
+Các đặc tả chi tiết theo từng chức năng (`auth/`, `cart/`, `payment/`…), quy ước đặt tên, checklist
+review và báo cáo Assignment 1 đã được chuyển vào [`_archive/`](_archive/). Chỉ mở khi cần tra cứu
+sâu; không dùng làm nguồn chính cho báo cáo Assignment 2.

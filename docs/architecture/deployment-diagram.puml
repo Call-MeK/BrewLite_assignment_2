@@ -1,4 +1,4 @@
-@startuml BrewLite-Deployment
+@startuml deployment-diagram
 title BrewLite – Sơ đồ triển khai production (Vercel + Render + Neon)
 
 node "Thiết bị người dùng\n(trình duyệt / mobile)" as Browser {

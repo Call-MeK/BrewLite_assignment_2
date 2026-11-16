@@ -1,4 +1,4 @@
-@startuml BrewLite-Checkout
+@startuml sequence-checkout
 title BrewLite – Luồng đặt hàng và thanh toán ZaloPay Sandbox
 
 actor "Khách hàng" as Customer
