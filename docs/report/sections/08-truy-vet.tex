@@ -8,8 +8,12 @@
 Mỗi yêu cầu chức năng được truy vết theo đúng mẫu của đề: \textbf{mã yêu cầu $\rightarrow$
 use-case/user story $\rightarrow$ thiết kế/sơ đồ $\rightarrow$ code/API $\rightarrow$ test}. Cột
 Test dùng mã scenario \code{TS-...} hoặc tên tệp test thật; các ô ghi ``thủ công'' là kiểm tra
-theo checklist, không có test tự động. \tabref{tabC:trace-fr} truy vết 12 yêu cầu chức năng,
-\tabref{tabC:trace-nfr} truy vết các yêu cầu phi chức năng.
+theo checklist, không có test tự động. \tabref{tabC:trace-fr} truy vết 12 nhóm yêu cầu chức năng
+của SRS, tương ứng 22 yêu cầu chi tiết FR-01$\dots$FR-22 ở \tabref{tab:fr-summary}; do đó mã
+FR-xx trong bảng này theo cách đánh số của SRS và không trùng với Bảng~8.
+\tabref{tabC:trace-nfr} truy vết 9 yêu cầu phi chức năng NFR-01$\dots$NFR-09 của SRS, trong khi
+\tabref{tab:nfr-summary} đánh số 8 yêu cầu phi chức năng theo thuộc tính chất lượng mà báo cáo
+dùng để nghiệm thu.
 
 {\small
 \begin{longtable}{@{}p{1.0cm} p{2.9cm} p{3.3cm} p{4.0cm} p{2.9cm}@{}}
@@ -106,7 +110,7 @@ NFR-02 & Bảo mật & JWT + role guard, bcrypt, DTO validation, \code{timingSaf
   ZaloPay & \path{auth-profile.test.cjs}, \path{orders-integration.test.cjs} (401/403/404),
   \path{core-flow.test.cjs}; TS-FR-04-06--08, TS-NFR-02-04/05 \\
 NFR-03 & Tương thích & Tailwind responsive; kiểm tra 390$\times$844 và 1440$\times$900 &
-  Hình 7--12 (14 ảnh trong báo cáo, 16 ảnh nguồn); TS-NFR-03-01 (thủ công trên Chromium; chưa có
+  Hình~\ref{figC:ui-menu}--\ref{figC:admin-desktop} (14 ảnh trong báo cáo, 16 ảnh nguồn); TS-NFR-03-01 (thủ công trên Chromium; chưa có
   test đa trình duyệt) \\
 NFR-04 & Toàn vẹn dữ liệu & Transaction Serializable, optimistic lock, UNIQUE
   \code{Idempotency-Key} & \path{orders.test.cjs}, \path{orders-integration.test.cjs},
@@ -128,8 +132,8 @@ NFR-09 & Khả năng triển khai & \code{docker compose up}; HTTPS; \code{/heal
 \end{table}
 
 \paragraph{Tính đầy đủ.}
-Cả 12/12 yêu cầu chức năng đều có ít nhất một mắt xích code/API và một test tự động hoặc checklist
-thủ công; không có yêu cầu nào chỉ tồn tại trên giấy. Cả chín NFR đều có bằng chứng nhưng mức độ
+Cả 12/12 nhóm yêu cầu chức năng của SRS đều có ít nhất một mắt xích code/API và một test tự động hoặc checklist
+thủ công; không có yêu cầu nào chỉ tồn tại trên giấy. Cả chín NFR của SRS đều có bằng chứng nhưng mức độ
 khác nhau: NFR-02/04/06/07/09 có kiểm chứng tự động hoặc kiểm tra được bằng cấu hình; NFR-01 đo
 thủ công bằng Postman; NFR-03/05/08 kiểm theo checklist, trong đó NFR-03 mới thử trên Chromium ở
 hai kích thước và chưa phủ đủ bốn trình duyệt. Các khoảng trống được ghi nhận trung thực: chưa có

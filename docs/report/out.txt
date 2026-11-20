@@ -1,0 +1,3479 @@
+   BỘ GIÁO DỤC VÀ ĐÀO TẠO
+TRƯỜNG ĐẠI HỌC SÀI GÒN
+     KHOA CÔNG NGHỆ THÔNG TIN
+
+
+
+
+   Công nghệ Phần mềm
+
+
+  BÁO CÁO BÀI TẬP NHÓM
+             Assignment 2
+
+          BrewLite
+ Từ yêu cầu đến triển khai
+Requirements to Deployment
+
+
+
+  Giảng viên: Từ Lãng Phiêu
+      Nhóm: 05
+     Học kỳ: Học kỳ 1, năm học 2026–2027
+
+
+
+
+    TP. Hồ Chí Minh, tháng 11 năm 2026
+      Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+Thành viên nhóm và phân công
+
+Nhóm 05 gồm sáu thành viên. Ba thành viên A, B, C biên soạn báo cáo theo ba khối nội
+dung của đề; ba thành viên còn lại phụ trách module giỏ hàng – kho nguyên liệu, module đơn
+hàng – lịch sử đơn, cùng phần xác thực – thanh toán – công thức.
+
+                            Bảng 1: Danh sách thành viên và phần phụ trách
+
+STT       Họ và tên                 MSSV            Phần phụ trách
+
+  1       Dương Anh Khoa            3124410154     Chương 1, Task 1, Task 2; kiến trúc monorepo, cd.yml
+                                                   + Docker; giỏ hàng phía state, admin đơn hàng + phiếu
+                                                   nhập kho, tồn khả dụng theo định lượng (BOM)
+  2       Võ Thị Thuỷ               3124410351      Task 3, Task 4, mục 9; API sản phẩm (danh sách, chi
+                                                    tiết, danh mục); thực đơn, lọc danh mục, tìm kiếm
+                                                    không dấu; CI (ci.yml)
+  3       Võ Quốc Anh               3124410010      Task 5, mục 8, kết luận; chi tiết sản phẩm (chọn
+                                                    size/topping); API và kiểu dữ liệu sản phẩm phía web
+  4       Lê Hoàng An               3124560001      Giỏ hàng phía server; kiểm tồn và trừ kho khi đặt hàng,
+                                                    cron dọn đơn; module nguyên liệu; dashboard admin,
+                                                    quản lí sản phẩm và nguyên liệu
+  5       Lưu Tấn Nin               3124410259      Module đơn hàng và lịch sử đơn (service, controller, máy
+                                                    trạng thái, DTO), Stakeholder, SRS, tiêu chí nghiệm
+                                                    thu, use-case, integration test, e2e
+  6       Hà Đức Phúc               3124410281      Auth JWT; ZaloPay Sandbox + idempotency; công
+                                                    thức theo size; admin thanh toán, người dùng, công
+                                                    thức; admin guard
+
+
+Ghi chú: A = Dương Anh Khoa, B = Võ Thị Thuỷ, C = Võ Quốc Anh (thứ tự STT 1–3 ở Bảng 1). Cột “Phần
+phụ trách” ghi cả phần báo cáo (A/B/C) và module mã nguồn từng người đảm nhiệm, để đối chiếu với bảng
+truy vết ở mục 8 và lịch sử commit trên GitHub.
+
+
+
+
+Công nghệ Phần mềm                                                                               Trang 1/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                            Bảng 2: Phân công theo hạng mục của báo cáo
+
+Hạng mục                                   Người phụ    Sản phẩm nộp kèm
+                                           trách
+
+Chương 1 – Tổng quan                       A            Bảng thành phần hệ thống, môi trường pro-
+                                                        duction, cách tái lập
+Task 1 – Yêu cầu                           A            6 stakeholder, danh mục FR/NFR (Bảng 8–9),
+                                                        UC-01, sơ đồ use-case
+Task 2 – Mô hình hóa                       A            Activity, sequence, class diagram (kèm .puml
+                                                        và ảnh)
+Task 3 – Kiến trúc                         B            ADR, sơ đồ triển khai, mô tả 9 module
+Task 4 – Sprint 1 & CI                     B            Product backlog, DoD, ảnh CI pass/fail
+Task 5 – Sprint 2 & CD                     C            Ảnh giao diện, bảng kiểm thử, pipeline CD,
+                                                        release notes
+Mục 8 – Truy vết                           C            Ma trận FR → use-case → code → test
+Mục 9 – Checklist repo                     B            Cây repository và bảng đối chiếu 9.1
+
+
+
+
+Công nghệ Phần mềm                                                                        Trang 2/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+Mục lục
+
+
+Thành viên nhóm và phân công                                                                                         1
+
+1 Tổng quan                                                                                                          5
+   1.1   Mục tiêu của báo cáo . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      5
+   1.2   Phạm vi sản phẩm và công nghệ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .           5
+   1.3   Môi trường triển khai và tài khoản demo . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .         5
+   1.4   Cách tái lập . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    6
+
+2 Task 1 – Khai thác và đặc tả yêu cầu                                                                               6
+   2.1   Bối cảnh, stakeholder và phạm vi dự án . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .          6
+   2.2   Danh mục yêu cầu phần mềm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .           9
+   2.3   Đặc tả chi tiết Use Case trọng tâm: UC-ORD-01 – Đặt đơn hàng mới và Hủy đơn hàng . . .                     11
+   2.4   Đặc tả chi tiết Use Case: UC-PRD-01 – Xem chi tiết món và tùy biến . . . . . . . . . . . . .               16
+   2.5   Danh mục mở rộng Use Case theo phân hệ backend (ZaloPay, Users, Recipes) . . . . . . . . .                 20
+
+3 Task 2 – Mô hình hóa hệ thống UML                                                                                 22
+   3.1 Activity Diagram – Biểu đồ hoạt động . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .           22
+   3.2   Sequence Diagram – Biểu đồ tuần tự . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .         29
+   3.3   Class Diagram – Biểu đồ lớp miền nghiệp vụ . . . . . . . . . . . . . . . . . . . . . . . . . . .           37
+   3.4   Máy trạng thái đơn hàng (Order State Machine) . . . . . . . . . . . . . . . . . . . . . . . . .            41
+   3.5   Kiểm tra tính nhất quán của mô hình . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .          41
+
+4 Task 3 – Thiết kế kiến trúc                                                                                       42
+   4.1 Task 3.1 – Phương pháp và quyết định kiến trúc . . . . . . . . . . . . . . . . . . . . . . . . .             42
+   4.2 Task 3.2 – Hồ sơ quyết định kiến trúc (ADR) . . . . . . . . . . . . . . . . . . . . . . . . . . .            44
+   4.3 Task 3.3 – Deployment diagram . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .          45
+
+5 Task 4 – Triển khai Sprint 1                                                                                      47
+   5.1 Task 4.1 – Thiết lập repository và quản lý công việc . . . . . . . . . . . . . . . . . . . . . . .           47
+   5.2 Task 4.2 – Quản lý tài liệu và kiểm soát phiên bản . . . . . . . . . . . . . . . . . . . . . . . .           49
+   5.3 Task 4.3 – Triển khai MVP Sprint 1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .           49
+   5.4 Task 4.4 – Continuous Integration . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .          51
+
+6 Task 5 – Sprint 2, CI/CD và bàn giao                                                                              52
+   6.1 Task 5.1 – Hoàn thiện MVP end-to-end . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .             53
+   6.2   Giao diện thực tế . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    54
+   6.3 Task 5.2 – Tích hợp và kiểm thử . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .          57
+   6.4 Task 5.3 – Continuous Delivery/Deployment . . . . . . . . . . . . . . . . . . . . . . . . . . . .            60
+   6.5 Task 5.4 – Triển khai production và bàn giao . . . . . . . . . . . . . . . . . . . . . . . . . . .           62
+
+7 Ma trận truy vết yêu cầu                                                                                          63
+
+8 Kết luận                                                                                                          68
+
+9 Cấu trúc repository và checklist nghiệm thu                                                                       68
+
+
+
+Công nghệ Phần mềm                                                                                         Trang 3/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+   9.1   Cấu trúc repository . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    68
+   9.2   Checklist nộp bài . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    69
+
+A Phân hệ Thực đơn và Danh mục (Menu & Catalog Module)                                                             71
+
+B Phân hệ Quản lý giỏ hàng (Cart Module)                                                                           73
+
+C Phân hệ Chi tiết món và tính giá (Product Detail & Pricing Module)                                                77
+   C.1 Sơ đồ Use Case: Chi tiết và tùy biến món . . . . . . . . . . . . . . . . . . . . . . . . . . . . .           77
+   C.2 Sơ đồ tuần tự: Tải chi tiết, tùy biến và thêm vào giỏ . . . . . . . . . . . . . . . . . . . . . . .          77
+   C.3 Sơ đồ hoạt động: Quy trình chi tiết món End-to-End . . . . . . . . . . . . . . . . . . . . . . .             79
+   C.4 Nguyên tắc kiến trúc và công thức tính giá chuẩn . . . . . . . . . . . . . . . . . . . . . . . . .           81
+   C.5 Đặc tả yêu cầu chức năng và tiêu chí chấp nhận (FR-07..09) . . . . . . . . . . . . . . . . . . .             82
+   C.6 Mô hình quản lý công thức sản phẩm phía Quản trị (Admin BOM) . . . . . . . . . . . . . . .                   83
+
+D Phân hệ Quản lý nguyên liệu và nhập kho (Ingredients Management)                                                 85
+
+E Phân hệ Lịch sử đơn hàng (Order History Module)                                                                   88
+
+F Phân hệ Cổng thanh toán ZaloPay Sandbox (ZaloPay Sandbox Module)                                                 89
+   F.1 Tổng quan kiến trúc và các Actor bên ngoài . . . . . . . . . . . . . . . . . . . . . . . . . . . .           90
+   F.2 Sơ đồ Use Case: Cổng thanh toán ZaloPay Sandbox . . . . . . . . . . . . . . . . . . . . . . .                91
+   F.3 Các sơ đồ tuần tự chi tiết của phân hệ ZaloPay . . . . . . . . . . . . . . . . . . . . . . . . . .           92
+
+G Phân hệ Quản lý người dùng và phân quyền (User Management Module)                                                94
+   G.1 Sơ đồ Use Case: Quản lý người dùng . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .           95
+   G.2 Các sơ đồ tuần tự chi tiết của phân hệ Người dùng . . . . . . . . . . . . . . . . . . . . . . . .            96
+
+H Phân hệ Quản lý định lượng và công thức pha chế (Recipe Management Module)                                        97
+   H.1 Sơ đồ Use Case: Quản lý định lượng và công thức . . . . . . . . . . . . . . . . . . . . . . . . .            98
+   H.2 Các sơ đồ tuần tự chi tiết của phân hệ Công thức pha chế . . . . . . . . . . . . . . . . . . . .             99
+
+Tài liệu tham khảo                                                                                                 103
+
+
+
+
+Công nghệ Phần mềm                                                                                        Trang 4/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+1. Tổng quan
+
+1.1 Mục tiêu của báo cáo
+Báo cáo này chứng minh một chuỗi phát triển phần mềm khép kín của BrewLite: từ khai thác
+yêu cầu (Task 1), mô hình hóa bằng UML (Task 2), thiết kế kiến trúc và hạ tầng (Task 3),
+triển khai Sprint 1 kèm CI (Task 4) đến hoàn thiện Sprint 2, kiểm thử, CD và vận hành
+production (Task 5). Trọng tâm không phải là liệt kê tính năng, mà là chứng minh mỗi kết
+luận đều có bằng chứng trong kho mã nguồn: mã yêu cầu truy vết tới sơ đồ, tới lớp xử lý, tới
+tệp kiểm thử và tới một URL chạy thật.
+Báo cáo cũng ghi nhận trung thực những phần chưa hoàn thiện (ví dụ pipeline CD chưa có
+registry image, cold start của gói miễn phí) để người đọc đánh giá đúng mức độ hoàn thành
+thay vì chỉ thấy mặt tích cực.
+
+1.2 Phạm vi sản phẩm và công nghệ
+BrewLite là ứng dụng web đặt cà phê không dùng tiền mặt cho một quán duy nhất. Luồng
+tối thiểu mà đồ án phải chạy được end-to-end là: xem thực đơn → chọn size/topping → giỏ
+hàng → đặt đơn → thanh toán ZaloPay Sandbox → theo dõi trạng thái đơn. Giao diện được
+thiết kế mobile-first (chuẩn 390×844) và vẫn dùng được trên desktop 1440×900.
+
+                                 Bảng 3: Thành phần hệ thống BrewLite
+
+Lớp                  Công nghệ                           Vai trò
+
+Frontend             Next.js 15 (App Router), Type- Giao diện khách và khu quản trị; gọi API qua
+                     Script, Tailwind CSS           lớp lib/; bộ lọc tiếng Việt không dấu tách riêng
+                                                    trong menu-filter.ts.
+Backend              NestJS 11, TypeScript strict, Modular monolith với 9 domain module; toàn bộ
+                     Prisma 6                      tính tiền, trừ kho, đổi trạng thái và xác thực chữ
+                                                   ký thanh toán thực thi tại đây.
+Cơ sở dữ liệu        PostgreSQL 16 (Neon, SSL)           Lưu người dùng, sản phẩm, công thức, nguyên
+                                                         liệu, đơn, giao dịch và điểm loyalty; migration
+                                                         forward-only qua Prisma.
+Thanh toán           ZaloPay Sandbox        (HMAC- Tạo giao dịch, nhận callback và truy vấn trạng
+                     SHA256)                       thái; không phát sinh tiền thật.
+CI                   GitHub                Actions       Cài đặt → lint → kiểm thử → build trên mỗi
+                     (.github/workflows/ci.yml)          push/PR vào main.
+Triển khai           Vercel (web), Render (API           HTTPS tự động, deploy từ Git; môi trường demo
+                     Docker), Neon (DB)                  công khai dùng gói miễn phí.
+
+
+
+1.3 Môi trường triển khai và tài khoản demo
+Ba nền tảng dưới đây đều dùng gói miễn phí nên có giới hạn (Render ngủ đông khi không có
+truy cập), nhưng đủ để chứng minh hệ thống chạy thật qua HTTPS.
+
+
+Công nghệ Phần mềm                                                                            Trang 5/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                              Bảng 4: Môi trường production của BrewLite
+
+Thành phần           Nền tảng                  Địa chỉ / ghi chú
+
+Frontend             Vercel                    https://brewlite-acme-1b6f1.vercel.app
+API                  Render (Docker, Free, https://brewlite-api-u2jb.onrender.com/api/v1
+                     Singapore)
+Health check         Render                    https:
+                                               //brewlite-api-u2jb.onrender.com/api/v1/health
+Cơ sở dữ liệu        Neon PostgreSQL           Nội bộ, chỉ API truy cập qua DATABASE_URL có SSL
+Thanh toán           ZaloPay Sandbox           app_id=2554; callback công khai có thể không tới app
+                                               demo nên giao diện có nút “Kiểm tra kết quả” (gọi sync).
+Mã nguồn             GitHub                    Monorepo apps/web, apps/api, docs/, tests/
+
+
+Hai tài khoản seed dùng cho kiểm thử và chấm bài (chỉ tồn tại ở môi trường local/test):
+khách hàng demo@brewlite.test / Demo@12345 (có sẵn 120 điểm loyalty) và quản trị
+admin@brewlite.test / Admin@12345. Đây không phải người dùng thật và không được dùng
+mật khẩu này trên môi trường có dữ liệu thật.
+
+1.4 Cách tái lập
+1. Cài dependencies: npm install ở thư mục gốc (workspace monorepo).
+2. Khởi động hạ tầng: docker compose up –build -d (PostgreSQL 16, API, web); backend
+   tự chạy prisma migrate deploy khi container khởi động.
+3. Nạp dữ liệu mẫu: docker compose exec backend npx prisma db seed. Lưu ý lệnh seed
+   xoá toàn bộ dữ liệu cũ trước khi tạo 8 sản phẩm, nguyên liệu, công thức và hai tài
+   khoản demo.
+4. Chạy khi không dùng Docker: docker compose up -d postgres, sau đó npm run start:dev
+   trong apps/api (cổng 4000) và npm run dev trong apps/web (cổng 3000).
+
+2. Task 1 – Khai thác và đặc tả yêu cầu
+
+2.1 Bối cảnh, stakeholder và phạm vi dự án
+Bối cảnh và vấn đề nghiệp vụ
+
+Bối cảnh. BrewLite là hệ thống đặt đồ uống cho một chuỗi cửa hàng cà phê và trà quy mô
+nhỏ. Thay vì phải xếp hàng chờ đợi, khách hàng có thể chủ động xem thực đơn, tùy chỉnh đồ
+uống, đặt hàng và thanh toán trực tiếp trên chiếc điện thoại của mình. Điều này giúp cửa
+hàng tăng hiệu suất phục vụ, giảm thiểu sai sót trong khâu ghi nhận đơn hàng và nâng cao
+sự hài lòng của khách hàng.
+
+
+Vấn đề cần giải quyết. Qua khảo sát và phân tích thực tế vận hành tại quầy, hệ thống
+nhận diện 5 vấn đề cốt lõi cần giải quyết:
+
+
+
+Công nghệ Phần mềm                                                                           Trang 6/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+             Bảng 5: Các vấn đề nghiệp vụ cần giải quyết (Business Problems P1–P5)
+
+STT     Vấn đề                    Hậu quả                   Cách giải quyết
+
+ P1     Khách phải xếp hàng, Mất thời gian, bỏ về, Đặt đơn trực tuyến thông qua điện thoại.
+        chờ gọi món vào giờ giảm doanh thu
+        cao điểm
+ P2     Menu giấy/nói miệng, Nhầm món, nhầm giá             Menu số có chi tiết sản phẩm, size, topping,
+        khó thể hiện size, top-                             số tiền.
+        ping, giá
+ P3     Ghi đơn thủ công, Sai sót, khó đối soát             Đơn hàng và thanh toán lưu tập trung, có
+        thanh toán rời rạc                                  trạng thái.
+ P4     Khách không biết đơn      Hỏi lại nhân viên, trải   Theo dõi trạng thái đơn hàng thời gian thực.
+        đã được làm chưa          nghiệm kém
+ P5     Quản lý không có dữ       Khó ra quyết định         Lưu lịch sử đơn, cập nhật tồn kho khi đặt
+        liệu bán hàng, tồn kho                              đơn.
+
+
+
+Luồng nghiệp vụ cốt lõi. Toàn bộ hành trình khách hàng trên hệ thống BrewLite tuân
+theo luồng khép kín:
+
+ Xem menu −→ Chọn tùy chọn −→ Giỏ hàng −→ Đặt đơn −→ Thanh toán −→
+                            Theo dõi đơn
+
+
+Stakeholder và kỳ vọng
+
+Sáu nhóm bên liên quan dưới đây quyết định trực tiếp phạm vi, kiến trúc kỹ thuật và tiêu
+chí nghiệm thu của sản phẩm:
+
+
+
+
+Công nghệ Phần mềm                                                                           Trang 7/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                        Bảng 6: Các bên liên quan (Stakeholders) và kỳ vọng
+
+Stakeholder            Vai trò                 Mục tiêu                   Kỳ vọng
+
+Khách hàng             Người dùng cuối, Đặt đồ uống nhanh, Giao diện dễ dùng, tải nhanh,
+                       đặt và thanh toán đúng ý, biết tiến độ đơn giá rõ ràng, thanh toán an toàn,
+                       đơn               hàng                     xem được lịch sử đơn.
+Nhân viên quầy         Nhận và chuẩn bị        Biết đơn mới, cập nhật Danh sách đơn rõ ràng, đổi
+                       đơn hàng                trạng thái dễ dàng     trạng thái (Đã nhận → Đang
+                                                                      pha chế → Sẵn sàng → Hoàn
+                                                                      tất) ít thao tác, ít nhầm lẫn.
+Quản lý cửa hàng       Chủ sở hữu nghiệp       Tăng doanh thu, kiểm       Dữ liệu đơn chính xác, quản lý
+                       vụ, quản lý menu        soát đơn và tồn kho        được sản phẩm/giá/khuyến mãi,
+                       và vận hành                                        giảm sai sót.
+Giảng viên / Khách Đánh giá sản phẩm Kiểm chứng đúng yêu Đủ tạo phẩm đúng thứ tự, truy
+hàng nghiệm thu    và quy trình kỹ cầu của đề tài        vết rõ, production chạy được,
+                   thuật                                 lịch sử commit minh bạch.
+Nhóm phát triển        Phân tích, thiết Hoàn thành đúng hạn, Yêu cầu rõ ràng, phạm vi khả
+                       kế, hiện thực, triển đạt chất lượng cam kết thi, công cụ CI/CD ổn định.
+                       khai
+Đơn vị thanh toán Xử lý thanh toán             Nhận yêu cầu thanh         Giao tiếp qua API chuẩn, hỗ trợ
+(ZaloPay Sandbox) Ví/Thẻ                       toán hợp lệ, không         idempotency, trả kết quả thành
+                                               trùng lặp                  công/thất bại rõ ràng.
+
+
+  Phân biệt Stakeholder và Actor
+
+  Stakeholder đại diện cho quyền lợi trong dự án; không phải stakeholder nào cũng là actor trực tiếp trong
+  sơ đồ use-case (ví dụ: Giảng viên và Nhóm phát triển là các bên nghiệm thu và thi công, không tham gia
+  tương tác runtime với hệ thống).
+
+
+
+Phạm vi sản phẩm
+
+Trong phạm vi (In-Scope). Yêu cầu tối thiểu của luồng nghiệp vụ khép kín bao gồm:
+ • Xem menu: Hiển thị danh sách đồ uống phân theo danh mục (Cà phê, Trà & Trái cây,
+   Đá xay).
+ • Chọn tùy chọn: Cho phép tùy chỉnh size (S, M, L), mức đá, mức đường, topping kèm
+   theo.
+ • Giỏ hàng: Quản lý các món đã chọn, gộp món trùng cấu hình, tính tổng tiền tạm tính
+   tự động.
+ • Đặt đơn & Thanh toán: Xác nhận thông tin, trừ kho theo công thức (BOM), xử lý
+   thanh toán qua cổng ZaloPay Sandbox.
+ • Theo dõi đơn: Xem chi tiết trạng thái đơn hàng (chờ xử lý, đang chuẩn bị, sẵn sàng
+   nhận, hoàn tất).
+ • Giao diện: Mobile-first / PWA phát triển bằng Next.js (App Router), hỗ trợ responsive.
+ • Backend & Database: RESTful API phát triển bằng NestJS, quản lý cơ sở dữ liệu quan
+   hệ PostgreSQL thông qua Prisma ORM.
+
+
+Công nghệ Phần mềm                                                                               Trang 8/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Ngoài phạm vi (Out-of-Scope). Để đảm bảo chất lượng và tiến độ giao nộp sản phẩm,
+các tính năng sau được xác định nằm ngoài phạm vi MVP:
+ • Tích hợp hệ thống giao hàng và định vị của bên thứ ba (Ahamove, GrabExpress).
+ • Hệ thống quản lý khách hàng thân thiết phức tạp vượt quá mức cơ bản (như hạng thẻ
+   kim cương, voucher cá nhân hóa theo thuật toán).
+ • Giao diện Admin quản trị chuỗi đa chi nhánh phức tạp.
+ • Phân tích dữ liệu lớn (Big Data) và gợi ý đồ uống thông minh bằng trí tuệ nhân tạo (AI
+   Recommendation).
+
+
+Giả định, ràng buộc và rủi ro ban đầu. Hệ thống hoạt động dưới giả định người dùng
+sử dụng trình duyệt hiện đại có kết nối Internet và hỗ trợ localStorage. Về ràng buộc kiến
+trúc, backend chịu trách nhiệm toàn diện trong việc tính toán số tiền và trừ kho nguyên liệu;
+frontend tuyệt đối không quyết định giá. Bảng rủi ro và giải pháp tương ứng được tổng hợp
+dưới đây:
+
+               Bảng 7: Rủi ro ban đầu và biện pháp giảm thiểu (Risks & Mitigation)
+
+Mã          Rủi ro                  Ảnh hưởng                Giải pháp kỹ thuật
+
+RK-01       Nhiều khách đặt         Có thể bán vượt tồn      Sử dụng Database Transaction và Optimistic
+            cùng lúc                kho nguyên liệu          Locking / Atomic Conditional Update.
+RK-02       Yêu cầu thanh toán      Phát sinh giao dịch      Cơ chế Idempotency-Key, kiểm tra request hash,
+            gửi lặp                 hoặc trạng thái trùng    xác minh callback/IPN độc lập.
+RK-03       API/DB gặp sự cố        Menu hoặc đơn hàng       Trạng thái Loading/Empty/Error rõ ràng, health
+            gián đoạn               không tải được           check endpoint, logging tập trung.
+RK-04       Lệch pha giữa thiết     Lỗi nghiệm thu, mất      Rà soát Acceptance Criteria định kỳ, PR review
+            kế và code              tính truy vết            có đối chiếu hợp đồng API.
+RK-05       CI/CD hoặc deploy       Mất liên kết bàn giao,   Tự động hóa kiểm thử trên CI, kiểm tra smoke
+            thất bại                không có URL             test và quy trình rollback 1-click.
+RK-06       Rò rỉ thông tin cấu     Nguy cơ bảo mật và lộ    Quản lý secrets qua biến môi trường, quét lịch
+            hình nhạy cảm           credential               sử Git, không lưu secret trong repo.
+
+
+
+2.2 Danh mục yêu cầu phần mềm
+Hệ thống quản lý 22 yêu cầu chức năng (FR-01 . . . FR-22) và 8 yêu cầu phi chức năng
+(NFR-01 . . . NFR-08) chuẩn hóa theo MoSCoW:
+
+
+
+
+Công nghệ Phần mềm                                                                              Trang 9/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                  Bảng 8: Danh mục yêu cầu chức năng (Functional Requirements)
+
+Mã          Tên yêu cầu                                                 Mức độ            Phân     hệ    phụ
+                                                                                          trách
+
+FR-01       Đăng ký tài khoản thành viên                                Must Have         Xác thực
+FR-02       Đăng nhập hệ thống & cấp phát JWT token                     Must Have         Xác thực
+FR-03       Bảo vệ tuyến API & phân quyền truy cập (RBAC)               Must Have         Xác thực / Quản lý
+                                                                                          Users
+FR-04       Xem danh mục sản phẩm (Category Browsing)                   Must Have         Thực đơn
+FR-05       Xem danh sách món uống đang mở bán                          Must Have         Thực đơn
+FR-06       Tìm kiếm món uống theo tên (tiếng Việt không dấu)           Should Have       Thực đơn
+FR-07       Xem chi tiết thông tin sản phẩm & hồ sơ rang                Must Have         Chi tiết món
+FR-08       Tùy biến kích cỡ (S/M/L) và Topping (tối đa 3 loại)         Must Have         Chi tiết món
+FR-09       Tính giá linh hoạt & Xác thực giá phía Backend              Must Have         Chi tiết món
+FR-10       Thêm, sửa, xóa món trong giỏ hàng                           Must Have         Giỏ hàng
+FR-11       Tính tổng tiền giỏ hàng tự động                             Must Have         Giỏ hàng
+FR-12       Lưu trữ giỏ bền vững (localStorage) & Giữ giỏ khi lỗi       Must Have         Giỏ hàng
+FR-13       Tạo đơn hàng mới (Atomic Transaction)                       Must Have         Đặt hàng
+FR-14       Trừ tồn kho nguyên liệu theo công thức & chống âm kho       Must Have         Đặt hàng / BOM
+FR-15       Áp dụng mã khuyến mãi & Tích điểm thưởng Loyalty            Should Have       Đặt hàng
+FR-16       Quản lý vòng đời trạng thái đơn (State Machine)             Must Have         Đặt hàng
+FR-17       Tích hợp cổng thanh toán ZaloPay Sandbox                    Must Have         Thanh toán
+FR-18       Cơ chế chống trùng lặp thanh toán (Idempotency-Key)         Must Have         Thanh toán
+FR-19       Xử lý lỗi thanh toán & Khôi phục trạng thái đơn             Must Have         Thanh toán
+FR-20       Xác nhận thanh toán & Biên nhận giao dịch                   Must Have         Thanh toán
+FR-21       Xem danh sách lịch sử đơn hàng cá nhân                      Must Have         Lịch sử
+FR-22       Theo dõi chi tiết & trạng thái đơn thời gian thực           Must Have         Lịch sử
+
+
+
+                     Bảng 9: Yêu cầu phi chức năng (Non-Functional Requirements)
+
+Mã            Thuộc tính           Tiêu chuẩn            Chỉ số định lượng cụ thể
+
+NFR-01        Hiệu năng            ISO/IEC 25010         Thời gian phản hồi p95 < 500ms đối với xem menu;
+                                                         p95 < 800ms khi tạo đơn.
+NFR-02        Bảo mật dữ liệu      Security              Mật khẩu băm bcrypt (salt 10); JWT HS256 hạn 7
+                                                         ngày; không lộ secret trên Git.
+NFR-03        Toàn vẹn dữ liệu     Data Integrity        Tạo đơn và trừ nguyên liệu nằm trong một ACID
+                                                         Transaction; tồn kho không âm (stock ≥ 0).
+NFR-04        Độ tin cậy           Idempotency           Trùng Idempotency-Key trả kết quả cũ (HTTP 200);
+                                                         không ghi nhận giao dịch trùng.
+NFR-05        Tương thích PWA      Compatibility         Đạt chuẩn Installable PWA; hiển thị tốt trên Chrome,
+                                                         Safari iOS, Edge.
+NFR-06        Đóng gói container   Deployability         Backend build từ Docker image chuẩn Node 22-slim;
+                                                         deploy Render (API) + Vercel (web) + Neon Post-
+                                                         greSQL.
+NFR-07        Tự động hóa CI       CI/CD                 100% PR phải vượt qua 2 job CI (frontend, backend)
+                                                         trước khi merge vào main.
+NFR-08        Khả năng phục hồi    Recoverability        Hỗ trợ rollback 1-click về bản ổn định trước đó; thời
+                                                         gian phục hồi RTO < 5 phút.
+
+
+
+Công nghệ Phần mềm                                                                                Trang 10/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+2.3 Đặc tả chi tiết Use Case trọng tâm: UC-ORD-01 – Đặt đơn
+    hàng mới và Hủy đơn hàng
+Use-case này mô tả quy trình cốt lõi khép kín từ khi khách hàng xác nhận giỏ hàng, trừ tồn
+kho nguyên liệu theo định lượng (BOM), xử lý thanh toán, cho đến khi hủy đơn hợp lệ hoặc
+tự động hủy do quá hạn.
+
+
+
+
+            Hình 1: Sơ đồ Use Case phân hệ Đặt hàng và Hủy đơn hàng (UC - Order)
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 11/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Thông tin ca sử dụng (Use Case Specification)
+
+
+                Bảng 10: Đặc tả ca sử dụng UC-ORD-01: Đặt đơn hàng và Hủy đơn
+
+Mục                    Nội dung
+
+Mã ca sử dụng          UC-ORD-01 (Tích hợp luồng Đặt hàng và Hủy đơn)
+Tên ca sử dụng         Đặt đơn hàng mới và Hủy đơn hàng
+Tác nhân chính         Khách hàng (Primary Actor)
+Tác nhân phụ           Nhân viên quầy (Barista), Cổng thanh toán (ZaloPay Sandbox), Cronjob hệ
+                       thống
+Mục tiêu ca sử         Khách hàng đặt mua thành công các món uống đã chọn trong giỏ hàng; hệ
+dụng                   thống đảm bảo trừ kho nguyên liệu theo định lượng và ghi nhận doanh thu
+                       chính xác; hỗ trợ hủy đơn an toàn khi chưa pha chế.
+Tiền điều kiện         1. Khách hàng đã đăng nhập và sở hữu JWT Token hợp lệ (FR-01..03).
+                       2. Giỏ hàng có tối thiểu 1 món; mỗi món có size, số lượng (1..99) và danh sách
+                       topping hợp lệ (FR-10..12).
+                       3. Kho nguyên liệu đáp ứng đủ định lượng theo công thức (BOM) của các món
+                       đã chọn.
+Hậu điều kiện          1. Đơn hàng mới được ghi nhận trong cơ sở dữ liệu với trạng thái PENDING;
+                       đơn chỉ chuyển PAID sau khi callback IPN hoặc lệnh sync xác thực HMAC
+                       thành công với ZaloPay.
+                       2. Tồn kho nguyên liệu bị trừ chính xác và ghi lại bản ghi snapshot
+                       OrderIngredientUsage.
+                       3. Điểm thưởng Loyalty chỉ được cộng trong transaction chuyển PENDING →
+                       PAID, tức là chỉ với đơn đã thanh toán thành công.
+                       4. Giỏ hàng trên thiết bị khách hàng chỉ được làm trống sau khi giao diện xác
+                       nhận đơn đã PAID.
+
+
+Luồng sự kiện chính (Sunny Day Scenario – 14 bước)
+
+Bước 1: Khách hàng mở trang Giỏ hàng (/cart), rà soát danh sách món uống, số lượng và
+        tổng tiền tạm tính.
+Bước 2: Khách hàng nhấn nút “Tiến hành đặt hàng” để điều hướng sang trang Thanh
+        toán (/checkout).
+Bước 3: Khách hàng kiểm tra lại thông tin đơn, chọn số điểm tích lũy muốn dùng (bội số
+        của 10), nhập mã giảm giá (nếu có) và nhấn “Xác nhận đặt hàng”. Phương thức
+        thanh toán duy nhất là ZaloPay Sandbox (ADR-002), nên bước này không còn lựa
+        chọn “ví mô phỏng”.
+Bước 4: Giao diện gửi yêu cầu POST /api/v1/orders kèm header Authorization: Bearer
+        <JWT>; trước khi gửi, giao diện đã kiểm tra đơn đang chờ trong localStorage để
+        không tạo đơn thứ hai.
+Bước 5: Tuyến API xác thực JWT Token hợp lệ, trích xuất userId của khách hàng.
+Bước 6: Hệ thống kiểm tra tính hợp lệ của DTO đầu vào (kích cỡ hợp lệ, số lượng > 0, danh
+        sách topping không trùng).
+
+
+Công nghệ Phần mềm                                                                        Trang 12/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+ Bước 7: Backend mở một Transaction ACID trong cơ sở dữ liệu PostgreSQL.
+ Bước 8: Backend đọc công thức pha chế (BOM) của từng món, gom nhóm và tính toán tổng
+         lượng nguyên liệu cần tiêu hao.
+ Bước 9: Backend thực hiện atomic conditional update trên từng nguyên liệu theo thứ
+         tự ID tăng dần (UPDATE ingredients SET stock = stock - qty WHERE id = ? AND
+         stock >= qty).
+Bước 10: Backend tính toán lại đơn giá từng dòng và tổng tiền đơn hàng dựa trên bảng giá
+         chuẩn trong cơ sở dữ liệu; kiểm tra điều kiện mã giảm giá (nếu có).
+Bước 11: Backend ghi nhận bản ghi Order mới (trạng thái PENDING), các dòng OrderItem,
+         danh sách topping và lưu bản chụp định lượng vào bảng OrderIngredientUsage;
+         transaction COMMIT và API trả 201 Created với payments: [].
+Bước 12: Giao diện điều hướng sang trang thanh toán (/orders/:id/payment). Tại đây
+         khách hàng nhấn “Tạo thanh toán ZaloPay Sandbox”; giao diện gửi POST
+         /api/v1/payments/zalopay kèm header Idempotency-Key.
+Bước 13: Backend tạo bản ghi Payment nguồn ZALOPAY_SANDBOX ở trạng thái PENDING trước
+         khi gọi mạng (để một kết quả không rõ ràng không thể dẫn tới thu tiền hai lần),
+         sau đó gọi API ZaloPay Sandbox và trả về paymentUrl.
+Bước 14: Khách hàng thanh toán trên cổng ZaloPay; ZaloPay gọi callback IPN và/hoặc
+         giao diện gọi POST /api/v1/payments/zalopay/:id/sync. Sau khi xác thực HMAC,
+         Backend chuyển đơn PENDING → PAID (ghi paidAt) và cộng điểm loyalty trong cùng
+         transaction; giao diện làm rỗng giỏ hàng khi nhận trạng thái PAID.
+
+
+ Các luồng sự kiện rẽ nhánh (Alternative Flows)
+
+  • Alt-1: Khách hàng áp dụng mã giảm giá hợp lệ: Tại bước 3, khách hàng nhập mã
+    voucher. Backend kiểm tra điều kiện giá trị đơn tối thiểu, hạn sử dụng và số lượt còn lại;
+    nếu thỏa mãn thì áp dụng chiết khấu và ghi nhận mã giảm giá vào đơn hàng.
+  • Alt-2: Thanh toán thất bại hoặc hủy ngang trên cổng thanh toán: Tại bước 14,
+    ZaloPay báo giao dịch thất bại hoặc khách hàng bấm hủy trên cổng. Lệnh sync ghi nhận
+    Payment là FAILED và chuyển đơn PENDING → PAYMENT_FAILED; nguyên liệu vẫn bị giữ chỗ
+    (đã trừ từ bước 9–11) cho tới khi khách hủy hoặc cronjob hủy sau 15 phút. Khách hàng
+    thấy nút “Thử lại thanh toán”; khi thử lại, Backend chuyển đơn về PENDING rồi tạo
+    Payment mới với Idempotency-Key khác.
+  • Alt-3: Khách hàng chủ động hủy đơn chưa chuẩn bị: Khi đơn hàng ở trạng
+    thái PENDING hoặc PAYMENT_FAILED, khách hàng nhấn nút “Hủy đơn”. Tuyến API
+    POST /api/v1/orders/:id/cancel kiểm tra quyền chủ đơn, chuyển trạng thái đơn sang
+    CANCELLED, đọc bảng snapshot OrderIngredientUsage và hoàn trả chính xác số lượng
+    nguyên liệu vào kho (UPDATE ingredients SET stock = stock + usageQty).
+  • Alt-4: Tự động hủy đơn quá hạn 15 phút chưa thanh toán: Định kỳ mỗi phút, tác vụ
+    nền (OrderCleanupCronjob) quét các đơn hàng có trạng thái PENDING hoặc PAYMENT_FAILED
+    được tạo quá 15 phút trước. Hệ thống tự động chuyển đơn sang CANCELLED và hoàn trả
+    nguyên liệu vào kho tương tự Alt-3.
+
+
+
+
+ Công nghệ Phần mềm                                                                Trang 13/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Các luồng sự kiện ngoại lệ (Exception Flows)
+
+ • Exc-1: Phiên đăng nhập hết hạn (401 Unauthorized): Tại bước 5, nếu JWT token
+   hết hạn hoặc không hợp lệ, hệ thống từ chối yêu cầu và chuyển hướng người dùng về trang
+   đăng nhập mà không thực hiện bất kỳ thao tác nào với giỏ hàng hay kho.
+ • Exc-2: Dữ liệu đặt hàng không hợp lệ (400 Bad Request): Tại bước 6, nếu giỏ
+   hàng rỗng, số lượng ly bằng 0, hoặc tùy chọn size không khớp với danh mục, hệ thống
+   ném ngoại lệ ValidationPipe và hủy bỏ yêu cầu.
+ • Exc-3: Không đủ nguyên liệu trong kho (400 Out of Stock): Tại bước 9, nếu bất
+   kỳ nguyên liệu nào không đủ định lượng (stock < qty), lệnh atomic update trả về 0 dòng
+   bị ảnh hưởng. Backend lập tức ROLLBACK toàn bộ transaction, kho nguyên liệu giữ
+   nguyên vẹn, và trả thông báo chi tiết: “Món [Tên món] hiện đã hết nguyên liệu, vui lòng
+   chọn món khác”.
+ • Exc-4: Tranh chấp ly đồ uống cuối cùng (Race Condition / Concurrency):
+   Khi hai khách hàng cùng đặt ly đồ uống cuối cùng tại cùng một tích tắc, cơ chế atomic
+   conditional update đảm bảo chỉ một transaction trừ kho thành công (nhận HTTP 201),
+   giao dịch còn lại sẽ bị từ chối với lỗi hết hàng (HTTP 400), ngăn chặn hoàn toàn hiện
+   tượng âm kho.
+ • Exc-5: Mã giảm giá không đủ điều kiện (400 Invalid Coupon): Tại bước 10, nếu
+   mã giảm giá đã hết hạn, hết ngân sách hoặc tổng tiền đơn hàng chưa đạt mức tối thiểu,
+   hệ thống từ chối áp dụng và trả thông báo lỗi cụ thể.
+ • Exc-6: Lỗi trùng lặp yêu cầu đặt hàng: Nếu khách hàng nhấn đúp nút đặt hàng, giao
+   diện đã lưu mã đơn đang chờ trong localStorage và đối soát lại trạng thái trước khi cho
+   phép gửi yêu cầu mới, nên yêu cầu thứ hai không tạo thêm đơn và không trừ kho lần hai.
+   Cơ chế Idempotency-Key bắt buộc chỉ áp dụng cho bước tạo thanh toán (FR-18), không
+   áp dụng cho POST /orders.
+ • Exc-7: Lỗi kết nối cơ sở dữ liệu (500 Database Error): Nếu có sự cố đứt kết nối
+   mạng hoặc timeout cơ sở dữ liệu trong quá trình xử lý transaction, toàn bộ các bước đã
+   thực hiện đều tự động ROLLBACK; kho nguyên liệu và trạng thái thanh toán không bị
+   sai lệch dữ liệu dạng nửa vời.
+ • Exc-8: Yêu cầu hủy đơn khi món đã bắt đầu pha chế (409 Conflict): Nếu khách
+   hàng gửi yêu cầu hủy đơn nhưng nhân viên quầy đã chuyển trạng thái đơn sang PREPARING,
+   hệ thống từ chối hủy với thông báo: “Đơn hàng đang được pha chế, không thể hủy”.
+ • Exc-9: Chuyển trạng thái đơn không hợp lệ: Bất kỳ yêu cầu chuyển trạng thái nào
+   vi phạm 9 chuyển tiếp hợp lệ của máy trạng thái (ví dụ: PENDING → COMPLETED) đều bị
+   hàm assertTransition chặn lại với mã lỗi 409 Conflict.
+ • Exc-10: IPN thành công đến sau khi đơn đã bị hủy: Trong trường hợp đơn hàng đã
+   chuyển CANCELLED (do khách hủy hoặc quá 15 phút) nhưng sau đó cổng thanh toán lại gửi
+   IPN báo thanh toán thành công, Backend cập nhật Payment là SUCCESS, đánh dấu đơn cần
+   hoàn tiền thủ công (refundStatus = MANUAL_REQUIRED), giữ nguyên đơn ở CANCELLED
+   và không cộng điểm loyalty.
+
+
+
+
+Công nghệ Phần mềm                                                             Trang 14/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+Ánh xạ tiêu chí chấp nhận và liên kết kiểm thử
+
+Bảng dưới đây ánh xạ các kịch bản kiểm chứng của use-case UC-ORD-01 với các mã kiểm
+thử (Test Case ID) trong bộ test tự động:
+
+                        Bảng 11: Ánh xạ kiểm thử của use-case UC-ORD-01
+
+Mã AC        Kịch bản kiểm chứng                                     Loại    kiểm    Test Case ID
+                                                                     thử
+
+AC-UC-01     Luồng chính: tạo đơn, trừ kho BOM, thanh toán PAID, E2E / Integra- TC-UC-01, TC-
+             cộng điểm                                                 tion          ORDER-01,
+                                                                                     TC-ORDER-26
+AC-UC-02     Chưa đăng nhập: trả 401 Unauthorized, không tạo đơn       Integration   TC-ORDER-11,
+                                                                                     TC-AUTH-06
+AC-UC-03     Dữ liệu không hợp lệ (size/topping/số lượng sai): trả 400 Integration / TC-ORDER-08,
+                                                                       DTO           TC-ORDER-09,
+                                                                                     TC-ORDER-16
+AC-UC-04     Thiếu nguyên liệu: rollback toàn bộ, không tạo đơn, kho Integration     TC-ORDER-02,
+             không đổi                                                               TC-ORDER-21
+AC-UC-05     Tranh chấp ly cuối: 2 request đồng thời → 1 thành công Concurrency      TC-ORDER-03,
+             201, 1 báo lỗi 400                                                      TC-ORDER-22
+AC-UC-06     Voucher không đủ điều kiện tối thiểu: từ chối 400, không Integration    TC-ORDER-28,
+             trừ kho                                                                 TC-ORDER-31
+AC-UC-07     Thanh toán lỗi: đơn sang PAYMENT_FAILED, giữ giỏ Component / TC-PAY-05,
+             và kho                                                    Int           TC-PAY-17, TC-
+                                                                                     CART-04
+AC-UC-08     Thử lại thanh toán: đơn về PENDING, giữ kho, không trừ Integration      TC-ORDER-42,
+             lần hai                                                                 TC-PAY-09
+AC-UC-09     Hủy đơn hàng hợp lệ: đơn CANCELLED, hoàn kho đúng Integration           TC-ORDER-23,
+             snapshot BOM                                                            TC-ORDER-43
+AC-UC-10     Hủy lần hai hoặc hủy đơn PAID: trả lỗi 409 Conflict       Integration   TC-ORDER-24,
+                                                                                     TC-ORDER-44
+AC-UC-11     Cronjob hủy đơn quá 15 phút: tự động CANCELLED và Unit / Int            TC-ORDER-48,
+             hoàn kho                                                                TC-CRON-01
+AC-UC-12     Idempotency: lặp cùng key trả kết quả cũ, không tạo Concurrency / TC-PAY-02,
+             payment trùng                                             Int           TC-PAY-03, TC-
+                                                                                     ORDER-34
+AC-UC-13     IPN thành công đến sau CANCELLED: ghi nhận hoàn Integration             TC-PAY-18
+             tiền thủ công
+
+
+  Quy tắc bất biến cần giữ nhất quán
+
+  1. Backend là nguồn sự thật duy nhất về giá: Giá cơ sở, phụ thu size và topping đều do
+     PricingService đọc từ PostgreSQL và tính toán; mọi giá trị tiền client gửi lên đều bị bỏ qua.
+  2. Nguyên tử hóa tồn kho theo BOM: Toàn bộ quá trình kiểm tra và trừ nguyên liệu diễn ra trong
+     transaction ACID với atomic conditional update. Tồn kho nguyên liệu tuyệt đối không bao giờ âm.
+  3. Snapshot định lượng khi hoàn kho: Khi hủy đơn, hệ thống đọc lượng nguyên liệu cần hoàn từ
+     bảng snapshot OrderIngredientUsage, không tính lại theo công thức hiện hành để đảm bảo tính
+     nhất quán lịch sử.
+
+
+
+
+Công nghệ Phần mềm                                                                         Trang 15/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+2.4 Đặc tả chi tiết Use Case: UC-PRD-01 – Xem chi tiết món và
+    tùy biến
+Use-case này mô tả quy trình khách hàng xem trang chi tiết của một đồ uống, tùy biến kích
+thước (size), lựa chọn các loại topping kèm theo, điều chỉnh số lượng và thêm vào giỏ hàng
+cục bộ trên trình duyệt.
+
+
+
+
+    Hình 2: Sơ đồ Use Case: Chi tiết sản phẩm và tùy biến món (BrewLite – Product Detail)
+
+
+
+
+Công nghệ Phần mềm                                                                Trang 16/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Thông tin cơ bản của Use Case UC-PRD-01
+
+
+              Bảng 12: Đặc tả ca sử dụng UC-PRD-01: Xem chi tiết món và tùy biến
+
+Mục                    Nội dung
+
+Mã ca sử dụng          UC-PRD-01 (Product Detail & Customization)
+Tên ca sử dụng         Xem chi tiết sản phẩm, tùy biến và thêm vào giỏ hàng
+Tác nhân chính         Khách hàng (Primary Actor)
+Mục tiêu ca sử         Khách hàng xem thông tin chi tiết của món, lựa chọn kích cỡ phù hợp, chọn
+dụng                   topping theo sở thích, theo dõi giá tạm tính tức thì và thêm sản phẩm vào giỏ
+                       hàng.
+Tiền điều kiện         1. Khách hàng đã mở ứng dụng BrewLite và chọn một món đồ uống từ thực
+                       đơn.
+                       2. Món đồ uống có ID hợp lệ và đang ở trạng thái kinh doanh (isAvailable
+                       = true).
+Hậu điều kiện          1. Món đồ uống với đầy đủ thuộc tính (size, danh sách topping, số lượng) được
+                       lưu trữ an toàn trong localStorage (brewlite-cart).
+                       2. Giao diện phát sự kiện cart-changed, cập nhật số lượng hiển thị trên biểu
+                       tượng giỏ hàng.
+                       3. Khách hàng nhận được thông báo phản hồi trực quan (Toast thông báo
+                       thành công).
+
+
+Luồng sự kiện chính (Sunny Day Scenario)
+
+Bước 1: Khách hàng điều hướng đến trang chi tiết sản phẩm thông qua đường dẫn
+        /products/:id.
+Bước 2: Frontend trích xuất mã nhận diện món ăn (id) từ URL bằng hook useParams().
+Bước 3: Hook useProductDetail kích hoạt trạng thái setLoading(true), đặt error = null
+        và gửi yêu cầu getProductById(id) qua ApiClient.
+Bước 4: Backend API tiếp nhận yêu cầu GET /products/:id, truy vấn cơ sở dữ liệu Post-
+        greSQL và trả về dữ liệu ProductDetail (mã trạng thái HTTP 200).
+Bước 5: Frontend xác thực cấu trúc dữ liệu trả về thông qua hàm kiểm định
+        isValidProduct(data).
+Bước 6: Frontend lưu thông tin sản phẩm vào bộ nhớ state (setProduct(data)), tự động
+        gán kích thước mặc định (kích thước đầu tiên trong mảng sizes), khởi tạo danh sách
+        topping rỗng (setSelectedToppings([])), tắt hiệu ứng chờ (setLoading(false)) và
+        hiển thị toàn bộ giao diện chi tiết món.
+Bước 7: Khách hàng lựa chọn kích thước đồ uống (ví dụ: Size M). Frontend gọi hàm
+        setSelectedSize(size) và kích hoạt tính toán lại giá dự kiến.
+Bước 8: Khách hàng chọn topping mong muốn. Frontend gọi hàm toggleTopping(toppingId),
+        xác nhận số lượng topping hiện tại < 3, thêm topping vào danh sách và kích hoạt
+        tính toán lại giá dự kiến.
+Bước 9: Khách hàng điều chỉnh số lượng ly cần mua (mặc định là 1 ly). Frontend gọi hàm
+        setQuantity(quantity) và kích hoạt tính toán lại giá dự kiến.
+
+
+Công nghệ Phần mềm                                                                       Trang 17/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Bước 10: Frontend tính toán giá dự kiến (estimatedPrice) và cập nhật hiển thị theo công
+         thức:
+                          (︄                                  n
+                                                                              )︄
+                                                             ∑︂
+         estimatedPrice = basePrice + sizePriceAdjustment +      toppingPricek ×quantity
+                                                                 k=1
+                                                                                          (1)
+Bước 11: Khách hàng nhấn nút “Thêm vào giỏ hàng”.
+Bước 12: Frontend kiểm tra các điều kiện tiên quyết: sản phẩm còn mở bán, kích cỡ đã chọn
+         hợp lệ, số lượng ≥ 1.
+Bước 13: Frontend bật cờ setIsAdding(true), khởi tạo đối tượng dữ liệu CartItemDraft.
+Bước 14: Frontend truy xuất dữ liệu giỏ hàng từ localStorage.getItem("brewlite-cart"),
+         giải mã chuỗi JSON qua JSON.parse() và xác minh mảng dữ liệu qua
+         Array.isArray(items).
+Bước 15: Frontend thực hiện hàm gộp giỏ hàng addToCartMerge(cartItems, newItem): nếu
+         giỏ hàng đã có món cùng ID, cùng kích cỡ và cùng bộ topping thì cộng dồn số lượng;
+         nếu không thì thêm một phần tử mới vào mảng.
+Bước 16: Frontend lưu mảng giỏ hàng mới vào localStorage.setItem("brewlite-cart",
+         JSON.stringify(items)).
+Bước 17: Frontend kích hoạt sự kiện tùy biến window.dispatchEvent(new Event("cart-changed"))
+         để đồng bộ hóa số đếm trên thanh điều hướng.
+Bước 18: Frontend hiển thị thông báo Toast “Đã thêm sản phẩm vào giỏ hàng”, tắt cờ
+         setIsAdding(false) và giữ nguyên trang chi tiết để khách hàng tiếp tục thao tác
+         hoặc chuyển trang.
+
+
+ Các luồng sự kiện rẽ nhánh (Alternative Flows)
+
+  • Alt-1: Thay đổi kích cỡ món: Tại bước 7, khách hàng nhấp chọn kích cỡ khác (ví dụ:
+    chuyển từ Size S sang Size L). Hệ thống cập nhật selectedSize, đọc mức giá chênh lệch
+    (sizePriceAdjustment) tương ứng từ dữ liệu sản phẩm, tính toán lại giá dự kiến và cập
+    nhật ngay lập tức trên nút bấm thêm vào giỏ.
+  • Alt-2: Bỏ chọn topping đã chọn trước đó: Tại bước 8, khách hàng nhấp vào một loại
+    topping đã có trong danh sách lựa chọn. Hàm toggleTopping() phát hiện topping đã tồn
+    tại, tiến hành loại bỏ topping đó khỏi danh sách selectedToppings, trừ chi phí topping
+    tương ứng và cập nhật lại giá tạm tính.
+  • Alt-3: Điều chỉnh số lượng bằng nút tăng/giảm: Tại bước 9, khách hàng nhấn nút
+    “+” hoặc “-” để tăng hoặc giảm số lượng ly. Hệ thống ràng buộc số lượng tối thiểu là 1;
+    mỗi thay đổi số lượng lập tức nhân đơn giá tạm tính của 1 ly với hệ số mới để hiển thị số
+    tiền chính xác.
+  • Alt-4: Món đã có trong giỏ hàng (Gộp dòng tự động): Tại bước 15, thuật toán
+    addToCartMerge duyệt qua danh sách giỏ hàng hiện tại và nhận thấy đã có một mục có
+    cùng productId, cùng sizeId và mảng toppingIds trùng khớp 100%. Thay vì tạo thêm
+    một dòng riêng biệt, hệ thống tăng thuộc tính quantity của mục đã có, giúp giỏ hàng
+    luôn gọn gàng và chuẩn xác.
+
+
+
+
+ Công nghệ Phần mềm                                                               Trang 18/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Các luồng sự kiện ngoại lệ (Exception Flows)
+
+ • Exc-1: Không tìm thấy sản phẩm hoặc sản phẩm bị xóa (Lỗi 404): Tại bước
+   4, Backend trả về mã trạng thái 404 Not Found. Hook useProductDetail bắt ngoại lệ
+   thông qua khối catch(e), thiết lập setProduct(null), đặt thông điệp setError("Không
+   tìm thấy sản phẩm này"), tắt tải setLoading(false) và render màn hình báo lỗi kèm nút
+   điều hướng quay về trang thực đơn.
+ • Exc-2: Dữ liệu sản phẩm bị sai lệch hoặc không đầy đủ: Tại bước 5, dữ liệu trả về
+   từ API thiếu các trường dữ liệu quan trọng (như thiếu giá cơ sở basePrice hoặc mảng
+   kích thước sizes rỗng). Hàm isValidProduct(data) trả về kết quả false, ném ra ngoại
+   lệ throw Error("Dữ liệu không hợp lệ"). Hệ thống dừng xử lý, hiển thị cảnh báo lỗi dữ
+   liệu cho người dùng.
+ • Exc-3: Khách hàng chọn vượt quá giới hạn 3 loại topping: Tại bước 8, khách
+   hàng cố gắng nhấp chọn loại topping thứ 4 khi danh sách đã chứa đủ 3 loại. Hàm
+   toggleTopping() kiểm tra điều kiện kích thước danh sách ≥ 3, lập tức ngăn chặn thêm
+   mới, gọi setError("Tối đa 3 topping") và hiển thị cảnh báo trên giao diện mà không
+   làm thay đổi giá tiền.
+ • Exc-4: Sản phẩm tạm ngưng bán hoặc hết hàng: Tại bước 12, nếu trường isAvailable
+   = false, giao diện hiển thị trạng thái “Tạm ngưng phục vụ”, nút “Thêm vào giỏ hàng” bị
+   vô hiệu hóa (disabled = true). Nếu khách hàng cố tình kích hoạt thông qua mã lệnh,
+   hàm kiểm tra điều kiện tại bước 12 lập tức return sớm và không ghi bất kỳ dữ liệu nào
+   vào localStorage.
+ • Exc-5: Dữ liệu giỏ hàng trong localStorage bị hỏng: Tại bước 14, nếu chuỗi lưu
+   trữ trong localStorage bị can thiệp dẫn đến sai cú pháp JSON hoặc kết quả phân tích
+   không phải là mảng (!Array.isArray), khối try...catch sẽ bắt lỗi, tự động đặt lại giỏ
+   hàng thành mảng rỗng mới [], bảo vệ hệ thống không bị crash và tiếp tục lưu món ăn
+   hợp lệ vừa thêm.
+
+
+
+
+Công nghệ Phần mềm                                                             Trang 19/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+Ánh xạ tiêu chí chấp nhận và liên kết kiểm thử của UC-PRD-01
+
+
+                        Bảng 13: Ánh xạ kiểm thử của use-case UC-PRD-01
+
+Mã AC        Kịch bản kiểm chứng                                             Loại   kiểm   Test Case ID
+                                                                             thử
+
+AC-PRD-                                                               Component / TC-PRD-01, TC-
+             Tải chi tiết sản phẩm hợp lệ, hiển thị size mặc định, topping
+01           rỗng                                                     UI            E2E-02
+AC-PRD-      Gọi sản phẩm không tồn tại (404) hiển thị thông báo lỗi  Integration   TC-PRD-02, TC-
+02           thân thiện                                                             API-04
+AC-PRD-                                                               Unit / Compo- TC-PRD-03, TC-
+             Tính giá tạm tính thời gian thực khi chọn size, topping, số
+03           lượng                                                    nent          CALC-01
+AC-PRD-                                                               Component / TC-PRD-04, TC-
+             Chặn chọn topping thứ 4 và hiển thị cảnh báo tối đa 3 loại
+04                                                                    UI            UI-05
+AC-PRD-      Thêm sản phẩm vào giỏ và lưu trữ thành công vào local- Unit / Integra- TC-CART-01,
+05           Storage                                                  tion          TC-CART-02
+AC-PRD-      Gộp số lượng khi thêm sản phẩm trùng cấu hình (ID, size, Unit Test     TC-CART-03,
+06           topping)                                                               TC-CALC-02
+AC-PRD-      Phát sự kiện cart-changed và hiển thị toast thông báo Component / TC-UI-06, TC-
+07           thành công                                               E2E           E2E-03
+
+
+
+2.5 Danh mục mở rộng Use Case theo phân hệ backend (ZaloPay,
+    Users, Recipes)
+Nhằm đảm bảo tính bao phủ toàn diện giữa yêu cầu phần mềm và các phân hệ thực tế đã
+triển khai trong mã nguồn, hệ thống định nghĩa bổ sung 18 ca sử dụng thuộc 3 phân hệ
+trọng yếu: Cổng thanh toán ZaloPay Sandbox (ZP01–ZP07), Quản lý người dùng và vai trò
+(UM01–UM05), cùng Quản lý định lượng và công thức (RC01–RC06):
+
+
+
+
+Công nghệ Phần mềm                                                                             Trang 20/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+          Bảng 14: Tổng hợp 18 Use Case thuộc các phân hệ ZaloPay, Users và Recipes
+
+Mã UC       Tên Use Case                  Tác nhân (Ac- Mục tiêu & Ràng buộc chính
+                                          tor)
+
+Phân hệ Cổng thanh toán ZaloPay Sandbox (Phụ lục F)
+ZP01        Xem khả năng sử dụng          Khách hàng, Quản     Kiểm tra trạng thái kích hoạt cổng
+            sandbox                       trị viên             thanh toán qua API config.
+ZP02        Tạo yêu cầu thanh toán        Khách hàng (Chủ      Chống trùng bằng Idempotency-Key,
+                                          đơn)                 tạo bản ghi Payment PENDING.
+ZP03        Mở cổng / thanh toán thử      Khách hàng           Điều hướng sang cổng ZaloPay Sandbox;
+            nghiệm                                             không tự đổi trạng thái khi redirect.
+ZP04        Xem giao dịch mới nhất        Khách hàng, Quản     Đọc trạng thái thanh toán từ DB;
+                                          trị viên             polling cục bộ mỗi 15 giây.
+ZP05        Đồng bộ kết quả từ Zalo- Khách hàng, Quản          Chủ động đối soát với ZaloPay Server
+            Pay                      trị viên                  khi giao dịch chưa thành công.
+ZP06        Tiếp nhận callback thanh      ZaloPay Sandbox      Webhook xác thực MAC (HMAC-
+            toán                                               SHA256); chuyển đơn sang PAID trong
+                                                               transaction.
+ZP07        Tạo lượt thanh toán lại       Khách hàng (Chủ      Thanh toán lại cho đơn PENDING hoặc
+                                          đơn)                 PAYMENT_FAILED.
+
+Phân hệ Quản lý người dùng và phân quyền (Phụ lục G)
+UM01        Xem ID và vai trò bản         Người dùng      đã   Đọc thông tin phiên đăng nhập qua
+            thân                          đăng nhập            JwtAuthGuard.
+UM02        Xem danh sách người           Quản trị viên (AD- Hiển thị thành viên và số đơn qua Trans-
+            dùng                          MIN)               action mức RepeatableRead.
+UM03        Tìm kiếm / lọc theo vai       Quản trị viên (AD- Tìm kiếm không dấu theo tên/email, lọc
+            trò                           MIN)               theo CUSTOMER/ADMIN.
+UM04        Phân trang danh sách          Quản trị viên (AD- Phân trang an toàn (10–50 dòng/trang),
+                                          MIN)               sắp xếp theo thời gian tạo.
+UM05       Đổi vai trò CUSTOMER           Quản trị viên (AD- Cấm tự đổi quyền; dùng PostgreSQL
+           / ADMIN                        MIN)               Advisory Lock chống race condition.
+
+Phân hệ Quản lý định lượng và công thức (Phụ lục H)
+RC01       Xem danh mục sản phẩm          Quản trị viên (AD- Xem sản phẩm, size và nguyên liệu kèm
+           / nguyên liệu                  MIN)               số lượng sử dụng (recipeCount).
+RC02        Thêm nguyên liệu              Quản trị viên (AD- Tên chuẩn hóa Unicode NFC, đơn vị
+                                          MIN)               chuẩn; tên không trùng hoa/thường.
+RC03        Sửa tên / đơn vị nguyên       Quản trị viên (AD- Cấm đổi đơn vị nếu nguyên liệu đang
+            liệu                          MIN)               được dùng trong công thức (409 Con-
+                                                             flict).
+RC04        Xóa nguyên liệu chưa sử       Quản trị viên (AD- Chỉ cho phép xóa khi recipeCount ==
+            dụng                          MIN)               0; cấm xóa cascade.
+RC05        Xem công thức theo sản        Quản trị viên (AD- Xem chi tiết định lượng thành phần cho
+            phẩm / size                   MIN)               từng cặp (productId, size).
+RC06        Lưu / làm rỗng công thức      Quản trị viên (AD- Thay thế nguyên tử toàn bộ BOM; khóa
+                                          MIN)               FOR SHARE và FOR UPDATE.
+
+Công nghệ Phần mềm                                                                        Trang 21/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+3. Task 2 – Mô hình hóa hệ thống UML
+
+Chương này trình bày các mô hình UML thể hiện các khía cạnh hành vi, tương tác và cấu
+trúc tĩnh của phân hệ trọng tâm UC - Order và toàn hệ thống BrewLite. Tất cả các sơ đồ
+đều được trích xuất từ mô hình thiết kế chuẩn trong các tệp .drawio và .puml.
+
+3.1 Activity Diagram – Biểu đồ hoạt động
+Biểu đồ hoạt động mô tả luồng điều khiển nghiệp vụ, các điều kiện rẽ nhánh và cơ chế đảm
+bảo tính toàn vẹn dữ liệu khi đặt đơn và hủy đơn.
+
+
+Quy trình đặt đơn hàng (Order Creation Process)
+
+Quy trình đặt đơn gồm sự phối hợp giữa Khách hàng, Giao diện Next.js, API OrdersController
+và Cơ sở dữ liệu PostgreSQL. Các bước kiểm tra được thực hiện tuần tự: xác thực đăng
+nhập, kiểm tra giỏ hàng, tính giá server-side, và đặc biệt là bước kiểm tra tồn kho nguyên
+liệu (BOM) với atomic update trong transaction.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 22/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+      Hình 3: Activity Diagram: Quy trình đặt đơn hàng và trừ kho nguyên liệu (phần 1/2)
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 23/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+      Hình 3: Activity Diagram: Quy trình đặt đơn hàng và trừ kho nguyên liệu (phần 2/2)
+
+
+Quy trình hủy đơn hàng (Order Cancellation Process)
+
+Quy trình hủy đơn được kích hoạt bởi Khách hàng (khi đơn ở PENDING hoặc PAYMENT_FAILED)
+hoặc Admin/Cronjob quá hạn. Điểm then chốt là hệ thống phục hồi tồn kho nguyên liệu dựa
+trên snapshot OrderIngredientUsage đã chụp tại thời điểm đặt đơn, tránh việc công thức
+thay đổi làm sai lệch lượng hoàn trả.
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 24/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+              Hình 4: Activity Diagram: Quy trình hủy đơn hàng và hoàn trả tồn kho
+
+
+Biểu đồ hoạt động End-to-End toàn hệ thống
+
+Sơ đồ hoạt động end-to-end bao quát toàn bộ hành trình từ duyệt thực đơn, chọn size/topping,
+thêm giỏ, đặt hàng, xử lý thanh toán đến các nhánh phục hồi sự cố:
+
+
+
+
+Công nghệ Phần mềm                                                                   Trang 25/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+     Hình 5: Activity Diagram End-to-End: Luồng đặt đồ uống và thanh toán toàn hệ thống
+                                        (phần 1/2)
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 26/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+     Hình 5: Activity Diagram End-to-End: Luồng đặt đồ uống và thanh toán toàn hệ thống
+                                        (phần 2/2)
+
+
+Biểu đồ hoạt động: Phân hệ Chi tiết món (Product Detail Activity Diagram)
+
+Biểu đồ hoạt động thể hiện sự phối hợp luồng nghiệp vụ giữa 3 phân làn (swimlanes): Khách
+hàng, Frontend (Next.js) và Backend (NestJS API). Quy trình bao quát từ khâu đọc
+tham số URL, truy vấn API, xác thực dữ liệu sản phẩm, tương tác chọn size/topping/số
+lượng và cơ chế lưu trữ an toàn vào localStorage.
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 27/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+     Hình 6: Activity Diagram: Quy trình hiển thị, tùy biến và thêm vào giỏ hàng (Product
+                                     Detail) (phần 1/2)
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 28/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+     Hình 6: Activity Diagram: Quy trình hiển thị, tùy biến và thêm vào giỏ hàng (Product
+                                     Detail) (phần 2/2)
+
+
+3.2 Sequence Diagram – Biểu đồ tuần tự
+Biểu đồ tuần tự làm rõ sự tương tác thời gian thực giữa các đối tượng trong kiến trúc phân
+tầng (Client, Controller, Service, Database Transaction, Cronjob).
+
+
+Sequence: Yêu cầu đặt đơn hàng
+
+Biểu đồ mô tả chi tiết lời gọi POST /api/v1/orders. OrdersService mở một transaction ACID
+để trừ kho nguyên liệu theo thứ tự ID tăng dần, tạo bản ghi Order, OrderItem, và snapshot
+OrderIngredientUsage.
+
+
+
+Công nghệ Phần mềm                                                                 Trang 29/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+                Hình 7: Sequence Diagram: Yêu cầu đặt đơn hàng (Order Creation)
+
+
+Sequence: Quy trình hủy đơn hàng thủ công
+
+Mô tả lời gọi POST /api/v1/orders/:id/cancel. Hệ thống kiểm tra quyền sở hữu đơn (chỉ
+chủ đơn mới có quyền hủy), kiểm tra trạng thái hợp lệ, cập nhật trạng thái đơn CANCELLED và
+hoàn kho nguyên liệu theo snapshot.
+
+
+
+
+           Hình 8: Sequence Diagram: Hủy đơn hàng và hoàn nguyên liệu theo snapshot
+
+
+
+
+Công nghệ Phần mềm                                                                Trang 30/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Sequence: Tự động hủy đơn quá hạn 15 phút (Cronjob)
+
+Hệ thống Cronjob quét các đơn hàng PENDING có thời gian tạo vượt quá 15 phút. Cronjob tự
+động gọi quy trình hủy đơn, chuyển trạng thái sang CANCELLED và giải phóng nguyên liệu đã
+giữ về lại kho.
+
+
+
+
+         Hình 9: Sequence Diagram: Tự động hủy đơn hàng PENDING quá hạn 15 phút
+
+
+Sequence: Cập nhật trạng thái đơn hàng (Admin/Barista)
+
+Biểu đồ mô tả thao tác cập nhật tiến độ pha chế từ phía nhân viên quầy: từ PAID → PREPARING
+→ READY → COMPLETED.
+
+
+
+
+          Hình 10: Sequence Diagram: Cập nhật trạng thái đơn hàng bởi Admin/Barista
+
+
+Sequence: Tải chi tiết món, tùy biến và thêm vào giỏ hàng
+
+Biểu đồ tuần tự làm rõ sự tương tác giữa các thành phần kiến trúc: Customer, trang giao
+diện ProductDetailPage, hook quản lý trạng thái useProductDetail.ts, lớp giao tiếp
+ApiClient.ts, dịch vụ Backend API và kho lưu trữ LocalStorage. Mô hình phân định
+
+
+
+Công nghệ Phần mềm                                                               Trang 31/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+thành 3 giai đoạn rõ ràng: nạp thông tin món (Load Product Detail ), người dùng tùy biến
+(Select Product Options) và thêm vào giỏ hàng (Add Product To Cart).
+
+
+
+
+          Hình 11: Sequence Diagram: Tải chi tiết sản phẩm (Product Detail – Phần 1)
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 32/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+    Hình 12: Sequence Diagram: Cấu hình và thêm sản phẩm vào giỏ hàng (Product Detail –
+                                         Phần 2)
+
+
+Sequence: Khởi tạo thanh toán ZaloPay Sandbox và kiểm soát Idempotency
+
+Biểu đồ tuần tự mô tả quy trình khởi tạo giao dịch thanh toán trực tuyến qua cổng ZaloPay
+Sandbox (POST /payments/zalopay). Để ngăn chặn việc thanh toán trùng lặp khi người dùng
+bấm đúp hoặc mạng chập chờn, hệ thống bắt buộc sử dụng Idempotency-Key. Nếu khóa đã tồn
+tại và khớp nội dung đơn hàng, hệ thống lập tức trả về giao dịch cũ; nếu khóa mới, Payment
+trạng thái PENDING được lưu vào cơ sở dữ liệu trước khi gọi API sang ZaloPay Sandbox nhằm
+bảo toàn tính toàn vẹn trạng thái.
+
+
+Công nghệ Phần mềm                                                              Trang 33/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+     Hình 13: Sequence Diagram: Khởi tạo thanh toán ZaloPay Sandbox và chống tạo trùng
+
+
+Sequence: Tiếp nhận Webhook Callback từ ZaloPay và cập nhật đơn hàng
+
+Biểu đồ tuần tự làm rõ quy trình tiếp nhận thông báo thanh toán tức thì (IPN Call-
+back) tại POST /payments/zalopay/callback. Hệ thống thẩm định chữ ký số HMAC-SHA256
+(verifyCallback), kiểm tra mã giao dịch và số tiền trong Transaction ACID. Nếu hợp lệ, giao
+dịch được xác nhận (SUCCESS), đơn hàng chuyển sang trạng thái PAID và ghi nhận lịch sử
+trạng thái phục vụ đối soát.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 34/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+        Hình 14: Sequence Diagram: Thẩm định Callback ZaloPay và ghi nhận thanh toán
+
+
+Sequence: Phân quyền quản trị và thay đổi vai trò người dùng (RBAC)
+
+Biểu đồ tuần tự mô tả nghiệp vụ thay đổi vai trò giữa CUSTOMER và ADMIN (PATCH
+/admin/users/:id/role). Để ngăn ngừa leo thang đặc quyền hoặc race condition khi nhiều
+quản trị viên cùng thao tác, hệ thống cấm tài khoản tự đổi quyền của bản thân (actorId ==
+targetId), kích hoạt Advisory Lock trong transaction PostgreSQL và kiểm tra lại quyền
+hạn của Admin trước khi cập nhật.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 35/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+     Hình 15: Sequence Diagram: Thay đổi vai trò người dùng an toàn bằng Advisory Lock
+
+
+Sequence: Quản lý định lượng và lưu công thức pha chế BOM
+
+Biểu đồ tuần tự mô tả quy trình lưu định lượng nguyên liệu cho từng kích cỡ món (PUT
+/admin/recipes/:productId/:size). Thao tác được bảo vệ trong Transaction với khóa FOR
+SHARE trên các nguyên liệu thành phần và FOR UPDATE trên giá kích cỡ, đảm bảo thay thế
+nguyên tử toàn bộ công thức và ngăn chặn việc nguyên liệu bị sửa đổi hoặc xóa xen kẽ.
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 36/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+   Hình 16: Sequence Diagram: Lưu công thức pha chế nguyên tử (Atomic BOM Replacement)
+
+
+3.3 Class Diagram – Biểu đồ lớp miền nghiệp vụ
+Biểu đồ lớp miền nghiệp vụ (Domain Model) thể hiện cấu trúc thực thể, thuộc tính và mối
+quan hệ giữa các bảng trong cơ sở dữ liệu PostgreSQL.
+
+
+Class Diagram phân hệ Đặt hàng & Lịch sử đơn
+
+Hình 17 thể hiện các thực thể xoay quanh đơn hàng: User, Order, OrderItem, OrderItemTopping,
+OrderStatusHistory, OrderIngredientUsage, Payment, Promotion và LoyaltyTransaction.
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 37/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+       Hình 17: Class Diagram: Phân hệ Đặt hàng và Lịch sử đơn (Order Domain Model)
+
+
+Class Diagram miền nghiệp vụ tổng thể
+
+Sơ đồ lớp toàn hệ thống thể hiện mối quan hệ giữa tất cả 16 model trong schema Prisma,
+kết nối giữa Thực đơn (Product, Category, ProductSizePrice, Topping), Kho nguyên liệu
+(Ingredient, ProductRecipe, ToppingRecipe), và Giao dịch đơn hàng.
+
+
+
+
+Công nghệ Phần mềm                                                             Trang 38/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+         Hình 18: Class Diagram miền nghiệp vụ tổng thể hệ thống BrewLite (phần 1/2)
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 39/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+         Hình 18: Class Diagram miền nghiệp vụ tổng thể hệ thống BrewLite (phần 2/2)
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 40/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+3.4 Máy trạng thái đơn hàng (Order State Machine)
+Vòng đời của đơn hàng trải qua 7 trạng thái với 9 chuyển tiếp hợp lệ được kiểm soát chặt
+chẽ bởi OrderService.transition() và cơ chế khóa lạc quan (optimistic locking) qua trường
+version:
+
+                     Bảng 15: Chín chuyển tiếp trạng thái hợp lệ của đơn hàng
+
+#    Trạng           thái   Trạng thái đích         Tác nhân / Sự kiện kích hoạt
+     nguồn
+
+1    PENDING                PAID                    Cổng thanh toán xác nhận thành công (IPN).
+2    PENDING                PAYMENT_FAILEDThanh toán bị từ chối hoặc khách hủy tại cổng.
+3    PENDING                CANCELLED               Khách hàng chủ động hủy hoặc Cronjob hủy quá 15
+                                                    phút.
+4    PAID                   PREPARING               Barista nhận đơn và bắt đầu pha chế.
+5    PAID                   CANCELLED               Hủy đơn đã thanh toán (cần hoàn tiền thủ công).
+6    PREPARING              READY                   Barista hoàn tất pha chế, chuyển sang quầy nhận
+                                                    món.
+7    READY                  COMPLETED               Khách hàng nhận món tại quầy, hoàn tất đơn hàng.
+8    PAYMENT_FAILEDPENDING                          Khách hàng chọn thử lại thanh toán với key mới.
+9    PAYMENT_FAILEDCANCELLED                        Khách hàng hủy đơn sau khi thanh toán thất bại.
+
+
+3.5 Kiểm tra tính nhất quán của mô hình
+Để đảm bảo các mô hình thiết kế phản ánh chính xác yêu cầu nghiệp vụ và hiện thực mã
+nguồn, bảng kiểm tra tính nhất quán đối chiếu các điểm thiết kế then chốt:
+
+             Bảng 16: Bảng kiểm tra tính nhất quán giữa Yêu cầu, UML và Mã nguồn
+
+Điểm thiết kế          Yêu cầu SRS       Biểu đồ UML            Điểm hiện thực trong Code
+
+Xác thực phiên làm     FR-01..03 Activity: check JWT; JwtAuthGuard,                JwtStrategy,
+việc                             Sequence:     JwtAuth- RolesGuard.
+                                 Guard
+Tính giá server-side FR-09       Sequence: calculate()    PricingService.calculate() đọc giá từ
+                                                          DB.
+Trừ kho theo định FR-14          Activity/Sequence: trừ Conditional atomic update trên bảng
+lượng BOM                        kho                      ingredients.
+Chống bán vượt tồn NFR-03        Activity: nhánh rollback Transaction ACID rollback khi stock <
+kho                                                       need.
+Chống thanh toán FR-18, NFR- Sequence: check key          Header Idempotency-Key + bảng
+trùng                04                                   Payment.
+Hoàn kho theo snap- FR-14, FR-16 Activity: hoàn snapshot CancelOrderService                  đọc
+shot                                                      OrderIngredientUsage.
+Tự động hủy đơn 15 FR-16         Sequence: cron 15m       NestJS @Cron(’0 * * * * *’) quét
+phút                                                      đơn PENDING.
+
+
+
+4. Task 3 – Thiết kế kiến trúc
+
+Công nghệ Phần mềm                                                                         Trang 41/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+4.1 Task 3.1 – Phương pháp và quyết định kiến trúc
+Kiến trúc tổng thể. BrewLite áp dụng kiến trúc phân lớp (Layered Architecture), kết
+hợp mô hình C4 ở mức Container. Hệ thống được tổ chức thành ba tầng chính, triển khai
+trong một kho mã Monorepo nhằm đảm bảo sự đồng bộ giữa giao diện, nghiệp vụ và dữ liệu.
+• Tầng trình diễn (Frontend): Sử dụng Next.js 15 [2] với App Router và React 19, kết
+  hợp Tailwind CSS và Zustand. Giao diện được thiết kế theo hướng mobile-first. Server
+  Components đảm nhiệm việc hiển thị nội dung ban đầu; Client Components xử lý các
+  tương tác như giỏ hàng, đặt hàng, thanh toán và quản trị. Giỏ hàng được lưu trữ cục bộ
+  thông qua localStorage.
+• Tầng nghiệp vụ (Backend): Sử dụng NestJS 11 [1] xây dựng RESTful API với tiền tố
+  /api/v1. Backend tổ chức theo Module/Domain, chịu trách nhiệm xử lý xác thực JWT,
+  phân quyền, tính giá, khuyến mãi, điểm thưởng, quản lý tồn kho và vòng đời đơn hàng.
+• Tầng dữ liệu và tích hợp: Sử dụng PostgreSQL 16 kết hợp Prisma ORM [3] để quản lý
+  dữ liệu. Prisma Migrate kiểm soát các thay đổi lược đồ cơ sở dữ liệu. Hệ thống tích hợp
+  ZaloPay Sandbox [4] thông qua HTTPS, sử dụng chữ ký HMAC-SHA256 để xác thực giao
+  dịch; MAC của callback được so sánh bằng timingSafeEqual nhằm hạn chế tấn công đo
+  thời gian [5].
+Theo mô hình C4 Container, các thành phần chính gồm Web Application, Backend API,
+PostgreSQL Database và dịch vụ thanh toán bên ngoài ZaloPay. Frontend giao tiếp với
+Backend thông qua REST API và JWT; Backend truy xuất dữ liệu thông qua Prisma Client,
+đồng thời kết nối ZaloPay để khởi tạo và đối soát giao dịch.
+Hệ thống không triển khai Message Broker, Distributed Cache hay dịch vụ tìm kiếm độc lập.
+Quyết định này giúp giảm độ phức tạp vận hành và phù hợp với quy mô của ứng dụng trong
+phạm vi đồ án.
+
+
+Kiến trúc Backend và các module nghiệp vụ. Backend sử dụng kiến trúc Mod-
+ule/Domain để phân chia chức năng theo từng miền nghiệp vụ. Các yêu cầu HTTP được xử lý
+thông qua pipeline gồm CORS, Guard xác thực và phân quyền, Rate Limiter, ValidationPipe,
+Controller và Service. TransformInterceptor chuẩn hóa dữ liệu phản hồi; AllExceptionsFilter
+xử lý các ngoại lệ phát sinh trong quá trình thực thi.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 42/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                          Bảng 17: Các module nghiệp vụ của Backend API
+
+Module               Trách nhiệm chính
+
+auth                 Đăng ký, đăng nhập, mã hóa mật khẩu bằng bcrypt và xác thực JWT.
+users                Quản lý hồ sơ người dùng, vai trò và điểm tích lũy.
+products             Quản lý thực đơn, danh mục, giá sản phẩm theo kích cỡ và tìm kiếm sản phẩm.
+cart                 Quản lý giỏ hàng và kiểm tra khả năng đáp ứng tồn kho trước khi đặt hàng.
+orders               Tạo đơn hàng, quản lý trạng thái, lịch sử đơn và xử lý đơn quá hạn.
+payments             Tích hợp ZaloPay Sandbox, khởi tạo giao dịch, xác thực callback và đối soát thanh
+                     toán.
+ingredients          Quản lý danh mục nguyên liệu, số lượng tồn kho và cảnh báo tồn kho.
+recipes              Quản lý định lượng nguyên liệu (BOM) theo sản phẩm và kích cỡ.
+stock-imports        Quản lý phiếu nhập kho và cập nhật số lượng nguyên liệu.
+
+
+
+Cơ sở dữ liệu và cơ chế Migration. PostgreSQL 16 được sử dụng làm hệ quản trị cơ sở
+dữ liệu quan hệ. Prisma ORM đóng vai trò trung gian giữa Backend và cơ sở dữ liệu, hỗ trợ
+truy vấn dữ liệu có kiểu và quản lý lược đồ thông qua Prisma Migrate.
+Các migration được lưu trong thư mục apps/api/prisma/migrations/. Trong môi trường
+CI và Production, hệ thống sử dụng lệnh prisma migrate deploy để áp dụng các migration
+đã được tạo và kiểm soát phiên bản. Dữ liệu mẫu được khởi tạo thông qua Prisma Seed.
+Đối với các nghiệp vụ có khả năng xảy ra tranh chấp đồng thời như đặt hàng và cập nhật
+tồn kho, hệ thống sử dụng transaction và cơ chế khóa dữ liệu phù hợp nhằm hạn chế cập
+nhật sai lệch và đảm bảo tính nhất quán.
+
+
+Tích hợp dịch vụ thanh toán ZaloPay Sandbox. Theo ADR-002, nhóm quyết định
+sử dụng ZaloPay Sandbox làm cổng thanh toán duy nhất thay cho cơ chế Mock Payment
+trước đây. Việc tích hợp cho phép kiểm thử quy trình giao dịch gần với môi trường thực tế
+mà không sử dụng tiền thật.
+Backend khởi tạo giao dịch thông qua endpoint POST /api/v1/payments/zalopay, yêu cầu
+Idempotency-Key để hạn chế giao dịch trùng lặp [4]. Thông tin giao dịch được lưu ở trạng
+thái PENDING trước khi gửi yêu cầu đến nhà cung cấp. Sau đó, người dùng được chuyển
+hướng đến paymentUrl do ZaloPay cung cấp.
+Khi nhận callback, Backend xác thực chữ ký HMAC-SHA256 bằng khóa key2. Trong trường
+hợp callback không được gửi đến hoặc không thể tiếp nhận, Frontend có thể chủ động gọi
+API đồng bộ trạng thái giao dịch (sync). Cơ chế này giúp hệ thống kiểm soát kết quả thanh
+toán và hạn chế việc ghi nhận giao dịch nhiều lần.
+
+
+Logging, health check và quản lý cấu hình. Backend sử dụng Logger của NestJS kết hợp
+các thành phần xử lý ngoại lệ để ghi nhận lỗi trong quá trình thực thi. TransformInterceptor
+chuẩn hóa cấu trúc phản hồi API, trong khi AllExceptionsFilter xử lý các lỗi phát sinh và
+hạn chế việc tiết lộ thông tin nội bộ cho phía client.
+Hệ thống cung cấp endpoint GET /api/v1/health để kiểm tra tình trạng hoạt động của API
+
+
+Công nghệ Phần mềm                                                                         Trang 43/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+và kết nối cơ sở dữ liệu. Endpoint này được cấu hình làm Health Check Path trên Render, hỗ
+trợ giám sát tình trạng dịch vụ sau triển khai.
+Các thông số cấu hình như DATABASE_URL, JWT_SECRET, ZALOPAY_APP_ID, ZALOPAY_KEY1,
+ZALOPAY_KEY2 và NEXT_PUBLIC_API_URL được quản lý thông qua biến môi trường. Repository
+cung cấp tệp .env.example làm mẫu cấu hình. Khóa bí mật thực tế được lưu trong môi
+trường triển khai, không đưa trực tiếp vào mã nguồn.
+
+
+Ưu điểm, hạn chế và trade-off. Các quyết định kiến trúc được lựa chọn dựa trên quy
+mô hệ thống, khả năng phối hợp nhóm, yêu cầu nghiệp vụ và điều kiện triển khai đồ án.
+
+                     Bảng 18: Phân tích ưu điểm, hạn chế và trade-off của kiến trúc
+
+Quyết định              Ưu điểm                                  Hạn chế / Trade-off
+
+Monorepo                Đồng bộ API, giao diện, tài liệu và cấu CI phải thực hiện cài đặt và build riêng
+                        hình trong cùng repository; thuận tiện cho hai ứng dụng; cần quản lý nhánh
+                        review và phối hợp nhóm.                và thay đổi độc lập.
+Kiến trúc phân Phân chia trách nhiệm rõ ràng, thuận              Các module vẫn thuộc cùng Backend;
+lớp   và   Mod- tiện bảo trì, kiểm thử và phát triển             chưa có khả năng triển khai và mở rộng
+ule/Domain      chức năng.                                       độc lập như kiến trúc Microservices.
+PostgreSQL           + Quản lý dữ liệu quan hệ, hỗ trợ transac- Cần quản lý migration giữa các môi
+Prisma                 tion, migration và kiểm soát tính nhất trường; giao dịch đồng thời có thể phát
+                       quán dữ liệu.                            sinh xung đột và cần xử lý thử lại.
+ZaloPay Sandbox         Kiểm chứng được quy trình giao dịch, Phụ thuộc dịch vụ bên ngoài; cần cấu
+                        chữ ký HMAC, callback và idempo- hình tài khoản Sandbox và không thể
+                        tency.                               thực hiện thanh toán bằng tiền thật.
+Vercel + Render + Tiết kiệm chi phí, hỗ trợ triển khai tự Render Free có thể ngủ đông khi không
+Neon              động và tách biệt frontend, backend, hoạt động; thời gian khởi động lại có
+                  database.                               thể ảnh hưởng trải nghiệm người dùng.
+
+
+
+4.2 Task 3.2 – Hồ sơ quyết định kiến trúc (ADR)
+Nhóm sử dụng Architecture Decision Records (ADR) để lưu trữ các quyết định kiến trúc
+quan trọng, bao gồm bối cảnh lựa chọn, phương án được chấp nhận và những hệ quả phát
+sinh. Hai ADR được lưu tại thư mục docs/architecture/adr/.
+
+
+
+
+Công nghệ Phần mềm                                                                           Trang 44/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                               Bảng 19: Tóm tắt ADR 001 – Monorepo
+
+Mục              Nội dung
+
+Bối cảnh         Nhóm gồm 6 thành viên cùng phát triển ứng dụng sử dụng Next.js, NestJS và
+                 Prisma/PostgreSQL. Cần một phương án tổ chức mã nguồn giúp đồng bộ API, giao
+                 diện, tài liệu, Postman, Docker Compose và CI.
+Quyết định       Sử dụng một repository duy nhất với hai ứng dụng độc lập: apps/web cho Next.js
+                 và apps/api cho NestJS. Các thư mục docs, tests và postman được quản lý cùng
+                 repository. Không sử dụng Nx hoặc Turborepo để giữ cấu hình đơn giản.
+Hệ quả           Một Pull Request có thể cập nhật đồng thời Backend, Frontend và kiểm thử; thuận
+                 tiện đồng bộ tài liệu. Đổi lại, CI cần cài đặt và build riêng từng ứng dụng; các thành
+                 viên phải quản lý nhánh rõ ràng và đồng bộ hợp đồng API thủ công.
+
+
+ADR 001 – Tổ chức mã nguồn theo Monorepo. Nguồn: docs/architecture/adr/001-monorepo.m
+
+
+                           Bảng 20: Tóm tắt ADR 002 – ZaloPay Sandbox
+
+Mục              Nội dung
+
+Bối cảnh         Phiên bản trước tồn tại hai luồng thanh toán song song: Mock Payment và ZaloPay
+                 Sandbox. Cách tổ chức này tạo ra hai nguồn xử lý giao dịch, không kiểm chứng đầy
+                 đủ callback, chữ ký MAC và vòng đời thanh toán.
+Quyết định       Loại bỏ toàn bộ Mock Payment và sử dụng ZaloPay Sandbox làm cổng thanh toán
+                 duy nhất. Endpoint POST /api/v1/payments/zalopay thay thế endpoint thanh
+                 toán cũ. Frontend chỉ sử dụng giao diện thanh toán ZaloPay Sandbox.
+Hệ quả           Hệ thống có một luồng thanh toán thống nhất, dễ bảo trì và kiểm thử chữ ký
+                 callback, số tiền, giao dịch trùng lặp. Tuy nhiên, môi trường demo phải có cấu hình
+                 Sandbox; khi thiếu cấu hình, API trả về lỗi 503 thay vì chuyển sang thanh toán giả
+                 lập. CI không gọi mạng ZaloPay mà kiểm thử logic thông qua gateway giả trong
+                 phạm vi test.
+
+
+ADR 002 – Sử dụng ZaloPay Sandbox làm cổng thanh toán duy nhất. Nguồn:
+docs/architecture/adr/002-payment-zalopay-sandbox.md.
+
+4.3 Task 3.3 – Deployment diagram
+Sơ đồ triển khai mô tả cách các thành phần của BrewLite được phân bố giữa môi trường
+phát triển cục bộ, quy trình tích hợp liên tục và môi trường Production.
+Trong môi trường Production, người dùng truy cập ứng dụng thông qua trình duyệt hoặc
+thiết bị di động bằng HTTPS. Frontend Next.js được triển khai trên Vercel, sử dụng CDN
+và Edge để phân phối nội dung. Các yêu cầu nghiệp vụ được gửi đến Backend NestJS chạy
+trong Docker Container trên Render thông qua REST API và JWT.
+Backend sử dụng Prisma Client để truy cập Neon PostgreSQL tại khu vực Singapore thông
+qua kết nối TCP cổng 5432 có SSL. Dịch vụ thanh toán ZaloPay Sandbox được tích hợp qua
+HTTPS, hỗ trợ các thao tác tạo giao dịch, truy vấn, hủy giao dịch và nhận callback.
+
+Công nghệ Phần mềm                                                                         Trang 45/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+GitHub Actions thực hiện CI khi có sự kiện push hoặc pull request vào nhánh main. Quy
+trình kiểm tra bao gồm cài đặt phụ thuộc, sinh Prisma Client, áp dụng migration, chạy lint,
+test và build riêng cho Frontend và Backend. Sau khi mã nguồn được cập nhật trên nhánh
+triển khai, Render và Vercel thực hiện tự động triển khai thông qua tích hợp GitHub.
+Các biến môi trường và khóa bí mật được cấu hình trực tiếp trên Dashboard của nền tảng
+triển khai. Health Check tại GET /api/v1/health được sử dụng để kiểm tra tình trạng hoạt
+động của Backend. Neon cung cấp cơ chế sao lưu Point-in-Time Recovery, hỗ trợ khôi phục
+dữ liệu khi cần thiết.
+
+
+
+
+   Hình 19: Deployment diagram của BrewLite: Vercel – Render – Neon – ZaloPay – GitHub
+                                       Actions
+
+
+Đối chiếu container với mã nguồn. Bảng dưới đây đối chiếu các thành phần trong
+Deployment diagram với vị trí triển khai và mã nguồn tương ứng trong repository, đảm bảo
+khả năng truy vết từ kiến trúc đến triển khai thực tế.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 46/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                Bảng 21: Truy vết container và dịch vụ trong Deployment diagram
+
+Container / Thành phần kiến trúc                           Bằng chứng trong repository
+Dịch vụ
+
+Web Applica- Giao diện người dùng, menu, giỏ hàng, apps/web/src/,
+tion         đặt hàng, thanh toán và quản trị. Triển apps/web/package.json, vercel.json.
+             khai trên Vercel.
+Backend API      REST API, xác thực JWT, xử lý nghiệp apps/api/src/, apps/api/Dockerfile,
+                 vụ đơn hàng, kho và thanh toán. Chạy apps/api/package.json.
+                 trong Docker Container trên Render.
+PostgreSQL       Lưu trữ thông tin người dùng, sản phẩm, apps/api/prisma/schema.prisma,
+Database         đơn hàng, tồn kho và giao dịch. Produc- apps/api/prisma/migrations/,
+                 tion sử dụng Neon; Local sử dụng Post- docker-compose.yml.
+                 greSQL Docker.
+Payment Ser- Cổng thanh toán bên ngoài, tạo giao dịch, Module        payments        trong
+vice         truy vấn, hủy và xác thực callback Zalo- apps/api/src/modules/, cấu hình
+             Pay.                                      ZALOPAY_KEY1, ZALOPAY_KEY2 và ADR-
+                                                       002.
+CI Pipeline      Kiểm thử chất lượng mã nguồn, migra- .github/workflows/ci.yml.
+                 tion, lint, test và build trên GitHub Ac-
+                 tions.
+Deployment       Tự động triển khai Frontend trên Vercel   docs/deployment.md,    vercel.json,
+Platform         và Backend trên Render từ nhánh main.     apps/api/Dockerfile.
+
+
+
+5. Task 4 – Triển khai Sprint 1
+
+5.1 Task 4.1 – Thiết lập repository và quản lý công việc
+Cấu trúc monorepo. Dự án BrewLite sử dụng mô hình monorepo nhằm quản lý mã nguồn
+frontend, backend, tài liệu và kiểm thử trong cùng một repository. Cấu trúc này giúp các
+thành viên dễ dàng phối hợp, đồng bộ thay đổi và kiểm soát phiên bản của toàn bộ hệ thống.
+Các thành phần chính của repository được tổ chức như sau:
+• apps/web/: ứng dụng frontend xây dựng bằng Next.js, bao gồm các trang giao diện, compo-
+  nent dùng chung và kiểm thử frontend.
+• apps/api/: backend xây dựng bằng NestJS, cung cấp REST API, quản lý nghiệp vụ và kết
+  nối PostgreSQL thông qua Prisma.
+• docs/: lưu trữ tài liệu yêu cầu, sơ đồ, kiến trúc, kịch bản kiểm thử và báo cáo đồ án.
+• tests/e2e/: chứa các kiểm thử end-to-end cho luồng nghiệp vụ.
+• .github/workflows/: định nghĩa các workflow CI, CD và keep-alive bằng GitHub Actions.
+• postman/: lưu trữ collection và environment phục vụ kiểm thử API.
+Ngoài ra, repository có các tệp cấu hình cấp dự án như README.md, .gitignore, .env.example
+và docker-compose.yml. Trong đó, Docker Compose hỗ trợ khởi chạy PostgreSQL, backend và
+frontend trong cùng một môi trường phát triển.
+
+Công nghệ Phần mềm                                                                  Trang 47/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Chiến lược nhánh và Pull Request. Nhóm áp dụng mô hình Git Flow rút gọn. Nhánh
+main được sử dụng để lưu phiên bản ổn định, còn develop là nhánh tích hợp mã nguồn trong
+quá trình phát triển Sprint. Thành viên tạo nhánh riêng để phát triển tính năng, sửa lỗi hoặc
+cập nhật tài liệu thay vì commit trực tiếp lên nhánh chính.
+
+                              Bảng 22: Quy ước nhánh và commit của dự án
+
+Hạng mục               Quy ước
+
+Nhánh ổn định          main: lưu mã nguồn đã qua kiểm tra và nghiệm thu.
+Nhánh tích hợp         develop: tích hợp công việc của các thành viên trong Sprint.
+Nhánh tính năng        feat/<scope>: ví dụ feat/product-menu, feat/auth-jwt.
+Nhánh sửa lỗi          fix/<scope>: ví dụ fix/cart-total-price.
+Commit                 Sử dụng Conventional Commits: feat:, fix:, docs:, test:, refactor:, chore:.
+Pull Request           Tạo PR vào develop theo Git Convention; yêu cầu ít nhất một thành viên khác
+                       review trước khi merge.
+
+
+Quy trình làm việc yêu cầu thành viên cập nhật nhánh develop, đồng bộ thay đổi mới nhất
+vào nhánh cá nhân, kiểm tra khả năng build của frontend và backend, sau đó tạo Pull Request
+để thành viên khác đánh giá trước khi hợp nhất mã nguồn.
+
+
+Product Backlog. Product Backlog được xây dựng trong docs/requirements/product-backlog.md,
+gồm 12 User Story, được phân chia thành hai Sprint. Mỗi User Story có mã định danh, mức
+độ ưu tiên, yêu cầu chức năng liên quan và Sprint thực hiện.
+
+                              Bảng 23: Product Backlog của dự án BrewLite
+Mã      User Story                                                        Ưu tiên         FR         Sprint
+
+US-01   Xem thực đơn kèm ảnh, giá và danh mục.                              Must         FR-01         1
+US-02   Tìm kiếm món có dấu/không dấu và lọc danh mục.                      Must         FR-01         1
+US-03   Xem chi tiết món, chọn size và topping.                             Must         FR-02         2
+US-04   Thêm, sửa, xóa món trong giỏ hàng.                                  Must         FR-03         2
+US-05   Đăng ký, đăng nhập và duy trì phiên JWT.                            Must         FR-04         2
+US-06   Đặt đơn và kiểm tra tồn kho, tính tiền phía server.                 Must      FR-05, FR-09     2
+US-07   Thanh toán qua ZaloPay Sandbox.                                     Must      FR-05, FR-08     2
+US-08   Xem lịch sử và chi tiết đơn hàng.                                   Must      FR-06, FR-12     2
+US-09   Sử dụng voucher và điểm tích lũy.                                  Should        FR-10         2
+US-10   Quản lý trạng thái và hủy đơn hàng.                                 Must      FR-07, FR-11     2
+US-11   Quản lý sản phẩm, nguyên liệu, công thức và nhập kho.              Should        FR-11         2
+US-12   Đối soát giao dịch và đồng bộ ZaloPay.                             Should        FR-11         2
+
+
+
+Sprint 1 được thực hiện trong giai đoạn 20/10–26/10/2026 với mục tiêu xây dựng nền tảng
+monorepo, hoàn thiện tài liệu Task 1–3, triển khai MVP Menu trên dữ liệu mẫu và thiết lập
+quy trình CI. Sprint 2 tập trung vào các nghiệp vụ chi tiết sản phẩm, giỏ hàng, xác thực, đặt
+hàng, thanh toán và triển khai hệ thống.
+
+
+Definition of Done. Theo tài liệu Product Backlog, một hạng mục chỉ được xem là hoàn
+thành khi đáp ứng các tiêu chí sau:
+
+
+Công nghệ Phần mềm                                                                             Trang 48/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+1. Có issue hoặc Pull Request mô tả phạm vi và cách kiểm chứng.
+2. Frontend và backend đều build thành công.
+3. Có kiểm thử cho nghiệp vụ chính và các kiểm thử hiện có vẫn đạt.
+4. Lint không có lỗi chặn quá trình build.
+5. Có ít nhất một thành viên khác review và thay đổi được merge thông qua Pull Request.
+6. Không chứa secret, lệnh debug tạm thời hoặc mã nguồn không sử dụng.
+7. Tài liệu liên quan trong docs/ được cập nhật khi có thay đổi.
+8. CI trên Pull Request đạt trạng thái thành công; không merge khi pipeline thất bại.
+
+5.2 Task 4.2 – Quản lý tài liệu và kiểm soát phiên bản
+Các tạo phẩm của những nhiệm vụ trước được tổ chức tập trung trong thư mục docs/. Cách
+tổ chức này giúp tách biệt tài liệu dự án với mã nguồn ứng dụng, đồng thời hỗ trợ các thành
+viên tra cứu và cập nhật tài liệu trong quá trình phát triển.
+
+                         Bảng 24: Cấu trúc và nội dung tài liệu trong docs/
+
+Thư mục / tệp                Nội dung
+
+requirements/                Bối cảnh, phạm vi, SRS và đặc tả Use Case.
+diagrams/                    Các sơ đồ Use Case, Activity, Sequence và mô hình hệ thống.
+architecture/adr/            Tài liệu kiến trúc và các quyết định thiết kế (ADR).
+figures/                     Hình ảnh giao diện và sơ đồ minh họa.
+test-scenarios/              Các kịch bản và tiêu chí kiểm thử.
+report/                      Báo cáo đồ án, mã nguồn LaTeX và tài nguyên báo cáo.
+traceability-matrix.md       Ma trận truy vết yêu cầu, thiết kế, mã nguồn và kiểm thử.
+git-convention.md            Quy ước nhánh, commit và quy trình Pull Request.
+deployment.md                Hướng dẫn CI/CD, triển khai và rollback.
+
+
+Các thay đổi liên quan đến yêu cầu, sơ đồ và kiến trúc được lưu lại thông qua hệ thống Git.
+Thành viên sử dụng commit để ghi nhận nội dung thay đổi và Pull Request để trao đổi,
+review trước khi tích hợp. Nhờ đó, nhóm có thể theo dõi lịch sử chỉnh sửa, xác định nguyên
+nhân thay đổi và duy trì tính nhất quán giữa tài liệu với mã nguồn.
+
+5.3 Task 4.3 – Triển khai MVP Sprint 1
+Backend API. Trong Sprint 1, nhóm triển khai module quản lý sản phẩm tại
+apps/api/src/modules/products/. Hai endpoint công khai chính được xây dựng gồm:
+
+• GET /products: trả về danh sách sản phẩm kèm tên, giá cơ bản, hình ảnh, danh mục và
+  thông tin khả dụng của từng size. Khả năng phục vụ được xác định dựa trên trạng thái
+  sản phẩm và lượng nguyên liệu hiện có theo công thức.
+• GET /products/:id: trả về thông tin chi tiết sản phẩm, các size, mức phụ thu, số lượng có
+  thể phục vụ và topping phù hợp.
+Backend sử dụng Prisma để truy vấn PostgreSQL. Khi xác định khả năng phục vụ, hệ thống
+đối chiếu lượng nguyên liệu tồn kho với định lượng công thức của từng size. Những size không
+đủ nguyên liệu không được đánh dấu khả dụng.
+
+Công nghệ Phần mềm                                                                         Trang 49/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Frontend Menu. Giao diện thực đơn được triển khai tại apps/web/src/app/menu/page.tsx
+theo hướng mobile-first. Trang menu lấy dữ liệu thông qua hàm getProducts() và hiển thị
+danh sách sản phẩm cùng thông tin giá, hình ảnh và danh mục.
+Chức năng tìm kiếm và lọc danh mục được xử lý ở frontend thông qua filterMenu() trong
+apps/web/src/lib/menu-filter.ts. Hàm tìm kiếm chuẩn hóa chuỗi bằng cách loại bỏ dấu tiếng
+Việt, chuyển về chữ thường và loại bỏ khoảng trắng thừa. Nhờ đó, người dùng có thể tìm
+kiếm tên món bằng từ khóa có dấu hoặc không dấu.
+Giao diện cũng xử lý các trạng thái tải dữ liệu, lỗi kết nối và danh sách kết quả rỗng, giúp
+người dùng nhận biết tình trạng của thực đơn trong quá trình sử dụng.
+
+
+
+
+                       Hình 20: Giao diện thực đơn mobile-first của BrewLite
+
+
+Dữ liệu mẫu và kiểm thử. Dữ liệu mẫu được khởi tạo bằng Prisma Seed tại
+apps/api/prisma/seed.ts. Tập dữ liệu gồm 8 sản phẩm thuộc hai danh mục Cà phê và Trà &
+Trái cây. Mỗi sản phẩm được cấu hình ba size S, M, L với mức phụ thu tương ứng 0, 5.000 và
+10.000 đồng. Ngoài ra, dữ liệu mẫu còn có topping, nguyên liệu, công thức pha chế và lượng
+tồn kho phục vụ việc kiểm tra khả năng cung cấp sản phẩm.
+Nhóm xây dựng kiểm thử cho backend và frontend để kiểm tra các nghiệp vụ chính của MVP
+Menu.
+
+
+
+
+Công nghệ Phần mềm                                                                Trang 50/103
+      Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                                Bảng 25: Các kiểm thử của MVP Sprint 1
+
+Hạng mục              Nội dung kiểm thử                          Tệp kiểm thử
+
+API sản phẩm          Kiểm tra danh sách menu, chi tiết sản      apps/api/test/products.test.cjs
+                      phẩm, size khả dụng và dữ liệu trả về.
+Tìm kiếm menu         Kiểm tra tìm kiếm tên món và kết hợp       apps/web/tests/menu-filter.test.mjs
+                      điều kiện danh mục.
+Frontend              Kiểm tra lint, unit test và build ứng      apps/web/
+                      dụng.
+Backend               Kiểm tra unit/integration test và build    apps/api/
+                      ứng dụng.
+
+
+
+5.4 Task 4.4 – Continuous Integration
+Nhóm sử dụng GitHub Actions để tự động hóa quá trình kiểm tra mã nguồn thông qua
+workflow .github/workflows/ci.yml. Workflow được kích hoạt khi có commit push lên main
+hoặc khi tạo Pull Request nhắm đến nhánh này.
+Pipeline được chia thành hai job độc lập là Frontend CI và Backend CI. Cả hai sử dụng
+Node.js 22 và thực hiện cài đặt thư viện, kiểm tra, kiểm thử và build. Riêng Backend CI khởi
+tạo PostgreSQL 16 service, sinh Prisma Client, áp dụng migration và chuẩn bị schema kiểm
+thử riêng trước khi chạy test.
+
+                                   Bảng 26: Các bước trong workflow CI
+
+Bước      Lệnh / tác vụ                    Điều kiện đạt
+
+  1       Checkout code                    Lấy đúng mã nguồn từ repository.
+  2       Setup Node.js 22                 Môi trường Node.js được cấu hình thành công.
+  3       npm ci                           Cài đặt đầy đủ dependency theo lockfile.
+  4       Prisma generate/migrate          Sinh Prisma Client và áp dụng migration (thực hiện ở Backend
+                                           CI).
+  5       npm run lint –if-present         Lint không phát sinh lỗi chặn workflow.
+  6       npm test –if-present             Các bài kiểm thử được cấu hình trong package.json hoàn thành
+                                           thành công.
+  7       npm run build                    Frontend và backend build thành công.
+
+
+Đối với frontend, workflow chạy lint, test và build trong thư mục apps/web/. Đối với backend,
+workflow thực hiện thêm các bước khởi tạo PostgreSQL, sinh Prisma Client, áp dụng migration
+và chuẩn bị schema kiểm thử trước khi chạy lint, test và build trong apps/api/. Tùy chọn
+–if-present cho phép bỏ qua script nếu package tương ứng không khai báo lệnh đó.
+
+
+Kết quả chạy CI thực tế. Theo lịch sử GitHub Actions của repository, workflow BrewLite
+CI đã có các lần chạy thành công và thất bại. Tại lần chạy số 19, ngày 16/11/2026, cả hai
+job Frontend CI và Backend CI đều hoàn thành với trạng thái success. Các bước cài đặt
+dependency, lint, test và build đều đạt yêu cầu.
+
+Công nghệ Phần mềm                                                                          Trang 51/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                            Bảng 27: Minh chứng kết quả GitHub Actions
+
+Workflow run         Kết quả ghi nhận                                              Trạng thái
+
+Run #19              Frontend CI và Backend CI đều hoàn thành thành công           Success
+                     (16/11/2026).
+Run #18              Workflow CI hoàn thành thành công.                            Success
+Run #15              Workflow CI kết thúc với lỗi.                                 Failure
+Run #6               Workflow CI kết thúc với lỗi.                                 Failure
+
+
+Kết quả trên cho thấy pipeline đã được thực thi trên repository và có khả năng ghi nhận cả
+trường hợp thành công lẫn thất bại. Theo Definition of Done, nhóm sử dụng trạng thái CI
+thành công làm điều kiện kiểm tra trước khi tích hợp mã nguồn.
+
+Minh chứng. Hình 21 minh họa lần chạy CI thành công, trong đó cả Frontend CI và
+Backend CI đều đạt trạng thái Success. Hình 22 minh họa lần chạy CI thất bại, cho thấy
+pipeline phát hiện lỗi trong quá trình kiểm tra mã nguồn.
+
+
+
+
+                               Hình 21: Pipeline CI thực thi thành công
+
+
+
+
+                      Hình 22: Pipeline CI ghi nhận lỗi trong quá trình kiểm tra
+
+
+
+6. Task 5 – Sprint 2, CI/CD và bàn giao
+
+
+Công nghệ Phần mềm                                                                  Trang 52/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+6.1 Task 5.1 – Hoàn thiện MVP end-to-end
+Sprint 2 (27/10 – 14/11/2026) khép kín luồng nghiệp vụ từ chọn món đến theo dõi đơn: menu
+→ chi tiết/size/topping → giỏ hàng → đăng nhập → tạo đơn → thanh toán ZaloPay Sandbox
+→ xác nhận và lịch sử đơn. Trọng tâm của sprint là biến các đặc tả ở Task 1–2 thành luồng
+chạy thật, đồng thời giữ tính đúng đắn ở các điểm dễ sai: giá tính ở server, tồn kho khi đặt
+đồng thời, trạng thái đơn và tính idempotent của thanh toán. Bảng 28 tổng hợp bảy nhóm
+chức năng đã hoàn thiện.
+
+                            Bảng 28: Chức năng hoàn thiện trong Sprint 2
+
+Nhóm                         Nội dung                                            Mã FR
+
+Chi tiết và tùy chọn         Chọn size S/M/L, topping; giá cập nhật ngay; FR-02
+                             chặn size/topping hết nguyên liệu; số lượng mỗi
+                             dòng 1–99
+Giỏ hàng                     Zustand store; gộp dòng theo product + size         FR-03
+                             + topping; giữ giỏ và pendingOrderId khi tạo
+                             đơn/thanh toán lỗi; chỉ xóa giỏ khi đơn PAID
+Xác thực và phân quyền       Đăng ký/đăng nhập JWT; bcrypt; role ADMIN; FR-04
+                             đổi mật khẩu làm tăng ver, vô hiệu token cũ
+Tạo đơn và tồn kho           Transaction khi tạo đơn; snapshot giá; trừ nguyên   FR-05, FR-09
+                             liệu theo công thức của size; chống bán vượt tồn
+                             kho
+Thanh toán                   ZaloPay Sandbox; Idempotency-Key; call- FR-05, FR-08
+                             back/sync/cancel; đối soát giao dịch ở khu
+                             quản trị
+Trạng thái và lịch sử        Bảy trạng thái, chín chuyển tiếp hợp lệ; chặn       FR-06, FR-07, FR-10
+                             chuyển sai bằng 409; hủy đơn hoàn kho/điểm
+                             một lần; lịch sử phân trang
+Quản trị và phản hồi         CRUD sản phẩm, kho, công thức, đơn, người           FR-11, FR-12
+                             dùng; trạng thái loading/empty/error; trang chờ
+                             thanh toán tự làm mới mỗi 15 giây
+
+
+
+Chi tiết sản phẩm: API và kiểu dữ liệu phía web. Trang chi tiết dùng GET
+/products/:id (ProductsController.findOne gọi ProductsService.getProductDetail).
+Response đã bọc bởi TransformInterceptor, phần data gồm id, name, imageUrl, basePrice,
+currency, categorySlug, isAvailable, mảng sizePrices và mảng toppings. Mỗi phần tử
+sizePrices có size (∈ {S, M, L}), priceAdjustment, isAvailable và availableQuantity; số
+ly khả dụng được tính ở server từ công thức của size và tồn kho nguyên liệu, nên client không
+tự quyết định size còn hàng. Mỗi topping có id, name, price; cà phê không trả topping, các
+món khác chỉ trả topping đang bán và còn kho.
+Phía web, apps/web/src/types/product.ts khai báo ProductSize, ProductSizePrice,
+ProductTopping, ProductDetail, ProductSummary và CartItemDraft. Trang apps/web/src/
+app/products/[id]/page.tsx kiểm tra hình dạng dữ liệu bằng isValidProduct trước khi
+render, mặc định chọn size M nếu còn hàng, chặn chọn quá 3 topping, giới hạn số lượng 1–99
+
+
+Công nghệ Phần mềm                                                                        Trang 53/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+và không vượt availableQuantity. Giá ước tính ở client là basePrice + priceAdjustment +
+topping; khi thêm vào giỏ, trang tạo CartItemDraft kèm estimatedUnitPrice và currency.
+Đây chỉ là giá ước tính: server tính lại toàn bộ giá khi tạo đơn, nên sửa request trên trình
+duyệt không làm thay đổi số tiền phải trả. Test products.test.cjs kiểm chi tiết sản phẩm
+và trường hợp size hết nguyên liệu; các nhánh UI được kiểm theo TS-FR-02.
+
+
+Máy trạng thái đơn hàng. Đơn hàng có bảy trạng thái PENDING, PAYMENT_FAILED,
+PAID, PREPARING, READY, COMPLETED, CANCELLED, với chín chuyển tiếp hợp lệ giữa các trạng
+thái và một bước khởi tạo (start) → PENDING. Mọi thay đổi trạng thái bắt buộc đi qua
+OrderService.transition; hàm assertTransition từ chối mọi chuyển tiếp ngoài sơ đồ và
+trả 409 Conflict. Câu lệnh cập nhật dùng điều kiện WHERE id = ... AND status = ... AND
+version = ... (optimistic locking), nên hai request đồng thời không ghi đè trạng thái của
+nhau. Hủy đơn từ PENDING hoặc PAYMENT_FAILED hoàn nguyên liệu và hoàn điểm đã dùng
+đúng một lần trong cùng transaction; đơn đã PAID nếu bị hủy ở mức state machine được đánh
+dấu cần hoàn tiền thủ công (refundStatus = MANUAL_REQUIRED). Nhánh PAID → CANCELLED
+chỉ tồn tại trong state machine theo đề bài, ngoài phạm vi MVP (không có UI/endpoint và
+không tự hoàn tiền). Ngoài hủy thủ công, một cron chạy mỗi phút tự hủy các đơn PENDING
+quá 15 phút và hoàn kho/điểm; cron nằm trong tiến trình API nên không scale backend lên
+nhiều instance khi còn dùng cơ chế này.
+
+6.2 Giao diện thực tế
+Hình 23–Hình 28 là ảnh chụp giao diện thật trên Chromium tại hai kích thước 390×844
+(mobile) và 1440×900 (desktop). Các màn hình khách gồm menu, chi tiết/size/topping, giỏ
+hàng, đăng nhập, checkout (điểm và voucher), chọn ZaloPay, liên kết ZaloPay, lịch sử và chi
+tiết đơn; khu quản trị gồm tổng quan, đơn hàng, kho nguyên liệu và công thức. Ảnh dùng
+đúng dữ liệu seed và tài khoản demo, không dựng mockup.
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 54/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+         Thực đơn                              Chọn size, topping                   Giỏ hàng
+
+                               Hình 23: Luồng chọn món trên điện thoại
+
+
+
+
+        Đăng nhập                              Điểm và voucher                  Chọn ZaloPay
+
+                     Hình 24: Đăng nhập, áp dụng điểm tích luỹ và chọn thanh toán
+
+
+
+
+Công nghệ Phần mềm                                                                       Trang 55/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+      Liên kết ZaloPay                            Lịch sử đơn                       Chi tiết đơn
+
+                     Hình 25: Giao dịch ZaloPay Sandbox, lịch sử và chi tiết đơn
+
+
+
+
+        Tổng quan                                  Đơn hàng                        Kho nguyên liệu
+
+                                       Hình 26: Khu vực quản trị
+
+
+
+
+Công nghệ Phần mềm                                                                          Trang 56/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+                                    Hình 27: Thực đơn ở 1440×900
+
+
+
+
+                              Hình 28: Quản lý đơn hàng trên máy tính
+
+
+6.3 Task 5.2 – Tích hợp và kiểm thử
+Kiểm thử tự động. Bộ kiểm thử dùng node:test có sẵn [6], không thêm framework ngoài.
+Backend có 15 tệp với 49 test; frontend có 5 tệp với 10 test; E2E HTTP có 1 kịch bản. Test
+backend chạy trên schema PostgreSQL dùng một lần (PAYMENT_TEST_DATABASE_URL), không
+
+Công nghệ Phần mềm                                                             Trang 57/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+gọi mạng ZaloPay. E2E chỉ chạy khi khai báo E2E_API_URL; nếu không có biến này, test tự bỏ
+qua để CI/local vẫn chạy được. Bảng 29 nhóm các tệp theo phạm vi, Bảng 30 ghi kết quả
+chạy tại thời điểm chốt Sprint 2.
+
+                                 Bảng 29: Nhóm kiểm thử và phạm vi
+
+Nhóm                     Nội dung kiểm chứng                              Tệp / số test
+
+Sản phẩm và menu         Danh sách công khai, chi tiết, size hết hàng, products.test.cjs (7),
+                         quyền admin khi sửa sản phẩm                  product-access.test.cjs
+                                                                       (1)
+Giỏ hàng và xác thực     Giỏ theo người dùng, chặn ghi chéo, hồ sơ, đổi   cart.test.cjs (3),
+                         email/mật khẩu, JWT                              auth-profile.test.cjs (5)
+Đơn hàng và state        Tạo đơn, tính giá server-side, chuỗi trạng thái, orders.test.cjs (11),
+machine                  hủy, hoàn kho/điểm, lịch sử, phân quyền          orders-integration.test.cjs
+                                                                          (5)
+Tồn kho và công thức     Giữ/hoàn nguyên liệu theo size, xung đột đồng ingredient-reservation.test.cjs
+                         thời, công thức đổi sau khi đặt               (2)
+Thanh toán và idem- Cùng key trả kết quả cũ, khác payload trả 409, payment-idempotency.test.cjs
+potency             request đồng thời, ZaloPay hủy/không xác định (3),
+                                                                          zalopay-change-method.test.cjs
+                                                                          (3)
+Khuyến mãi và loy- Voucher theo thời hạn/giá trị đơn; cộng/hoàn           promotions.test.cjs (1)
+alty               điểm đúng một lần
+Quản trị                 Đơn admin, người dùng, nguyên liệu/công thức, admin-flow.test.cjs (3),
+                         thứ tự trạng thái                             admin-user-integration.test.cjs
+                                                                       (1),
+                                                                          ingredient-integration.test.cjs
+                                                                          (1)
+Luồng lõi và giới hạn    Đăng ký → đặt → hủy → đổi mật khẩu qua           core-flow.test.cjs (2),
+request                  HTTP; giới hạn tần suất ghi                      request-limits.test.cjs
+                                                                          (1)
+
+
+
+
+Công nghệ Phần mềm                                                                        Trang 58/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                                Bảng 30: Kết quả chạy kiểm thử và build
+
+Hạng mục        Lệnh                                                      Kết quả
+
+Backend         cd apps/api && npm test                                   49/49 test đạt
+Frontend        cd apps/web && npm test                                   10/10 test đạt
+E2E HTTP        E2E_API_URL=... node –test tests/e2e                      1/1 kịch bản đạt (menu →
+                                                                          chi tiết → đặt đơn → lịch
+                                                                          sử → hủy)
+Build API       cd apps/api && npm run build                              Đạt
+Build web       cd apps/web && npm run build                              Đạt
+Lint web        cd apps/web && npm run lint                               Đạt
+CI              .github/workflows/ci.yml trên main                        Hai job frontend/backend;
+                                                                          là điều kiện merge theo quy
+                                                                          trình của nhóm
+CD              .github/workflows/cd.yml sau CI xanh                      Migration (tuỳ chọn) →
+                                                                          Render đúng commit →
+                                                                          smoke API → Vercel →
+                                                                          smoke web; rollback khi
+                                                                          smoke test lỗi
+
+
+Backend chưa có script lint riêng; CI dùng npm run lint –if-present nên bước lint backend
+được bỏ qua, còn frontend có ESLint và chạy thật. Đây là khoảng trống nhỏ cần bổ sung nếu
+muốn quality gate chặt hơn.
+
+
+Migration, seed và Docker Compose. Chạy toàn bộ hệ thống bằng docker compose up
+–build -d (PostgreSQL 16, API, web). Container backend tự chạy prisma migrate deploy
+trước khi start node dist/src/main; nhờ vậy schema production và local đi cùng một chuỗi
+migration. Seed dữ liệu mẫu bằng docker compose exec backend npx prisma db seed; lệnh
+seed xóa dữ liệu cũ trước khi tạo 2 tài khoản, 8 sản phẩm, 24 nguyên liệu, 105 dòng công
+thức và 2 voucher. Trên production, seed chạy một lần từ máy local trỏ vào Neon hoặc qua
+Render Shell.
+
+
+Health         check. GET /api/v1/health                 trả
+                                                  {"success": true, "statusCode": 200,
+"data": {"status": "ok", "service": "brewlite-api"}, "timestamp": "..."}          (bọc
+bởi TransformInterceptor). Đây là liveness probe nhẹ, không truy vấn database; cd.yml
+kiểm tra data.status = "ok" sau deploy, còn workflow keep-alive (.github/workflows/
+keepalive.yml, mỗi 5 phút) dùng cùng endpoint để giữ Render Free thức. Vì không kiểm
+tra DB, smoke test cần gọi thêm một endpoint đọc dữ liệu (ví dụ GET /products) nếu muốn
+xác nhận kết nối Neon trong checklist thủ công.
+
+
+Đo hiệu năng production. Năm lượt đo trên production sau khi dịch vụ đã thức cho
+các endpoint đọc mẫu (/products, /products/:id, /orders/me) đạt trung vị 81–182 ms tùy
+endpoint, tối đa 194 ms, dưới ngưỡng 500 ms của NFR-01. Đây là đo thủ công bằng Postman,
+
+
+
+Công nghệ Phần mềm                                                                         Trang 59/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+không phải test hiệu năng tự động trong CI. Cold start của Render Free (khi dịch vụ ngủ)
+mất khoảng 30–60 giây, không nằm trong con số trung vị ở trên.
+
+6.4 Task 5.3 – Continuous Delivery/Deployment
+Hiện trạng: có pipeline CD tự động tại .github/workflows/cd.yml. Pipeline chạy sau
+CI chứ không chạy song song, gồm các bước:
+• Kích hoạt: workflow_run khi workflow BrewLite CI của một push vào main kết thúc
+  với conclusion = success, hoặc chạy tay bằng workflow_dispatch. Push lên nhánh khác
+  và CI đỏ không kích hoạt CD.
+• Kiểm tra commit: so SHA vừa được test với HEAD hiện tại của main; nếu commit đã
+  cũ thì bỏ qua để không deploy đè lên commit mới hơn.
+• Migration (tuỳ chọn): nếu khai báo secret PROD_DATABASE_URL, pipeline chạy npm ci rồi
+  npx prisma migrate deploy trước khi deploy; nếu không, container Render vẫn tự chạy
+  migration lúc khởi động (CMD trong apps/api/Dockerfile).
+• Deploy API: gọi Render API POST /services/{id}/deploys với đúng commitId; nếu
+  Render Auto-Deploy đã tạo deployment cho commit đó thì dùng lại thay vì tạo bản trùng;
+  chờ trạng thái live tối đa khoảng 15 phút.
+• Smoke test API: gọi GET /api/v1/health, yêu cầu data.status = "ok", lặp 12 lần cách
+  10 giây để chịu cold start của Render Free.
+• Deploy/xác minh frontend: gọi VERCEL_DEPLOY_HOOK nếu có; nếu có VERCEL_TOKEN thì
+  chờ deployment đúng SHA đạt READY; nếu không có token thì chỉ chạy smoke test URL.
+• Smoke test web: GET trang chủ, yêu cầu HTTP 200 và HTML có chuỗi brewlite, lặp 30
+  lần cách 10 giây.
+• Rollback tự động: nếu smoke test API lỗi, gọi POST /services/{id}/rollback về de-
+  ployment live trước đó; nếu smoke test web lỗi và có VERCEL_TOKEN, gọi rollback Vercel về
+  deployment production trước. Rollback chỉ chạy khi smoke test thất bại; lỗi build hoặc
+  migration thì dừng trước khi đổi traffic, bản cũ vẫn phục vụ.
+• Tổng kết: ghi bảng trạng thái từng bước vào GITHUB_STEP_SUMMARY; concurrency:
+  cd-production bảo đảm hai lần deploy không chồng nhau.
+
+Secret và biến cấu hình. Bắt buộc RENDER_API_KEY; tuỳ chọn PROD_DATABASE_URL,
+VERCEL_TOKEN, VERCEL_DEPLOY_HOOK. Có thể override API_BASE_URL, WEB_URL, RENDER_SERVICE_ID,
+VERCEL_PROJECT_ID, VERCEL_TEAM_ID bằng Variables; nếu không khai báo, workflow dùng giá
+trị của môi trường demo.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 60/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                 Bảng 31: Đối chiếu bảy yêu cầu pipeline CD của đề với hiện trạng
+
+#    Yêu cầu                                            Hiện trạng
+
+1    Quality gate: lint, test, build trước khi phát Đạt một phần – cd.yml chỉ chạy khi CI xanh
+     hành                                           và kiểm tra commit còn là HEAD của main;
+                                                    nhưng Render/Vercel vẫn bật Auto-Deploy nên
+                                                    có thể phát hành trước khi CI kết thúc nếu
+                                                    không tắt Auto-Deploy
+2    Đóng gói image từ commit đã test                   Đạt một phần – Render build apps/api/
+                                                        Dockerfile từ đúng commit; không gắn tag
+                                                        image riêng
+3    Đẩy image lên registry                             Chưa – không dùng GHCR/Docker Hub; Ren-
+                                                        der build trực tiếp từ Git
+4    Deploy tự động                                     Đạt – Render API theo commitId; Vercel de-
+                                                        ploy hook/Git integration, có chờ deployment
+                                                        đúng SHA khi khai báo token
+5    Migration cơ sở dữ liệu                            Đạt một phần – có bước prisma
+                                                        migrate deploy trong CD nếu khai báo
+                                                        PROD_DATABASE_URL; nếu không, migration
+                                                        nằm trong container start nên không bảo đảm
+                                                        xong trước khi đổi traffic
+6    Smoke test sau deploy                              Đạt một phần – tự động /health và trang
+                                                        chủ; chưa kiểm đăng nhập/tạo đơn/thanh toán,
+                                                        các bước đó vẫn theo checklist thủ công
+7    Rollback                                           Đạt một phần – tự động khi smoke test thất
+                                                        bại; lỗi build/migration không rollback vì bản
+                                                        cũ vẫn chạy; vẫn có thể rollback tay
+
+
+Phần chưa tự động (ghi rõ để tránh hiểu nhầm).
+• Không đẩy image lên registry và không có image tag theo release; Render build trực tiếp
+  từ Git.
+• Migration chỉ do pipeline điều khiển khi khai báo PROD_DATABASE_URL; mặc định vẫn chạy
+  trong container start.
+• Smoke test mới ở mức liveness và trang chủ, chưa đi hết luồng người dùng; checklist mục
+  6.5 vẫn làm tay.
+• Rollback tự động chỉ gắn với smoke test. Rollback của Render không tắt Auto-Deploy, nên
+  một auto-deploy sau đó có thể ghi đè bản vừa rollback.
+• Chạy tay workflow_dispatch không qua CI – dùng có chủ đích để redeploy sau khi đổi
+  biến môi trường.
+• Chưa có E2E trình duyệt (Playwright/Cypress) trong pipeline; E2E hiện tại chỉ là HTTP
+  và chỉ chạy khi có E2E_API_URL.
+• Frontend chỉ được xác minh đầy đủ khi khai báo VERCEL_TOKEN hoặc VERCEL_DEPLOY_HOOK.
+
+
+
+
+Công nghệ Phần mềm                                                                         Trang 61/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+6.5 Task 5.4 – Triển khai production và bàn giao
+
+                                        Bảng 32: Địa chỉ bàn giao
+
+Hạng mục          URL / ghi chú
+
+Frontend          https://brewlite-acme-1b6f1.vercel.app
+API               https://brewlite-api-u2jb.onrender.com/api/v1
+Health check      https://brewlite-api-u2jb.onrender.com/api/v1/health
+Cơ sở dữ liệu     Neon PostgreSQL (Singapore), không mở cổng công khai; API truy cập qua
+                  DATABASE_URL có SSL
+Thanh toán        ZaloPay Sandbox (app_id=2554); không dùng tiền thật
+Mã nguồn          GitHub monorepo apps/web, apps/api, docs/, tests/
+CI                GitHub Actions, workflow .github/workflows/ci.yml
+CD                GitHub Actions, workflow .github/workflows/cd.yml (chạy sau CI xanh trên
+                  main)
+
+
+Hai tài khoản seed dùng cho chấm bài: khách hàng demo@brewlite.test / Demo@12345 (có
+sẵn 120 điểm loyalty) và quản trị admin@brewlite.test / Admin@12345. Đây là tài khoản
+demo trên môi trường sandbox, không phải người dùng thật.
+
+
+Ghi chú phát hành (chưa có tag). Tại thời điểm kiểm tra, repo chưa có git tag và
+chưa có GitHub Release nào (kết quả git tag -l và mục Releases đều trống), nên không
+tồn tại tag v1.0.0. Bản nộp được đánh dấu bằng commit SHA: 3dc9552c trên nhánh docs
+(bản báo cáo này); commit mới nhất của main lúc kiểm tra là 69180eba — commit đã chạy
+CI xanh và là mục tiêu của lần chạy CD. Nếu nhóm tạo tag v1.0.0 trước khi nộp, tag phải
+trỏ đúng commit đã chạy CD xanh.
+• Luồng end-to-end: menu → chi tiết/size/topping → giỏ → đăng nhập → tạo đơn →
+  ZaloPay Sandbox → xác nhận/lịch sử đơn.
+• Thanh toán idempotent, callback/sync/cancel, đối soát giao dịch ở /admin/payments.
+• State machine bảy trạng thái, kiểm soát tồn kho, voucher và điểm loyalty.
+• 49 test backend + 10 test frontend + 1 E2E HTTP; build và lint chạy trong CI.
+• Triển khai Vercel + Render + Neon; CI là cổng merge, CD tự động chạy sau CI xanh với
+  smoke test và rollback khi smoke test lỗi.
+• Hạn chế đã biết: chưa đẩy image lên registry/image tag; smoke test mới phủ /health và
+  trang chủ; rollback chỉ tự động khi smoke test lỗi; Render Free cold start 30–60 giây; chưa
+  có E2E trình duyệt.
+
+
+
+
+Công nghệ Phần mềm                                                                Trang 62/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                                     Bảng 33: Sprint Retrospective
+
+Điểm           Nội dung
+
+Đã làm tốt     Khép kín được luồng thanh toán sandbox và state machine; bộ test backend/frontend
+               phủ các điểm dễ sai (idempotency, tồn kho, hủy đơn); dựng được CD chạy sau CI với
+               deploy đúng commit, smoke test và rollback khi smoke lỗi; tài liệu yêu cầu – sơ đồ –
+               truy vết khớp nhau; phân công A/B/C rõ ràng
+Chưa tốt      Chưa đóng gói/đẩy image lên registry và chưa có image tag; Render/Vercel vẫn bật
+              Auto-Deploy nên có thể phát hành trước khi CI xong; smoke test mới phủ /health và
+              trang chủ; chưa có E2E trình duyệt; cuối sprint thời gian gấp nên một số bảng trong
+              báo cáo phải bổ sung muộn
+Hành động      Tắt Auto-Deploy của Render/Vercel để CD là cổng duy nhất; thêm bước đóng gói
+               image + tag + registry; mở rộng smoke test sang đăng nhập/tạo đơn/thanh toán
+               sandbox; bổ sung Playwright vào CI; tách keep-alive/cron khỏi tiến trình API; chốt
+               checklist phát hành trước mỗi lần nộp
+
+
+Video demo 3–5 phút: nhóm quay luồng đăng nhập → chọn món → đặt hàng → thanh
+toán ZaloPay → xem lịch sử → admin đổi trạng thái. Link video: [ĐIỀN LINK VIDEO] —
+phải thay bằng liên kết thật (hoặc ghi “chưa có trong repo”) trước khi nộp; không mô tả như
+đã có.
+
+7. Ma trận truy vết yêu cầu
+
+Mỗi yêu cầu chức năng được truy vết theo đúng mẫu của đề: mã yêu cầu → use-case/user
+story → thiết kế/sơ đồ → code/API → test. Cột Test dùng mã scenario TS-... hoặc tên
+tệp test thật; các ô ghi “thủ công” là kiểm tra theo checklist, không có test tự động. Bảng 34
+truy vết 12 nhóm yêu cầu chức năng của SRS, tương ứng 22 yêu cầu chi tiết FR-01. . . FR-22
+ở Bảng 8; do đó mã FR-xx trong bảng này theo cách đánh số của SRS và không trùng với
+Bảng 8. Bảng 35 truy vết 9 yêu cầu phi chức năng NFR-01. . . NFR-09 của SRS, trong khi
+Bảng 9 đánh số 8 yêu cầu phi chức năng theo thuộc tính chất lượng mà báo cáo dùng để
+nghiệm thu.
+
+                                Bảng 34: Truy vết yêu cầu chức năng
+
+   Mã        Use-case         / Thiết kế / Sơ đồ        Code / API             Test
+             User story
+
+   FR-       US-01,  US-02; UseCase-                    GET/products; apps/    products.
+   01        UC Menu        ProductCatalog;             api/src/modules/       test.cjs    (7),
+                            Activity-                   products/;     apps/   product-access.
+                            ProductCatalog              web/src/app/menu/,     test.cjs    (1),
+                                                        lib/menu-filter.ts     menu-filter.
+                                                                               test.mjs    (1);
+                                                                               TS-FR-01-01–07
+
+
+
+
+Công nghệ Phần mềm                                                                      Trang 63/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+   Mã       Use-case          / Thiết kế / Sơ đồ        Code / API             Test
+            User story
+
+   FR-      US-03; UC Prod- UseCase-            GET/products/:id;              products.test.
+   02       uct Detail      ProductDetail;      products.service.ts;           cjs (size hết
+                            Activity-           apps/web/src/app/              hàng); TS-FR-
+                            ProductDetail;      products/[id]/,                02-01–06 (03/04
+                            Class-              apps/web/src/types/            unit   frontend;
+                            Product/ProductSizePrice/Topping
+                                                product.ts                     01/02/05/06 thủ
+                                                                               công)
+   FR-      US-04; UC Cart        UseCase-              apps/web/src/        cart-items.
+   03                             Cart;     Activity-   lib/cart-items.      test.mjs      (5),
+                                  Cart;       Class-    ts,           store/ cart.test.cjs
+                                  Cart/CartItem         useCartStore.ts,     (3); TS-FR-03-01–
+                                                        lib/pending-order.   07
+                                                        ts;    apps/api/src/
+                                                        modules/cart/
+   FR-      US-05; UC Auth        UseCase-Auth;         POST/auth/register,    auth-profile.
+   04                             Activity-Auth;        POST/auth/login,       test.cjs    (5),
+                                  Sequence-JWT-         GET/PUT/auth/me,       core-flow.
+                                  Auth; Class-User      POST/auth/             test.cjs;   TS-
+                                                        change-password;       FR-04-01–09
+                                                        modules/auth/
+   FR-      UC-01,      US-06, UseCase-Order;      POST/orders,   POST/        orders.test.
+   05       US-07              Activity-           payments/zalopay;           cjs     (create),
+                               EndToEnd;           modules/orders/,            orders-integration.
+                               Sequence-           modules/payments/           test.cjs,
+                               Checkout;    Class-                             core-flow.
+                               Order/OrderItem/Payment                         test.cjs,
+                                                                               tests/e2e/
+                                                                               checkout-flow.
+                                                                               test.mjs;    TS-
+                                                                               FR-05-01–10
+   FR-      US-08; UC Order UseCase-                    GET/orders/me,         orders-integration.
+   06       History         OrderHistory;               GET/orders/:id;        test.cjs      (his-
+                            Activity-                   orders.controller.     tory/detail),
+                            OrderHistory;               ts;    apps/web/src/   orders.test.
+                            Class-Order                 app/orders/            cjs      (history
+                                                                               scopes); TS-FR-
+                                                                               06-01–08
+
+
+
+
+Công nghệ Phần mềm                                                                     Trang 64/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+   Mã       Use-case          / Thiết kế / Sơ đồ        Code / API             Test
+            User story
+
+   FR-      US-10; UC Ad- StateMachine-                 PATCH/admin/           orders.test.
+   07       min Order     Order                         orders/:id/status,     cjs         (state
+                          (docs/order/                  POST/orders/:          machine,      can-
+                          state-machine.                id/cancel;             cel/points),
+                          md); Class-Order              orders.service.ts      orders-integration.
+                                                        (transition, cancel,   test.cjs (prep
+                                                        cron hủy đơn quá 15    vs cancel, pay-
+                                                        phút)                  ment vs can-
+                                                                               cel,     expiry),
+                                                                               admin-flow.
+                                                                               test.cjs;      TS-
+                                                                               FR-07-01–09
+   FR-      US-07; UC Pay- Sequence-Payment; POST/payments/                    payment-idempotency.
+   08       ment           Class-Payment     zalopay                           test.cjs    (3),
+                                             (Idempotency-Key),                zalopay-change-method.
+                                             POST/payments/                    test.cjs    (3);
+                                             zalopay/:id/sync,                 TS-FR-08-01–05
+                                             POST/payments/
+                                             zalopay/callback,
+                                             POST/payments/
+                                             zalopay/:id/cancel
+   FR-     US-06; UC Order Activity-            orders.service.ts              ingredient-reservation.
+   09      + Inventory     EndToEnd; Class- (reserve/restore);                 test.cjs      (2),
+                           RecipeIngredient/Ingredient/StockImport
+                                                modules/                       orders.test.
+                                                ingredients/,                  cjs     (reserve),
+                                                modules/recipes/,              orders-integration.
+                                                modules/                       test.cjs
+                                                stock-imports/                 (concurrent),
+                                                                               core-flow.
+                                                                               test.cjs;     TS-
+                                                                               FR-09-01,03,04;
+                                                                               TS-E2E-STOCK-
+                                                                               01
+   FR-      US-09; UC Check- Activity-           orders.service.ts             promotions.
+   10       out              Checkout;   Class- (voucher/points);              test.cjs
+                             Promotion/LoyaltyTransaction
+                                                 apps/web/src/app/             (1),     orders.
+                                                 checkout/page.tsx             test.cjs     (re-
+                                                                               deem/refund
+                                                                               points),
+                                                                               promotion-checkout.
+                                                                               test.mjs     (2);
+                                                                               TS-FR-10-01,03–
+                                                                               06
+
+
+
+
+Công nghệ Phần mềm                                                                    Trang 65/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+   Mã       Use-case          / Thiết kế / Sơ đồ        Code / API              Test
+            User story
+
+   FR-      US-10,      US-11, UseCase-Overall          admin/*          (or-   admin-flow.
+   11       US-12;        UC (Admin); Activity          ders,       payments,   test.cjs       (3),
+            Admin              diagrams theo mod-       users),    products/,   admin-user-integration.
+                               ule; Class-Domain        ingredients/,           test.cjs       (1),
+                                                        recipes/,               ingredient-integration.
+                                                        stock-imports/;         test.cjs       (1);
+                                                        apps/web/src/app/       TS-FR-11 (check-
+                                                        admin/                  list thủ công)
+   FR-      US-08; UC Order Activity-                   Polling 15 giây ở apps/ TS-FR-12   (thủ
+   12       History         OrderHistory;               web/src/app/orders/; công)
+                            Class-Order                 thông báo lỗi tiếng Việt
+                                                        ở các trang
+
+
+
+
+Công nghệ Phần mềm                                                                     Trang 66/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                                Bảng 35: Truy vết yêu cầu phi chức năng
+
+Mã         Thuộc tính       Thiết kế / cách kiểm chứng                                Bằng chứng
+
+NFR-       Hiệu năng                                                          Trung vị 81–182 ms, tối
+                            Index Prisma; đo 5 lượt trên production sau khi dịch vụ
+01                          thức                                              đa 194 ms, mục tiêu <
+                                                                              500 ms; đo thủ công,
+                                                                              không có test tự động
+NFR-       Bảo mật          JWT + role guard, bcrypt, DTO validation, auth-profile.
+02                          timingSafeEqual cho MAC ZaloPay                   test.cjs,
+                                                                              orders-integration.
+                                                                              test.cjs
+                                                                              (401/403/404),
+                                                                              core-flow.test.cjs;
+                                                                              TS-FR-04-06–08, TS-
+                                                                              NFR-02-04/05
+NFR-       Tương thích      Tailwind responsive; kiểm tra 390×844 và 1440×900 Hình 23–28 (14 ảnh
+03                                                                            trong báo cáo, 16 ảnh
+                                                                              nguồn); TS-NFR-03-
+                                                                              01 (thủ công trên
+                                                                              Chromium; chưa có
+                                                                              test đa trình duyệt)
+NFR-       Toàn vẹn dữ      Transaction Serializable, optimistic lock, UNIQUE orders.test.cjs,
+04         liệu             Idempotency-Key                                   orders-integration.
+                                                                              test.cjs,
+                                                                              payment-idempotency.
+                                                                              test.cjs,
+                                                                              ingredient-reservation.
+                                                                              test.cjs
+NFR-       Khả dụng         Loading/empty/error; hộp thoại xác nhận thao tác nguy     Ảnh giao diện; TS-
+05                          hiểm                                                      NFR-05 (thủ công)
+NFR-       Bảo trì          TypeScript strict, 9 module, tài liệu API/DB/ADR          npm run build (type
+06                                                                                    check), docs/
+NFR-       Kiểm thử         49 backend + 10 frontend + 1 E2E HTTP; build/lint         .github/workflows/
+07                          trong CI; CD chỉ chạy sau CI xanh                         ci.yml,      .github/
+                                                                                      workflows/cd.yml;
+                                                                                      kết quả Bảng 30
+NFR-       Cấu hình         Biến môi trường, .env.example, không commit secret        .gitignore,
+08                                                                                    .env.example;      re-
+                                                                                      view thủ công
+NFR-       Khả năng triển   docker compose up; HTTPS; /health; CD tự động             docker-compose.yml,
+09         khai             sau CI                                                    docs/deployment.md,
+                                                                                      .github/workflows/
+                                                                                      cd.yml, URL produc-
+                                                                                      tion
+
+
+
+Tính đầy đủ. Cả 12/12 nhóm yêu cầu chức năng của SRS đều có ít nhất một mắt xích
+code/API và một test tự động hoặc checklist thủ công; không có yêu cầu nào chỉ tồn tại trên
+giấy. Cả chín NFR của SRS đều có bằng chứng nhưng mức độ khác nhau: NFR-02/04/06/07/09
+có kiểm chứng tự động hoặc kiểm tra được bằng cấu hình; NFR-01 đo thủ công bằng Postman;
+NFR-03/05/08 kiểm theo checklist, trong đó NFR-03 mới thử trên Chromium ở hai kích
+
+
+Công nghệ Phần mềm                                                                              Trang 67/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+thước và chưa phủ đủ bốn trình duyệt. Các khoảng trống được ghi nhận trung thực: chưa có
+E2E trình duyệt, NFR-01 đo thủ công, FR-11/FR-12 kiểm theo checklist.
+
+8. Kết luận
+
+Kết quả đạt được. Báo cáo đã khép kín chuỗi yêu cầu → mô hình hóa → kiến trúc →
+hai sprint → CI/CD → production. Sản phẩm có 22 yêu cầu chức năng và 8 yêu cầu phi
+chức năng được chuẩn hóa trong báo cáo (Bảng 8–9), tương ứng 12 nhóm yêu cầu chức năng
+và 9 yêu cầu phi chức năng của SRS; 49 test backend, 10 test frontend và 1 kịch bản E2E
+HTTP; ba địa chỉ production (web, API, health) truy cập được qua HTTPS. Luồng cốt lõi
+chạy thật với ZaloPay Sandbox: tạo đơn, thanh toán, callback/sync, state machine, trừ/hoàn
+kho, voucher và điểm loyalty. CI chạy trên main và là cổng merge của nhóm; CD tự động chạy
+sau CI xanh, deploy đúng commit đã test, smoke test API/trang chủ và rollback khi smoke
+test thất bại.
+
+
+Hạn chế. CD chưa phủ hết chuỗi phát hành: chưa đóng gói/đẩy image lên registry và chưa
+có image tag; migration chỉ do pipeline điều khiển khi khai báo PROD_DATABASE_URL, mặc định
+vẫn chạy lúc container start; smoke test mới kiểm /health và trang chủ; rollback tự động chỉ
+chạy khi smoke test lỗi. Render/Vercel vẫn bật Auto-Deploy nên có thể phát hành trước khi
+CI kết thúc nếu không tắt. Ngoài ra, chưa có E2E trình duyệt, Render Free có cold start
+30–60 giây và phạm vi nghiệp vụ mới ở mức một quán, thanh toán sandbox.
+
+
+Hướng phát triển. Tắt Auto-Deploy để CD là cổng duy nhất; thêm bước đóng gói image
++ tag + registry, migration có kiểm soát trước khi đổi traffic, mở rộng smoke test sang đăng
+nhập/tạo đơn/thanh toán sandbox và rollback cho mọi loại lỗi; thêm Playwright vào CI; nâng
+gói hạ tầng hoặc tách keep-alive/cron khỏi tiến trình API; mở rộng giao hàng, đa chi nhánh
+và tích hợp thanh toán thật khi có hợp đồng merchant.
+
+9. Cấu trúc repository và checklist nghiệm thu
+
+9.1 Cấu trúc repository
+Repository BrewLite được tổ chức theo mô hình monorepo, trong đó frontend và backend
+được quản lý trong cùng một kho mã nguồn. Các thư mục chính được trình bày tại Bảng 36.
+
+
+
+
+Công nghệ Phần mềm                                                                Trang 68/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                           Bảng 36: Cấu trúc thư mục chính của repository
+
+Đường dẫn                Nội dung
+
+apps/web/                Frontend Next.js, chứa giao diện, component, thư viện xử lý và kiểm thử
+                         frontend.
+apps/api/                Backend NestJS, chứa REST API, các module nghiệp vụ, Prisma, migration
+                         và kiểm thử backend.
+docs/requirements/       Tài liệu bối cảnh, phạm vi và đặc tả yêu cầu phần mềm (SRS).
+docs/diagrams/           Các sơ đồ Use Case, Activity và Sequence được biểu diễn bằng PlantUML.
+docs/architecture/       Tài liệu kiến trúc, các quyết định ADR và sơ đồ triển khai.
+docs/                    Đặc tả use-case, API Contract, DB Mapping, tài liệu thiết kế và ma trận
+                         truy vết theo chức năng.
+docs/report/             Báo cáo Assignment 1, Assignment 2, mã nguồn LaTeX và tài nguyên hình
+                         ảnh.
+apps/api/test/,          Các bài kiểm thử unit và integration của backend, frontend.
+apps/web/tests/
+tests/e2e/               Kiểm thử end-to-end luồng đặt hàng thông qua API.
+.github/workflows/       Các workflow GitHub Actions phục vụ CI, CD và keep-alive.
+docker-compose.yml       Cấu hình Docker Compose để chạy frontend, backend và PostgreSQL.
+.env.example             Tệp mẫu khai báo các biến môi trường của dự án.
+README.md                Hướng dẫn cài đặt, khởi chạy và sử dụng dự án.
+
+
+
+9.2 Checklist nộp bài
+Bảng 37 đối chiếu các hạng mục nghiệm thu theo Mục 9.1 của đề bài với tài liệu, mã nguồn
+và kết quả triển khai thực tế trong repository.
+
+
+
+
+Công nghệ Phần mềm                                                                      Trang 69/103
+     Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+                        Bảng 37: Đối chiếu checklist nghiệm thu theo Mục 9.1
+
+#     Hạng mục                Trạng         Bằng chứng
+                              thái
+
+1     Link repository và Đạt                Repository công khai: Call-MeK/BrewLite_assignment_2.
+      quyền truy cập cho
+      giảng viên.
+2     SRS, đặc tả use-case Đạt             docs/requirements/srs.md,         docs/traceability-matrix.md,
+      và ma trận truy vết.                 các tài liệu use-case trong docs/.
+3     Activity,   sequence, Đạt            Activity, Sequence, Class và Database UML trong docs/diagrams/
+      class và deployment                  (class-domain.puml,        usecase-*.puml,    sequence-*.puml,
+      diagram.                             activity-*.puml),                      docs/database-uml.puml;
+                                           docs/architecture/deployment-diagram.puml.
+4     Source code frontend,   Đạt          apps/web/, apps/api/, apps/api/prisma/migrations/.
+      backend và migration.
+5     Unit, integration và    Đạt           apps/web/tests/,                               apps/api/test/,
+      end-to-end test.                      tests/e2e/checkout-flow.test.mjs.
+6     Pipeline CI/CD chạy     Đạt một       .github/workflows/ci.yml, .github/workflows/cd.yml. CI
+      thành công.             phần          trên main xanh (lần chạy gần nhất thành công); cả hai lần chạy
+                                            CD đều dừng ở bước Deploy API to Render (lỗi jq khi đọc phản
+                                            hồi API Render), nên các bước smoke test và rollback chưa từng
+                                            được thực thi.
+7     URL production, API     Đạt           Frontend: https://brewlite-acme-1b6f1.vercel.app; API:
+      và health check.                      https://brewlite-api-u2jb.onrender.com/api/v1;            health
+                                            check đã được workflow keep-alive kiểm tra thành công.
+8     Release        notes,   Đạt một       Có README.md và docs/deployment.md hướng dẫn triển khai, roll-
+      README và hướng         phần          back; chưa có Release Notes riêng, chưa có git tag và chưa có
+      dẫn rollback.                         GitHub Release (mục Releases trống).
+9     Video/demo và Sprint    Đạt một       Có môi trường demo trực tuyến và bảng Sprint Retrospective trong
+      Retrospective.          phần          báo cáo (Bảng 33); chưa có video demo trong repository.
+
+
+    Ghi chú nghiệm thu
+
+    Các trạng thái được đánh giá dựa trên bằng chứng hiện có trong repository và lịch sử GitHub Actions
+    tại thời điểm kiểm tra. Đạt một phần thể hiện hạng mục đã có một số thành phần nhưng chưa đáp ứng
+    đầy đủ toàn bộ yêu cầu của đề bài.
+
+
+
+
+Công nghệ Phần mềm                                                                              Trang 70/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+A. Phân hệ Thực đơn và Danh mục (Menu & Catalog
+   Module)
+
+Nguồn thiết kế: BrewLite.drawio. Phân hệ Thực đơn và Danh mục là điểm chạm đầu tiên của
+khách hàng với hệ thống BrewLite, cho phép duyệt danh sách đồ uống phân theo danh mục
+(Cà phê, Trà & Trái cây, Đá xay), lọc nhanh và tìm kiếm món uống theo tên tiếng Việt không
+dấu.
+
+
+
+
+             Hình 29: Use Case Diagram: Phân hệ Thực đơn và Danh mục sản phẩm
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 71/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+   Hình 30: Activity Diagram: Quy trình duyệt thực đơn, lọc danh mục và tìm kiếm món (phần
+                                            1/2)
+
+
+
+
+   Hình 30: Activity Diagram: Quy trình duyệt thực đơn, lọc danh mục và tìm kiếm món (phần
+                                            2/2)
+
+
+
+
+Công nghệ Phần mềm                                                                Trang 72/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+B. Phân hệ Quản lý giỏ hàng (Cart Module)
+
+Nguồn thiết kế: cart (3).drawio. Phân hệ giỏ hàng được quản lý phía Client thông qua
+Zustand Store kết hợp middleware persist (localStorage), hỗ trợ đầy đủ các thao tác thêm,
+chỉnh sửa cấu hình (size, topping), tăng giảm số lượng, tính tổng tạm tính và bảo toàn giỏ
+khi thanh toán thất bại.
+
+
+
+
+                       Hình 31: Use Case Diagram: Phân hệ Quản lý giỏ hàng
+
+
+
+
+                Hình 32: Activity Diagram: Quy trình quản lý giỏ hàng (phần 1/2)
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 73/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+                Hình 32: Activity Diagram: Quy trình quản lý giỏ hàng (phần 2/2)
+
+
+
+
+             Hình 33: Class Diagram: Mô hình dữ liệu Giỏ hàng (Cart Domain Model)
+
+
+
+
+Công nghệ Phần mềm                                                                  Trang 74/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+        Hình 34: Sequence Diagram: Thêm món vào giỏ hàng và gộp dòng trùng cấu hình
+
+
+
+
+           Hình 35: Sequence Diagram: Chỉnh sửa kích cỡ và topping của món trong giỏ
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 75/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+                     Hình 36: Sequence Diagram: Tiến hành thanh toán từ giỏ hàng
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 76/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+C. Phân hệ Chi tiết món và tính giá (Product Detail &
+   Pricing Module)
+
+Phân hệ Chi tiết món và tính giá (Dải yêu cầu: FR-07..09) cho phép khách hàng xem đầy đủ
+thông tin chi tiết của một món đồ uống, tùy biến kích cỡ (Size S/M/L), chọn tối đa 3 loại
+topping, điều chỉnh số lượng và xem giá tạm tính cập nhật thời gian thực trước khi thêm vào
+giỏ hàng.
+
+C.1 Sơ đồ Use Case: Chi tiết và tùy biến món
+Sơ đồ mô tả các chức năng người dùng tương tác trên trang chi tiết sản phẩm (/products/:id),
+thể hiện các mối quan hệ ≪ include ≫ kiểm tra tính toàn vẹn dữ liệu, khả năng mở bán và
+tính giá tạm tính.
+
+
+
+
+         Hình 37: Use Case Diagram: Phân hệ Chi tiết món (BrewLite – Product Detail)
+
+
+C.2 Sơ đồ tuần tự: Tải chi tiết, tùy biến và thêm vào giỏ
+Sơ đồ tuần tự gồm 3 giai đoạn phân ranh giới trách nhiệm rõ ràng:
+1. Load Product Detail: Client gọi API GET /products/:id. Frontend kiểm tra tính hợp
+   lệ qua isValidProduct(data), chọn size mặc định đầu tiên và nạp danh sách topping khả
+   dụng. Trường hợp lỗi 404 hoặc lỗi mạng hiển thị giao diện báo lỗi chuyên biệt kèm nút thử
+   lại.
+2. Select Product Options: Khi khách chọn kích cỡ, số lượng hoặc topping (kiểm soát chặt
+   chẽ không quá 3 topping), giao diện tự động tính estimatedPrice và hiển thị giá tạm tính
+   tức thì.
+3. Add Product To Cart: Kiểm tra tính khả dụng của món, tạo đối tượng CartItemDraft,
+   đọc giỏ hàng từ localStorage, gộp dòng nếu trùng cấu hình (addToCartMerge), lưu lại bộ
+
+Công nghệ Phần mềm                                                               Trang 77/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+   nhớ và phát sự kiện cart-changed.
+
+
+
+
+                       Hình 38: Sequence Diagram: Tải chi tiết món (Phần 1)
+
+
+
+
+Công nghệ Phần mềm                                                            Trang 78/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+               Hình 39: Sequence Diagram: Tùy biến và thêm vào giỏ hàng (Phần 2)
+
+
+C.3 Sơ đồ hoạt động: Quy trình chi tiết món End-to-End
+Sơ đồ hoạt động thể hiện luồng điều khiển nghiệp vụ giữa 3 làn: Khách hàng, Frontend
+(Next.js) và Backend (NestJS API).
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 79/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+      Hình 40: Activity Diagram: Quy trình hiển thị, tùy biến và thêm giỏ hàng (phần 1/2)
+
+
+
+
+Công nghệ Phần mềm                                                                  Trang 80/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+      Hình 40: Activity Diagram: Quy trình hiển thị, tùy biến và thêm giỏ hàng (phần 2/2)
+
+
+C.4 Nguyên tắc kiến trúc và công thức tính giá chuẩn
+Nguyên tắc kiến trúc bắt buộc:
+1. Backend là nguồn sự thật duy nhất về giá (Single Source of Truth): Mọi công thức
+   tính đơn giá, phụ thu và thành tiền bắt buộc do PricingService.calculate() ở Backend
+   đọc trực tiếp từ PostgreSQL và tính toán độc lập. Client không được phép gửi giá tính sẵn
+   để quyết định số tiền phải trả.
+2. Frontend chỉ hiển thị giá tạm tính (Estimated Price Only): Giao diện chỉ hiển thị
+   giá ước tính phục vụ trải nghiệm người dùng tức thời; giá thanh toán chính thức chỉ được
+   chốt lại khi tạo đơn (OrdersService.create()).
+3. Toàn vẹn số học VNĐ: Tiền tệ sử dụng số nguyên chuẩn VNĐ (Decimal(12, 0) trong
+   CSDL), không làm tròn sai số dấu phẩy động.
+
+Công nghệ Phần mềm                                                                  Trang 81/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Công thức tính giá chuẩn (Pricing Formula):
+
+                           unitPrice = basePrice + priceAdjustment(size)
+                                               k
+                                              ∑︂
+                          toppingTotal =            toppingPricei   (0 ≤ k ≤ 3)
+                                              i=1
+
+                        unitPriceWithToppings = unitPrice + toppingTotal
+              lineTotal = unitPriceWithToppings × quantity (1 ≤ quantity ≤ 99)
+                                               ∑︂
+                                    subtotal =    lineTotal
+
+C.5 Đặc tả yêu cầu chức năng và tiêu chí chấp nhận (FR-07..09)
+
+                     Bảng 38: Đặc tả các yêu cầu chức năng phân hệ Chi tiết món
+
+Mã FR      Yêu cầu nghiệp vụ       Tiêu chí chấp nhận chính (Acceptance Criteria)
+
+FR-07      Xem chi tiết sản AC-07.1: Tải dữ liệu từ GET /api/v1/products/:id, hiển thị tên, ảnh
+           phẩm (Product De- (ảnh fallback khi null), giá gốc, size, topping khả dụng.
+           tail View)        AC-07.2: ID không tồn tại trả 404 Not Found, hiển thị màn hình lỗi
+                             và nút quay lại menu.
+                             AC-07.4: Món ngừng bán (isAvailable = false) hiển thị huy hiệu
+                             “Hết hàng” và vô hiệu hóa nút thêm vào giỏ.
+
+FR-08      Tùy biến kích cỡ và AC-08.1: Radio group chọn duy nhất 1 size, mặc định chọn Size S.
+           Topping (Customiza- AC-08.2: Chọn từ 0 đến tối đa 3 topping không trùng lặp. Đạt 3 topping
+           tion)               tự động khóa checkbox còn lại; bỏ chọn mở khóa lại.
+                               AC-08.3: Tăng/giảm số lượng trong biên nguyên [1, 99]; nút giảm vô hiệu
+                               ở 1, nút tăng vô hiệu ở 99.
+
+FR-09      Tính giá tạm tính & AC-09.1: Cập nhật giá tức thì trên UI khi đổi size (+5.000đ cho Size M,
+           Xác thực Backend    +10.000đ cho Size L).
+                               AC-09.2: Cập nhật giá tức thì khi thêm/bớt topping (+5.000đ trân châu,
+                               +10.000đ kem cheese...).
+                               AC-09.4: Backend tính lại độc lập theo công thức từ DB, không nhận giá
+                               do Client gửi lên.
+
+
+
+
+Công nghệ Phần mềm                                                                         Trang 82/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+       Bảng 39: Ánh xạ tiêu chí chấp nhận (AC) phân hệ Chi tiết món sang Test Case ID
+
+Mã AC         Kịch bản kiểm chứng                                    Loại test     Test Case ID
+
+AC-07.1       Lấy & hiển thị chi tiết sản phẩm hợp lệ                Component   / TC-DETAIL-01
+                                                                     Int
+AC-07.2       Sản phẩm không tồn tại trả về 404                      Component   / TC-DETAIL-02
+                                                                     Int
+AC-07.3       ID sai định dạng hoặc lỗi kết nối trả về 400           Component   / TC-DETAIL-06
+                                                                     Int
+AC-07.4       Sản phẩm ngừng bán / hết hàng hiển thị cảnh báo        Component     TC-DETAIL-07
+AC-08.1       Chọn kích cỡ duy nhất & mặc định Size S trên UI        Component     TC-DETAIL-03
+AC-08.2       Chọn/bỏ chọn Topping & chặn vượt quá 3 loại            Component     TC-DETAIL-04
+AC-08.3       Điều chỉnh số lượng trong biên nguyên 1..99            Component     TC-DETAIL-08
+AC-08.4       Chặn thêm giỏ khi thiếu thuộc tính size bắt buộc       Component     TC-DETAIL-09
+AC-09.1       Cập nhật giá realtime khi chọn/đổi Size trên UI        Component     TC-DETAIL-10
+AC-09.2       Cập nhật giá realtime khi thêm/bớt Topping trên UI     Component     TC-DETAIL-11
+AC-09.3       Cập nhật thành tiền khi đổi số lượng & lưu vào Giỏ     Component     TC-DETAIL-12
+AC-09.4       Backend tính lại giá độc lập theo DB, không làm tròn   Unit          TC-DETAIL-05
+AC-09.5       Backend bảo vệ tính toàn vẹn giá, chống giả mạo        Unit          TC-DETAIL-05
+AC-09.6       Backend từ chối dữ liệu đầu vào & trạng thái DB sai    Unit          TC-DETAIL-13
+
+
+
+C.6 Mô hình quản lý công thức sản phẩm phía Quản trị (Admin
+    BOM)
+Bên cạnh giao diện người dùng, quản trị viên thiết lập công thức sản phẩm (ProductRecipe)
+liên kết từng kích cỡ với nguyên liệu kho (Ingredient) để làm cơ sở trừ kho khi đặt hàng:
+
+
+
+
+Công nghệ Phần mềm                                                                      Trang 83/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+      Hình 41: Class Diagram: Mô hình quan hệ Sản phẩm, Kích cỡ và Công thức (Admin)
+
+
+
+
+Công nghệ Phần mềm                                                             Trang 84/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+D. Phân hệ Quản lý nguyên liệu và nhập kho (Ingredients
+   Management)
+
+Nguồn thiết kế: quản lý nguyên liệu ingredients cho brewlite.drawio. Cung cấp khả năng
+theo dõi tồn kho nguyên liệu thời gian thực theo đơn vị đo (g, ml, piece), phát hiện cảnh báo
+dưới ngưỡng định mức an toàn, và quy trình lập phiếu nhập kho theo lô.
+
+
+
+
+                 Hình 42: Use Case Diagram: Quản lý kho nguyên liệu và nhập kho
+
+
+
+
+Công nghệ Phần mềm                                                                Trang 85/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+             Hình 43: Class Diagram: Mô hình dữ liệu Nguyên liệu và Phiếu nhập kho
+
+
+
+
+              Hình 44: Sequence Diagram: Quy trình lập phiếu nhập kho nguyên liệu
+
+
+
+
+Công nghệ Phần mềm                                                                   Trang 86/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+              Hình 45: Activity Diagram: Quy trình nhập kho nguyên liệu (phần 1/2)
+
+
+
+
+              Hình 45: Activity Diagram: Quy trình nhập kho nguyên liệu (phần 2/2)
+
+
+
+
+Công nghệ Phần mềm                                                                   Trang 87/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+E. Phân hệ Lịch sử đơn hàng (Order History Module)
+
+Nguồn thiết kế: Order&OrderHistory.drawio. Cho phép khách hàng theo dõi danh sách các đơn
+đã đặt, xem chi tiết từng đơn hàng kèm mã biên nhận, trạng thái pha chế thời gian thực (tự
+động polling mỗi 10 giây khi đơn ở PAID, PREPARING, READY), và kiểm tra số điểm tích
+lũy.
+
+
+
+
+                       Hình 46: Use Case Diagram: Phân hệ Lịch sử đơn hàng
+
+
+
+
+               Hình 47: Sequence Diagram: Xem danh sách lịch sử đơn hàng cá nhân
+
+
+
+
+Công nghệ Phần mềm                                                                 Trang 88/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+             Hình 48: Sequence Diagram: Xem chi tiết đơn hàng và polling trạng thái
+
+
+
+
+            Hình 49: Activity Diagram: Quy trình truy vấn lịch sử và chi tiết đơn hàng
+
+
+
+F. Phân hệ Cổng thanh toán ZaloPay Sandbox (ZaloPay
+   Sandbox Module)
+
+Tài liệu này mô tả hành vi đang có trong mã nguồn dự án đối với việc tích hợp cổng thanh
+toán trực tuyến qua môi trường thử nghiệm ZaloPay Sandbox, với ranh giới hệ thống là ứng
+dụng BrewLite.
+
+
+
+
+Công nghệ Phần mềm                                                                       Trang 89/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+F.1 Tổng quan kiến trúc và các Actor bên ngoài
+
+
+
+
+   Hình 50: Tổng quan các phân hệ tương tác: ZaloPay Sandbox, Quản lý người dùng và Công
+                                     thức định lượng
+
+
+Phân hệ bao gồm 3 tác nhân bên ngoài hệ thống tương tác qua API:
+ • Khách hàng (Chủ đơn): Chủ đơn hàng thực hiện thanh toán thử nghiệm; xem và đồng
+   bộ giao dịch thanh toán của chính mình.
+ • Quản trị viên (ADMIN): Xem và đồng bộ giao dịch của người khác; tuy nhiên, thao tác
+   tạo thanh toán luôn yêu cầu tài khoản phải là chủ đơn (kể cả đối với tài khoản ADMIN).
+ • ZaloPay Sandbox: Hệ thống bên thứ ba tiếp nhận yêu cầu thanh toán, trả kết quả truy
+   vấn trạng thái và gửi webhook callback.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 90/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+F.2 Sơ đồ Use Case: Cổng thanh toán ZaloPay Sandbox
+
+
+
+
+              Hình 51: Use Case Diagram: Phân hệ ZaloPay Sandbox (ZP01 – ZP07)
+
+
+                      Bảng 40: Danh mục Use Case phân hệ ZaloPay Sandbox
+
+Mã UC       Tên Use Case                    Mô tả nghiệp vụ                         Endpoint / Cơ
+                                                                                    chế
+
+ZP01        Xem khả năng sử dụng            Kiểm tra cổng thanh toán đã được bật GET
+            sandbox                         cấu hình thử nghiệm chưa.            /payments/zalopay/config
+ZP02        Tạo yêu cầu thanh toán          Khởi tạo phiên thanh toán ví/thẻ, ký POST
+                                            mã HMAC, sinh URL thanh toán.        /payments/zalopay
+ZP03        Mở cổng / thanh toán thử        Khách hàng chuyển hướng sang cổng       Webview / Exter-
+            nghiệm                          ZaloPay để quét QR hoặc nhập OTP.       nal Host
+ZP04        Xem giao dịch mới nhất          Truy vấn lịch sử giao dịch thanh toán   GET
+                                            gần nhất theo đơn hàng.                 /payments/zalopay/:orderId
+ZP05        Đồng bộ kết quả từ Zalo- Chủ động gọi API kiểm tra trạng thái           POST
+            Pay                      giao dịch từ phía ZaloPay Server.              /payments/zalopay/:id/sync
+ZP06        Tiếp nhận callback thanh        Nhận thông báo IPN tự động từ Zalo- POST
+            toán                            Pay khi thanh toán thành công.      /payments/zalopay/callback
+ZP07        Tạo lượt thanh toán lại         Kích hoạt thanh toán lại cho đơn        POST
+                                            PENDING hoặc PAYMENT_FAILED.            /payments/zalopay
+                                                                                    (Replay)
+
+
+
+Công nghệ Phần mềm                                                                         Trang 91/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+  Quy tắc kiểm soát trạng thái thanh toán ZaloPay
+
+ a. Chống tạo trùng (Idempotency): Mọi yêu cầu tạo thanh toán đều bắt buộc mang header
+    Idempotency-Key. Nếu gửi lặp cùng key và cùng nội dung, hệ thống trả lại giao dịch cũ mà không
+    gọi lại mạng sang ZaloPay.
+ b. Không tự động đánh dấu PAID khi redirect: Việc chuyển hướng trình duyệt từ ZaloPay quay
+    về trang web BrewLite tuyệt đối không tự đánh dấu đơn là PAID. Chỉ có Callback hợp lệ mang chữ ký
+    MAC đúng (ZP06) hoặc thao tác đồng bộ máy chủ (ZP05) mới có thẩm quyền chuyển trạng thái đơn.
+ c. Thăm dò cục bộ an toàn: Giao diện Frontend tự động thăm dò đọc lại dữ liệu mỗi 15 giây khi
+    đang chờ, nhưng thao tác này chỉ đọc database nội bộ của BrewLite, không gửi truy vấn sang ZaloPay
+    để bảo vệ hạn ngạch rate limit.
+
+
+F.3 Các sơ đồ tuần tự chi tiết của phân hệ ZaloPay
+Sequence: Tạo thanh toán và thanh toán lại (ZP02, ZP03, ZP07)
+
+Sơ đồ thể hiện quy trình tạo phiên thanh toán mới kèm bảo vệ chống lặp qua Idempotency-Key,
+xác thực quyền chủ đơn, ghi nhận bản ghi Payment trạng thái PENDING trước khi gọi ra cổng
+ngoài và xử lý phân nhánh kết quả từ ZaloPay Sandbox:
+
+
+
+
+       Hình 52: Sequence Diagram: Tạo thanh toán và thanh toán lại (ZP02, ZP03, ZP07)
+
+
+Sequence: Callback và ghi nhận thanh toán (ZP06)
+
+Sơ đồ mô tả quy trình tiếp nhận IPN Callback từ ZaloPay: xác thực chữ ký điện tử HMAC-
+SHA256, đối soát mã giao dịch và số tiền trong Transaction ACID, cập nhật trạng thái đơn
+
+
+Công nghệ Phần mềm                                                                          Trang 92/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+hàng sang PAID và ghi nhận lý do đối soát (reviewReason) nếu phát hiện sai lệch số tiền:
+
+
+
+
+         Hình 53: Sequence Diagram: Tiếp nhận Callback và ghi nhận thanh toán (ZP06)
+
+
+Sequence: Xem và đồng bộ giao dịch (ZP01, ZP04, ZP05)
+
+Sơ đồ thể hiện luồng chủ động đối soát trạng thái giao dịch giữa BrewLite và ZaloPay Gateway
+khi khách hàng bấm nút “Kiểm tra kết quả” hoặc hệ thống cần xác định trạng thái cuối của
+một giao dịch đang treo:
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 93/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+           Hình 54: Sequence Diagram: Xem và đồng bộ giao dịch (ZP01, ZP04, ZP05)
+
+
+
+G. Phân hệ Quản lý người dùng và phân quyền (User
+   Management Module)
+
+Phân hệ quản lý thông tin danh tính, phân vai trò người dùng (Role-Based Access Control)
+và các chính sách bảo mật chống leo thang đặc quyền trong hệ thống BrewLite.
+
+
+
+
+Công nghệ Phần mềm                                                              Trang 94/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+G.1 Sơ đồ Use Case: Quản lý người dùng
+
+
+
+
+            Hình 55: Use Case Diagram: Phân hệ Quản lý người dùng (UM01 – UM05)
+
+
+                     Bảng 41: Danh mục Use Case phân hệ Quản lý người dùng
+
+Mã UC       Tên Use Case                  Mô tả nghiệp vụ                          Actor & Guard
+
+UM01        Xem ID và vai trò bản         Lấy thông tin ID, email và quyền hạn     Người         dùng
+            thân                          thực tế đang có trong phiên đăng nhập.   đã    đăng    nhập
+                                                                                   (JwtAuthGuard)
+UM02        Xem danh sách người Hiển thị danh sách tài khoản thành Quản    trị                    viên
+            dùng                viên trong hệ thống kèm số đơn đã (AdminGuard)
+                                đặt.
+UM03        Tìm kiếm / lọc theo vai Tìm kiếm tài khoản theo tên, email Quản        trị            viên
+            trò                     (không dấu) và lọc theo nhóm vai trò. (AdminGuard)
+UM04        Phân trang danh sách          Duyệt danh sách theo trang (mặc định Quản      trị      viên
+                                          10 dòng/trang, tối đa 50 dòng/trang). (AdminGuard)
+UM05       Đổi vai trò CUSTOMER Nâng cấp hoặc thu hồi quyền quản trị Quản     trị                 viên
+           / ADMIN              viên của một tài khoản khác.         (AdminGuard)
+
+
+
+
+Công nghệ Phần mềm                                                                         Trang 95/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+  Quy tắc an toàn phân quyền trong mã nguồn
+
+ a. Cấm tự thay đổi quyền của chính mình: Hệ thống chặn đứng yêu cầu nếu actorId ==
+    targetId (trả mã lỗi HTTP 400 Bad Request), ngăn chặn tình huống vô tình khóa mất tài khoản
+    Admin đang vận hành.
+ b. Tuần tự hóa giao dịch bằng Advisory Lock: Khi thực hiện đổi quyền tài khoản, UsersService
+    sử dụng cơ chế khóa cố vấn PostgreSQL (pg_advisory_xact_lock) và kiểm tra lại vai trò của
+    người thực hiện trong chính Transaction đó. Cơ chế này loại bỏ hoàn toàn khả năng hai quản trị viên
+    đồng thời gửi yêu cầu hạ quyền nhau gây xung đột dữ liệu.
+
+
+G.2 Các sơ đồ tuần tự chi tiết của phân hệ Người dùng
+Sequence: Truy vấn vai trò bản thân và danh sách người dùng (UM01 – UM04)
+
+Sơ đồ phân định rõ nhánh cho người dùng thường xem thông tin hồ sơ của chính mình qua
+/admin/users/me và nhánh cho Quản trị viên xem danh sách thành viên với cơ chế phân trang
+và tìm kiếm chạy trong transaction mức RepeatableRead:
+
+
+
+
+   Hình 56: Sequence Diagram: Xem vai trò bản thân và quản lý danh sách người dùng (UM01
+                                         – UM04)
+
+
+Sequence: Thay đổi vai trò người dùng (UM05)
+
+Sơ đồ thể hiện quy trình phân quyền an toàn, kiểm tra tự đổi quyền, áp dụng Advisory Lock
+trong transaction và các nhánh ngoại lệ bảo mật:
+
+
+
+Công nghệ Phần mềm                                                                           Trang 96/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+                 Hình 57: Sequence Diagram: Thay đổi vai trò người dùng (UM05)
+
+
+
+H. Phân hệ Quản lý định lượng và công thức pha chế
+   (Recipe Management Module)
+
+Phân hệ quản lý cấu trúc công thức pha chế (Bill of Materials – BOM) theo từng kích cỡ
+món uống, quản lý danh mục nguyên liệu và kiểm soát toàn vẹn dữ liệu tồn kho.
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 97/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+H.1 Sơ đồ Use Case: Quản lý định lượng và công thức
+
+
+
+
+        Hình 58: Use Case Diagram: Phân hệ Quản lý công thức pha chế (RC01 – RC06)
+
+
+                 Bảng 42: Danh mục Use Case phân hệ Quản lý công thức pha chế
+
+Mã UC       Tên Use Case                    Mô tả nghiệp vụ                          Endpoint        /
+                                                                                     Guard
+
+RC01        Xem danh mục sản phẩm / Xem tổng hợp các mặt hàng kèm số                 GET
+            nguyên liệu             lượng thành phần công thức đang có.              /admin/recipes/catalog
+RC02        Thêm nguyên liệu                Đăng ký nguyên liệu mới vào hệ thống     POST
+                                            kèm đơn vị tính chuẩn hóa.               /admin/recipes/ingredients
+RC03        Sửa tên / đơn vị nguyên         Cập nhật tên gọi hoặc đơn vị tính cho    PATCH
+            liệu                            nguyên liệu đã tạo.                      /admin/recipes/ingredients/
+RC04        Xóa nguyên liệu chưa sử         Xóa bỏ nguyên liệu khỏi hệ thống khi     DELETE
+            dụng                            chưa từng gắn vào bất kỳ công thức       /admin/recipes/ingredients/
+                                            nào.
+RC05        Xem công thức theo sản          Xem bảng định lượng chi tiết các         GET
+            phẩm / size                     thành phần cho một kích cỡ cụ thể        /admin/recipes/:productId/:
+                                            của món.
+RC06        Lưu / làm rỗng công thức        Thiết lập mới, thay thế hoặc xóa trắng   PUT
+                                            toàn bộ định lượng của một cặp sản       /admin/recipes/:productId/:
+                                            phẩm/size.
+
+
+
+Công nghệ Phần mềm                                                                         Trang 98/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+  Quy tắc bảo vệ toàn vẹn dữ liệu định lượng BOM
+
+ a. Cấm xóa nguyên liệu đang dùng: Nếu nguyên liệu đã được liên kết trong bất kỳ công thức nào
+    (recipeCount > 0), API từ chối xóa và trả lỗi 409 Conflict. Không cho phép cascade xóa tự
+    động để bảo vệ lịch sử đơn hàng.
+ b. Cấm đổi đơn vị tính khi đã có trong công thức: Đổi đơn vị tính của nguyên liệu đang dùng sẽ
+    làm sai lệch hoàn toàn phép tính trừ kho khi đặt hàng; do đó thao tác này bị chặn với mã lỗi 409
+    Conflict.
+ c. Lưu công thức nguyên tử (Atomic BOM Replacement): Khi lưu công thức, hệ thống sử dụng
+    khóa FOR SHARE trên các nguyên liệu thành phần và FOR UPDATE trên bản ghi giá kích cỡ, xóa các
+    dòng cũ và chèn toàn bộ dòng mới trong cùng một transaction. Dữ liệu rỗng items = [] mang ý
+    nghĩa làm rỗng công thức hợp lệ.
+
+
+H.2 Các sơ đồ tuần tự chi tiết của phân hệ Công thức pha chế
+Sequence: Xem danh mục và công thức theo kích cỡ (RC01, RC05)
+
+
+
+
+         Hình 59: Sequence Diagram: Xem danh mục và chi tiết công thức (RC01, RC05)
+
+
+
+
+Công nghệ Phần mềm                                                                         Trang 99/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Sequence: Thêm và sửa nguyên liệu (RC02, RC03)
+
+
+
+
+               Hình 60: Sequence Diagram: Thêm và sửa nguyên liệu (RC02, RC03)
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 100/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Sequence: Xóa nguyên liệu chưa sử dụng (RC04)
+
+
+
+
+                Hình 61: Sequence Diagram: Xóa nguyên liệu chưa sử dụng (RC04)
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 101/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+Sequence: Lưu hoặc làm rỗng công thức pha chế (RC06)
+
+
+
+
+                 Hình 62: Sequence Diagram: Lưu hoặc làm rỗng công thức (RC06)
+
+
+
+
+Công nghệ Phần mềm                                                               Trang 102/103
+    Trường Đại học Sài Gòn – Khoa Công nghệ Thông tin
+
+
+
+
+Tài liệu tham khảo
+
+[1] NestJS Documentation. https://docs.nestjs.com. Truy cập 15/11/2026.
+
+[2] Next.js Documentation (App Router). https://nextjs.org/docs. Truy cập 15/11/2026.
+
+[3] Prisma ORM Documentation. https://www.prisma.io/docs. Truy cập 15/11/2026.
+
+[4] ZaloPay Payment Gateway – Sandbox API. https://docs.zalopay.vn. Truy cập
+    15/11/2026.
+
+[5] OWASP Application Security Verification             Standard.   https://owasp.org/
+    www-project-asvs/. Truy cập 15/11/2026.
+
+[6] Node.js Test Runner Documentation. https://nodejs.org/api/test.html. Truy cập
+    15/11/2026.
+
+
+
+
+Công nghệ Phần mềm                                                           Trang 103/103
+

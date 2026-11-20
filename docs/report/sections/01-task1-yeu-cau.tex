@@ -54,7 +54,7 @@ Nhân viên quầy & Nhận và chuẩn bị đơn hàng & Biết đơn mới, c
 Quản lý cửa hàng & Chủ sở hữu nghiệp vụ, quản lý menu và vận hành & Tăng doanh thu, kiểm soát đơn và tồn kho & Dữ liệu đơn chính xác, quản lý được sản phẩm/giá/khuyến mãi, giảm sai sót. \\
 Giảng viên / Khách hàng nghiệm thu & Đánh giá sản phẩm và quy trình kỹ thuật & Kiểm chứng đúng yêu cầu của đề tài & Đủ tạo phẩm đúng thứ tự, truy vết rõ, production chạy được, lịch sử commit minh bạch. \\
 Nhóm phát triển & Phân tích, thiết kế, hiện thực, triển khai & Hoàn thành đúng hạn, đạt chất lượng cam kết & Yêu cầu rõ ràng, phạm vi khả thi, công cụ CI/CD ổn định. \\
-Đơn vị thanh toán (mô phỏng / ZaloPay) & Xử lý thanh toán Ví/Thẻ & Nhận yêu cầu thanh toán hợp lệ, không trùng lặp & Giao tiếp qua API chuẩn, hỗ trợ idempotency, trả kết quả thành công/thất bại rõ ràng. \\
+Đơn vị thanh toán (ZaloPay Sandbox) & Xử lý thanh toán Ví/Thẻ & Nhận yêu cầu thanh toán hợp lệ, không trùng lặp & Giao tiếp qua API chuẩn, hỗ trợ idempotency, trả kết quả thành công/thất bại rõ ràng. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -71,7 +71,7 @@ Yêu cầu tối thiểu của luồng nghiệp vụ khép kín bao gồm:
   \item \textbf{Xem menu:} Hiển thị danh sách đồ uống phân theo danh mục (Cà phê, Trà \& Trái cây, Đá xay).
   \item \textbf{Chọn tùy chọn:} Cho phép tùy chỉnh size (S, M, L), mức đá, mức đường, topping kèm theo.
   \item \textbf{Giỏ hàng:} Quản lý các món đã chọn, gộp món trùng cấu hình, tính tổng tiền tạm tính tự động.
-  \item \textbf{Đặt đơn \& Thanh toán:} Xác nhận thông tin, trừ kho theo công thức (BOM), xử lý thanh toán (Ví điện tử ZaloPay Sandbox / Mock).
+  \item \textbf{Đặt đơn \& Thanh toán:} Xác nhận thông tin, trừ kho theo công thức (BOM), xử lý thanh toán qua cổng ZaloPay Sandbox.
   \item \textbf{Theo dõi đơn:} Xem chi tiết trạng thái đơn hàng (chờ xử lý, đang chuẩn bị, sẵn sàng nhận, hoàn tất).
   \item \textbf{Giao diện:} Mobile-first / PWA phát triển bằng Next.js (App Router), hỗ trợ responsive.
   \item \textbf{Backend \& Database:} RESTful API phát triển bằng NestJS, quản lý cơ sở dữ liệu quan hệ PostgreSQL thông qua Prisma ORM.
@@ -135,7 +135,7 @@ FR-13 & Tạo đơn hàng mới (Atomic Transaction) & Must Have & Đặt hàng 
 FR-14 & Trừ tồn kho nguyên liệu theo công thức \& chống âm kho & Must Have & Đặt hàng / BOM \\
 FR-15 & Áp dụng mã khuyến mãi \& Tích điểm thưởng Loyalty & Should Have & Đặt hàng \\
 FR-16 & Quản lý vòng đời trạng thái đơn (State Machine) & Must Have & Đặt hàng \\
-FR-17 & Thanh toán Mock \& Tích hợp cổng ZaloPay Sandbox & Must Have & Thanh toán \\
+FR-17 & Tích hợp cổng thanh toán ZaloPay Sandbox & Must Have & Thanh toán \\
 FR-18 & Cơ chế chống trùng lặp thanh toán (Idempotency-Key) & Must Have & Thanh toán \\
 FR-19 & Xử lý lỗi thanh toán \& Khôi phục trạng thái đơn & Must Have & Thanh toán \\
 FR-20 & Xác nhận thanh toán \& Biên nhận giao dịch & Must Have & Thanh toán \\
@@ -158,8 +158,8 @@ NFR-02 & Bảo mật dữ liệu & Security & Mật khẩu băm bcrypt (salt 10)
 NFR-03 & Toàn vẹn dữ liệu & Data Integrity & Tạo đơn và trừ nguyên liệu nằm trong một ACID Transaction; tồn kho không âm ($stock \ge 0$). \\
 NFR-04 & Độ tin cậy & Idempotency & Trùng Idempotency-Key trả kết quả cũ (HTTP 200); không ghi nhận giao dịch trùng. \\
 NFR-05 & Tương thích PWA & Compatibility & Đạt chuẩn Installable PWA; hiển thị tốt trên Chrome, Safari iOS, Edge. \\
-NFR-06 & Đóng gói container & Deployability & Backend build từ Docker image chuẩn Node 22-slim; deploy Render/Vercel/Supabase. \\
-NFR-07 & Tự động hóa CI & CI/CD & 100\% PR phải vượt qua 3 job CI (api, web, integration) trước khi merge vào main. \\
+NFR-06 & Đóng gói container & Deployability & Backend build từ Docker image chuẩn Node 22-slim; deploy Render (API) + Vercel (web) + Neon PostgreSQL. \\
+NFR-07 & Tự động hóa CI & CI/CD & 100\% PR phải vượt qua 2 job CI (\code{frontend}, \code{backend}) trước khi merge vào main. \\
 NFR-08 & Khả năng phục hồi & Recoverability & Hỗ trợ rollback 1-click về bản ổn định trước đó; thời gian phục hồi RTO $< 5$ phút. \\
 \bottomrule
 \end{tabularx}
@@ -190,17 +190,17 @@ Use-case này mô tả quy trình cốt lõi khép kín từ khi khách hàng x�
 \textbf{Mã ca sử dụng} & \textbf{UC-ORD-01} (Tích hợp luồng Đặt hàng và Hủy đơn) \\
 \textbf{Tên ca sử dụng} & Đặt đơn hàng mới và Hủy đơn hàng \\
 \textbf{Tác nhân chính} & Khách hàng (Primary Actor) \\
-\textbf{Tác nhân phụ} & Nhân viên quầy (Barista), Cổng thanh toán (ZaloPay Sandbox / Mock), Cronjob hệ thống \\
+\textbf{Tác nhân phụ} & Nhân viên quầy (Barista), Cổng thanh toán (ZaloPay Sandbox), Cronjob hệ thống \\
 \textbf{Mục tiêu ca sử dụng} & Khách hàng đặt mua thành công các món uống đã chọn trong giỏ hàng; hệ thống đảm bảo trừ kho nguyên liệu theo định lượng và ghi nhận doanh thu chính xác; hỗ trợ hủy đơn an toàn khi chưa pha chế. \\
 \textbf{Tiền điều kiện} & 
 1. Khách hàng đã đăng nhập và sở hữu JWT Token hợp lệ (FR-01..03).\\
 & 2. Giỏ hàng có tối thiểu 1 món; mỗi món có size, số lượng (1..99) và danh sách topping hợp lệ (FR-10..12).\\
 & 3. Kho nguyên liệu đáp ứng đủ định lượng theo công thức (BOM) của các món đã chọn. \\
 \textbf{Hậu điều kiện} & 
-1. Đơn hàng mới được ghi nhận trong cơ sở dữ liệu với trạng thái \code{PAID} (hoặc \code{PENDING} nếu thanh toán sau).\\
+1. Đơn hàng mới được ghi nhận trong cơ sở dữ liệu với trạng thái \code{PENDING}; đơn chỉ chuyển \code{PAID} sau khi callback IPN hoặc lệnh \code{sync} xác thực HMAC thành công với ZaloPay.\\
 & 2. Tồn kho nguyên liệu bị trừ chính xác và ghi lại bản ghi snapshot \code{OrderIngredientUsage}.\\
-& 3. Điểm thưởng Loyalty được tích lũy cho khách hàng (nếu đơn thành công).\\
-& 4. Giỏ hàng trên thiết bị khách hàng được làm trống an toàn. \\
+& 3. Điểm thưởng Loyalty chỉ được cộng trong transaction chuyển \code{PENDING} $\rightarrow$ \code{PAID}, tức là chỉ với đơn đã thanh toán thành công.\\
+& 4. Giỏ hàng trên thiết bị khách hàng chỉ được làm trống sau khi giao diện xác nhận đơn đã \code{PAID}. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -210,25 +210,25 @@ Use-case này mô tả quy trình cốt lõi khép kín từ khi khách hàng x�
 \begin{enumerate}[label=\textbf{Bước \arabic*:}, leftmargin=4.2em]
   \item Khách hàng mở trang Giỏ hàng (\file{/cart}), rà soát danh sách món uống, số lượng và tổng tiền tạm tính.
   \item Khách hàng nhấn nút \textbf{``Tiến hành đặt hàng''} để điều hướng sang trang Thanh toán (\file{/checkout}).
-  \item Khách hàng chọn phương thức thanh toán (ví dụ: ZaloPay Sandbox hoặc Ví điện tử mô phỏng), nhập mã giảm giá (nếu có), và nhấn \textbf{``Xác nhận đặt hàng''}.
-  \item Giao diện gửi yêu cầu \code{POST /api/v1/orders} kèm header \code{Authorization: Bearer <JWT>} và \code{Idempotency-Key: <UUIDv4>}.
+  \item Khách hàng kiểm tra lại thông tin đơn, chọn số điểm tích lũy muốn dùng (bội số của 10), nhập mã giảm giá (nếu có) và nhấn \textbf{``Xác nhận đặt hàng''}. Phương thức thanh toán duy nhất là ZaloPay Sandbox (ADR-002), nên bước này không còn lựa chọn ``ví mô phỏng''.
+  \item Giao diện gửi yêu cầu \code{POST /api/v1/orders} kèm header \code{Authorization: Bearer <JWT>}; trước khi gửi, giao diện đã kiểm tra đơn đang chờ trong \code{localStorage} để không tạo đơn thứ hai.
   \item Tuyến API xác thực JWT Token hợp lệ, trích xuất \code{userId} của khách hàng.
   \item Hệ thống kiểm tra tính hợp lệ của DTO đầu vào (kích cỡ hợp lệ, số lượng $>0$, danh sách topping không trùng).
   \item Backend mở một Transaction ACID trong cơ sở dữ liệu PostgreSQL.
   \item Backend đọc công thức pha chế (BOM) của từng món, gom nhóm và tính toán tổng lượng nguyên liệu cần tiêu hao.
   \item Backend thực hiện atomic conditional update trên từng nguyên liệu theo thứ tự ID tăng dần (\code{UPDATE ingredients SET stock = stock - qty WHERE id = ? AND stock >= qty}).
   \item Backend tính toán lại đơn giá từng dòng và tổng tiền đơn hàng dựa trên bảng giá chuẩn trong cơ sở dữ liệu; kiểm tra điều kiện mã giảm giá (nếu có).
-  \item Backend ghi nhận bản ghi \code{Order} mới (trạng thái \code{PENDING}), các dòng \code{OrderItem}, danh sách topping và lưu bản chụp định lượng vào bảng \code{OrderIngredientUsage}.
-  \item Hệ thống gọi dịch vụ thanh toán để tạo phiên giao dịch, nhận kết quả thanh toán thành công (\code{SUCCESS}), cập nhật trạng thái đơn sang \code{PAID}.
-  \item Transaction được COMMIT thành công. Điểm tích lũy Loyalty được cộng tự động vào tài khoản khách hàng.
-  \item Giao diện khách hàng nhận mã phản hồi \code{201 Created}, làm rỗng giỏ hàng cục bộ và chuyển hướng khách hàng sang trang Theo dõi đơn hàng (\file{/orders/:id}).
+  \item Backend ghi nhận bản ghi \code{Order} mới (trạng thái \code{PENDING}), các dòng \code{OrderItem}, danh sách topping và lưu bản chụp định lượng vào bảng \code{OrderIngredientUsage}; transaction COMMIT và API trả \code{201 Created} với \code{payments: []}.
+  \item Giao diện điều hướng sang trang thanh toán (\file{/orders/:id/payment}). Tại đây khách hàng nhấn \textbf{``Tạo thanh toán ZaloPay Sandbox''}; giao diện gửi \code{POST /api/v1/payments/zalopay} kèm header \code{Idempotency-Key}.
+  \item Backend tạo bản ghi \code{Payment} nguồn \code{ZALOPAY\_SANDBOX} ở trạng thái \code{PENDING} \emph{trước} khi gọi mạng (để một kết quả không rõ ràng không thể dẫn tới thu tiền hai lần), sau đó gọi API ZaloPay Sandbox và trả về \code{paymentUrl}.
+  \item Khách hàng thanh toán trên cổng ZaloPay; ZaloPay gọi callback IPN và/hoặc giao diện gọi \code{POST /api/v1/payments/zalopay/:id/sync}. Sau khi xác thực HMAC, Backend chuyển đơn \code{PENDING} $\rightarrow$ \code{PAID} (ghi \code{paidAt}) và cộng điểm loyalty trong cùng transaction; giao diện làm rỗng giỏ hàng khi nhận trạng thái \code{PAID}.
 \end{enumerate}
 
 \subsubsection{Các luồng sự kiện rẽ nhánh (Alternative Flows)}
 
 \begin{itemize}[leftmargin=1.5em]
   \item \textbf{Alt-1: Khách hàng áp dụng mã giảm giá hợp lệ:} Tại bước 3, khách hàng nhập mã voucher. Backend kiểm tra điều kiện giá trị đơn tối thiểu, hạn sử dụng và số lượt còn lại; nếu thỏa mãn thì áp dụng chiết khấu và ghi nhận mã giảm giá vào đơn hàng.
-  \item \textbf{Alt-2: Thanh toán thất bại hoặc hủy ngang trên cổng thanh toán:} Tại bước 12, cổng thanh toán báo lỗi giao dịch hoặc người dùng bấm hủy. Backend ghi nhận trạng thái đơn là \code{PAYMENT\_FAILED}, nguyên liệu trong kho vẫn được giữ chỗ tạm thời; khách hàng nhận được thông báo lỗi kèm nút \textbf{``Thử lại thanh toán''} trong vòng 15 phút.
+  \item \textbf{Alt-2: Thanh toán thất bại hoặc hủy ngang trên cổng thanh toán:} Tại bước 14, ZaloPay báo giao dịch thất bại hoặc khách hàng bấm hủy trên cổng. Lệnh \code{sync} ghi nhận \code{Payment} là \code{FAILED} và chuyển đơn \code{PENDING} $\rightarrow$ \code{PAYMENT\_FAILED}; nguyên liệu vẫn bị giữ chỗ (đã trừ từ bước 9--11) cho tới khi khách hủy hoặc cronjob hủy sau 15 phút. Khách hàng thấy nút \textbf{``Thử lại thanh toán''}; khi thử lại, Backend chuyển đơn về \code{PENDING} rồi tạo \code{Payment} mới với \code{Idempotency-Key} khác.
   \item \textbf{Alt-3: Khách hàng chủ động hủy đơn chưa chuẩn bị:} Khi đơn hàng ở trạng thái \code{PENDING} hoặc \code{PAYMENT\_FAILED}, khách hàng nhấn nút \textbf{``Hủy đơn''}. Tuyến API \code{POST /api/v1/orders/:id/cancel} kiểm tra quyền chủ đơn, chuyển trạng thái đơn sang \code{CANCELLED}, đọc bảng snapshot \code{OrderIngredientUsage} và hoàn trả chính xác số lượng nguyên liệu vào kho (\code{UPDATE ingredients SET stock = stock + usageQty}).
   \item \textbf{Alt-4: Tự động hủy đơn quá hạn 15 phút chưa thanh toán:} Định kỳ mỗi phút, tác vụ nền (\code{OrderCleanupCronjob}) quét các đơn hàng có trạng thái \code{PENDING} hoặc \code{PAYMENT\_FAILED} được tạo quá 15 phút trước. Hệ thống tự động chuyển đơn sang \code{CANCELLED} và hoàn trả nguyên liệu vào kho tương tự Alt-3.
 \end{itemize}
@@ -241,7 +241,7 @@ Use-case này mô tả quy trình cốt lõi khép kín từ khi khách hàng x�
   \item \textbf{Exc-3: Không đủ nguyên liệu trong kho (400 Out of Stock):} Tại bước 9, nếu bất kỳ nguyên liệu nào không đủ định lượng (\code{stock < qty}), lệnh atomic update trả về 0 dòng bị ảnh hưởng. Backend lập tức \textbf{ROLLBACK} toàn bộ transaction, kho nguyên liệu giữ nguyên vẹn, và trả thông báo chi tiết: \textit{``Món [Tên món] hiện đã hết nguyên liệu, vui lòng chọn món khác''}.
   \item \textbf{Exc-4: Tranh chấp ly đồ uống cuối cùng (Race Condition / Concurrency):} Khi hai khách hàng cùng đặt ly đồ uống cuối cùng tại cùng một tích tắc, cơ chế atomic conditional update đảm bảo chỉ một transaction trừ kho thành công (nhận HTTP 201), giao dịch còn lại sẽ bị từ chối với lỗi hết hàng (HTTP 400), ngăn chặn hoàn toàn hiện tượng âm kho.
   \item \textbf{Exc-5: Mã giảm giá không đủ điều kiện (400 Invalid Coupon):} Tại bước 10, nếu mã giảm giá đã hết hạn, hết ngân sách hoặc tổng tiền đơn hàng chưa đạt mức tối thiểu, hệ thống từ chối áp dụng và trả thông báo lỗi cụ thể.
-  \item \textbf{Exc-6: Lỗi trùng lặp yêu cầu đặt hàng (Idempotency Violation):} Nếu khách hàng nhấn đúp nút đặt hàng, yêu cầu thứ hai gửi cùng \code{Idempotency-Key}. Backend nhận diện key đã được xử lý thành công, lập tức trả về kết quả của đơn hàng trước đó (HTTP 200) mà không tạo thêm đơn mới và không trừ kho lần hai.
+  \item \textbf{Exc-6: Lỗi trùng lặp yêu cầu đặt hàng:} Nếu khách hàng nhấn đúp nút đặt hàng, giao diện đã lưu mã đơn đang chờ trong \code{localStorage} và đối soát lại trạng thái trước khi cho phép gửi yêu cầu mới, nên yêu cầu thứ hai không tạo thêm đơn và không trừ kho lần hai. Cơ chế \code{Idempotency-Key} bắt buộc chỉ áp dụng cho bước tạo thanh toán (FR-18), không áp dụng cho \code{POST /orders}.
   \item \textbf{Exc-7: Lỗi kết nối cơ sở dữ liệu (500 Database Error):} Nếu có sự cố đứt kết nối mạng hoặc timeout cơ sở dữ liệu trong quá trình xử lý transaction, toàn bộ các bước đã thực hiện đều tự động ROLLBACK; kho nguyên liệu và trạng thái thanh toán không bị sai lệch dữ liệu dạng nửa vời.
   \item \textbf{Exc-8: Yêu cầu hủy đơn khi món đã bắt đầu pha chế (409 Conflict):} Nếu khách hàng gửi yêu cầu hủy đơn nhưng nhân viên quầy đã chuyển trạng thái đơn sang \code{PREPARING}, hệ thống từ chối hủy với thông báo: \textit{``Đơn hàng đang được pha chế, không thể hủy''}.
   \item \textbf{Exc-9: Chuyển trạng thái đơn không hợp lệ:} Bất kỳ yêu cầu chuyển trạng thái nào vi phạm 9 chuyển tiếp hợp lệ của máy trạng thái (ví dụ: \code{PENDING} $\rightarrow$ \code{COMPLETED}) đều bị hàm \code{assertTransition} chặn lại với mã lỗi \code{409 Conflict}.

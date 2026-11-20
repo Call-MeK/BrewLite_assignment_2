@@ -148,7 +148,7 @@ thức. Ảnh dùng đúng dữ liệu seed và tài khoản demo, không dựng
 \subsection{Task 5.2 -- Tích hợp và kiểm thử}
 
 \paragraph{Kiểm thử tự động.}
-Bộ kiểm thử dùng \code{node:test} có sẵn, không thêm framework ngoài. Backend có 15 tệp với 49
+Bộ kiểm thử dùng \code{node:test} có sẵn~\cite{node-test}, không thêm framework ngoài. Backend có 15 tệp với 49
 test; frontend có 5 tệp với 10 test; E2E HTTP có 1 kịch bản. Test backend chạy trên schema
 PostgreSQL dùng một lần (\code{PAYMENT\_TEST\_DATABASE\_URL}), không gọi mạng ZaloPay. E2E chỉ
 chạy khi khai báo \code{E2E\_API\_URL}; nếu không có biến này, test tự bỏ qua để CI/local vẫn chạy
@@ -360,9 +360,12 @@ Hai tài khoản seed dùng cho chấm bài: khách hàng
 \code{admin@brewlite.test / Admin@12345}. Đây là tài khoản demo trên môi trường sandbox, không
 phải người dùng thật.
 
-\paragraph{Ghi chú phát hành v1.0.0.}
-Repo hiện chưa tạo git tag; bản nộp được đánh dấu bằng commit SHA trên \code{main}. Nếu nhóm tạo
-tag \code{v1.0.0} trước khi nộp, tag phải trỏ đúng commit đã chạy CD xanh.
+\paragraph{Ghi chú phát hành (chưa có tag).}
+Tại thời điểm kiểm tra, repo \textbf{chưa có git tag và chưa có GitHub Release} nào (kết quả
+\code{git tag -l} và mục Releases đều trống), nên không tồn tại tag \code{v1.0.0}. Bản nộp được
+đánh dấu bằng commit SHA: \code{3dc9552c} trên nhánh \code{docs} (bản báo cáo này); commit mới nhất
+của \code{main} lúc kiểm tra là \code{69180eba} --- commit đã chạy CI xanh và là mục tiêu của lần
+chạy CD. Nếu nhóm tạo tag \code{v1.0.0} trước khi nộp, tag phải trỏ đúng commit đã chạy CD xanh.
 
 \begin{itemize}
   \item Luồng end-to-end: menu $\rightarrow$ chi tiết/size/topping $\rightarrow$ giỏ $\rightarrow$
@@ -404,5 +407,5 @@ Hành động & Tắt Auto-Deploy của Render/Vercel để CD là cổng duy nh
 
 \textbf{Video demo 3--5 phút:} nhóm quay luồng đăng nhập $\rightarrow$ chọn món $\rightarrow$ đặt
 hàng $\rightarrow$ thanh toán ZaloPay $\rightarrow$ xem lịch sử $\rightarrow$ admin đổi trạng thái.
-Link video cần được điền trước khi nộp; nếu chưa có, ghi rõ ``chưa có trong repo'' thay vì mô tả
-như đã có.
+Link video: \textbf{[ĐIỀN LINK VIDEO]} --- phải thay bằng liên kết thật (hoặc ghi ``chưa có trong
+repo'') trước khi nộp; không mô tả như đã có.

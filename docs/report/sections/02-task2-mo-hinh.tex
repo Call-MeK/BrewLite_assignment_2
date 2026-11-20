@@ -15,9 +15,17 @@ Quy trình đặt đơn gồm sự phối hợp giữa Khách hàng, Giao diện
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.88\textwidth]{../figures/diagrams/ad-order-create.png}
-\caption{Activity Diagram: Quy trình đặt đơn hàng và trừ kho nguyên liệu}
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/ad-order-create-part1.png}
+\caption{Activity Diagram: Quy trình đặt đơn hàng và trừ kho nguyên liệu (phần 1/2)}
 \label{figA:ad-order-create}
+\end{figure}
+
+\begin{figure}[H]
+\ContinuedFloat
+\centering
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/ad-order-create-part2.png}
+\caption{Activity Diagram: Quy trình đặt đơn hàng và trừ kho nguyên liệu (phần 2/2)}
+\label{figA:ad-order-create-part2}
 \end{figure}
 
 \subsubsection{Quy trình hủy đơn hàng (Order Cancellation Process)}
@@ -25,7 +33,7 @@ Quy trình hủy đơn được kích hoạt bởi Khách hàng (khi đơn ở \
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.88\textwidth]{../figures/diagrams/ad-order-cancel.png}
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/ad-order-cancel.png}
 \caption{Activity Diagram: Quy trình hủy đơn hàng và hoàn trả tồn kho}
 \label{figA:ad-order-cancel}
 \end{figure}
@@ -35,9 +43,17 @@ Sơ đồ hoạt động end-to-end bao quát toàn bộ hành trình từ duy�
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{../figures/diagrams/activity-end-to-end.png}
-\caption{Activity Diagram End-to-End: Luồng đặt đồ uống và thanh toán toàn hệ thống}
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/activity-end-to-end-part1.png}
+\caption{Activity Diagram End-to-End: Luồng đặt đồ uống và thanh toán toàn hệ thống (phần 1/2)}
 \label{figA:activity-e2e}
+\end{figure}
+
+\begin{figure}[H]
+\ContinuedFloat
+\centering
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/activity-end-to-end-part2.png}
+\caption{Activity Diagram End-to-End: Luồng đặt đồ uống và thanh toán toàn hệ thống (phần 2/2)}
+\label{figA:activity-e2e-part2}
 \end{figure}
 
 \subsubsection{Biểu đồ hoạt động: Phân hệ Chi tiết món (Product Detail Activity Diagram)}
@@ -45,9 +61,17 @@ Biểu đồ hoạt động thể hiện sự phối hợp luồng nghiệp vụ
 
 \begin{figure}[H]
 \centering
-\includegraphics[height=0.82\textheight,keepaspectratio]{../figures/diagrams/ad-product-detail-custom.png}
-\caption{Activity Diagram: Quy trình hiển thị, tùy biến và thêm vào giỏ hàng (Product Detail)}
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/ad-product-detail-custom-part1.png}
+\caption{Activity Diagram: Quy trình hiển thị, tùy biến và thêm vào giỏ hàng (Product Detail) (phần 1/2)}
 \label{figA:ad-product-detail}
+\end{figure}
+
+\begin{figure}[H]
+\ContinuedFloat
+\centering
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/ad-product-detail-custom-part2.png}
+\caption{Activity Diagram: Quy trình hiển thị, tùy biến và thêm vào giỏ hàng (Product Detail) (phần 2/2)}
+\label{figA:ad-product-detail-part2}
 \end{figure}
 
 \subsection{Sequence Diagram -- Biểu đồ tuần tự}
@@ -168,14 +192,20 @@ Hình~\ref{figA:cd-order} thể hiện các thực thể xoay quanh đơn hàng:
 \subsubsection{Class Diagram miền nghiệp vụ tổng thể}
 Sơ đồ lớp toàn hệ thống thể hiện mối quan hệ giữa tất cả 16 model trong schema Prisma, kết nối giữa Thực đơn (Product, Category, ProductSizePrice, Topping), Kho nguyên liệu (Ingredient, ProductRecipe, ToppingRecipe), và Giao dịch đơn hàng.
 
-\begin{landscape}
 \begin{figure}[H]
 \centering
-\includegraphics[height=0.84\textheight,keepaspectratio]{../figures/diagrams/class-domain.png}
-\caption{Class Diagram miền nghiệp vụ tổng thể hệ thống BrewLite}
+\includegraphics[width=\textwidth,height=0.93\textheight,keepaspectratio]{../figures/diagrams/class-domain-part1.png}
+\caption{Class Diagram miền nghiệp vụ tổng thể hệ thống BrewLite (phần 1/2)}
 \label{figA:class-domain}
 \end{figure}
-\end{landscape}
+
+\begin{figure}[H]
+\ContinuedFloat
+\centering
+\includegraphics[width=\textwidth,height=0.93\textheight,keepaspectratio]{../figures/diagrams/class-domain-part2.png}
+\caption{Class Diagram miền nghiệp vụ tổng thể hệ thống BrewLite (phần 2/2)}
+\label{figA:class-domain-part2}
+\end{figure}
 
 \subsection{Máy trạng thái đơn hàng (Order State Machine)}
 
@@ -183,7 +213,7 @@ Vòng đời của đơn hàng trải qua 7 trạng thái với 9 chuyển tiế
 
 \begin{table}[H]
 \centering\small
-\caption{Bảng 9 chuyển tiếp trạng thái hợp lệ của đơn hàng}
+\caption{Chín chuyển tiếp trạng thái hợp lệ của đơn hàng}
 \label{tab:order-transitions}
 \begin{tabularx}{\textwidth}{@{}c p{3.2cm} p{3.2cm} X@{}}
 \toprule

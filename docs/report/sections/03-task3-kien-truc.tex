@@ -14,11 +14,11 @@
 BrewLite áp dụng kiến trúc phân lớp (Layered Architecture), kết hợp mô hình C4 ở mức Container. Hệ thống được tổ chức thành ba tầng chính, triển khai trong một kho mã Monorepo nhằm đảm bảo sự đồng bộ giữa giao diện, nghiệp vụ và dữ liệu.
 
 \begin{itemize}
-    \item \textbf{Tầng trình diễn (Frontend):} Sử dụng Next.js 15 với App Router và React 19, kết hợp Tailwind CSS và Zustand. Giao diện được thiết kế theo hướng mobile-first. Server Components đảm nhiệm việc hiển thị nội dung ban đầu; Client Components xử lý các tương tác như giỏ hàng, đặt hàng, thanh toán và quản trị. Giỏ hàng được lưu trữ cục bộ thông qua localStorage.
+    \item \textbf{Tầng trình diễn (Frontend):} Sử dụng Next.js 15~\cite{nextjs} với App Router và React 19, kết hợp Tailwind CSS và Zustand. Giao diện được thiết kế theo hướng mobile-first. Server Components đảm nhiệm việc hiển thị nội dung ban đầu; Client Components xử lý các tương tác như giỏ hàng, đặt hàng, thanh toán và quản trị. Giỏ hàng được lưu trữ cục bộ thông qua localStorage.
 
-    \item \textbf{Tầng nghiệp vụ (Backend):} Sử dụng NestJS 11 xây dựng RESTful API với tiền tố \texttt{/api/v1}. Backend tổ chức theo Module/Domain, chịu trách nhiệm xử lý xác thực JWT, phân quyền, tính giá, khuyến mãi, điểm thưởng, quản lý tồn kho và vòng đời đơn hàng.
+    \item \textbf{Tầng nghiệp vụ (Backend):} Sử dụng NestJS 11~\cite{nestjs} xây dựng RESTful API với tiền tố \texttt{/api/v1}. Backend tổ chức theo Module/Domain, chịu trách nhiệm xử lý xác thực JWT, phân quyền, tính giá, khuyến mãi, điểm thưởng, quản lý tồn kho và vòng đời đơn hàng.
 
-    \item \textbf{Tầng dữ liệu và tích hợp:} Sử dụng PostgreSQL 16 kết hợp Prisma ORM để quản lý dữ liệu. Prisma Migrate kiểm soát các thay đổi lược đồ cơ sở dữ liệu. Hệ thống tích hợp ZaloPay Sandbox thông qua HTTPS, sử dụng chữ ký HMAC-SHA256 để xác thực giao dịch.
+    \item \textbf{Tầng dữ liệu và tích hợp:} Sử dụng PostgreSQL 16 kết hợp Prisma ORM~\cite{prisma} để quản lý dữ liệu. Prisma Migrate kiểm soát các thay đổi lược đồ cơ sở dữ liệu. Hệ thống tích hợp ZaloPay Sandbox~\cite{zalopay} thông qua HTTPS, sử dụng chữ ký HMAC-SHA256 để xác thực giao dịch; MAC của callback được so sánh bằng \code{timingSafeEqual} nhằm hạn chế tấn công đo thời gian~\cite{owasp}.
 \end{itemize}
 
 Theo mô hình C4 Container, các thành phần chính gồm Web Application, Backend API, PostgreSQL Database và dịch vụ thanh toán bên ngoài ZaloPay. Frontend giao tiếp với Backend thông qua REST API và JWT; Backend truy xuất dữ liệu thông qua Prisma Client, đồng thời kết nối ZaloPay để khởi tạo và đối soát giao dịch.
@@ -80,7 +80,7 @@ Các migration được lưu trong thư mục \texttt{apps/api/prisma/migrations
 
 Theo ADR-002, nhóm quyết định sử dụng ZaloPay Sandbox làm cổng thanh toán duy nhất thay cho cơ chế Mock Payment trước đây. Việc tích hợp cho phép kiểm thử quy trình giao dịch gần với môi trường thực tế mà không sử dụng tiền thật.
 
-Backend khởi tạo giao dịch thông qua endpoint \texttt{POST /api/v1/payments/zalopay}, yêu cầu \texttt{Idempotency-Key} để hạn chế giao dịch trùng lặp. Thông tin giao dịch được lưu ở trạng thái PENDING trước khi gửi yêu cầu đến nhà cung cấp. Sau đó, người dùng được chuyển hướng đến \texttt{paymentUrl} do ZaloPay cung cấp.
+Backend khởi tạo giao dịch thông qua endpoint \texttt{POST /api/v1/payments/zalopay}, yêu cầu \texttt{Idempotency-Key} để hạn chế giao dịch trùng lặp~\cite{zalopay}. Thông tin giao dịch được lưu ở trạng thái PENDING trước khi gửi yêu cầu đến nhà cung cấp. Sau đó, người dùng được chuyển hướng đến \texttt{paymentUrl} do ZaloPay cung cấp.
 
 Khi nhận callback, Backend xác thực chữ ký HMAC-SHA256 bằng khóa \texttt{key2}. Trong trường hợp callback không được gửi đến hoặc không thể tiếp nhận, Frontend có thể chủ động gọi API đồng bộ trạng thái giao dịch (sync). Cơ chế này giúp hệ thống kiểm soát kết quả thanh toán và hạn chế việc ghi nhận giao dịch nhiều lần.
 
@@ -148,7 +148,7 @@ Nhóm sử dụng Architecture Decision Records (ADR) để lưu trữ các quy�
 \midrule
 
 Bối cảnh &
-Nhóm gồm 4 thành viên cùng phát triển ứng dụng sử dụng Next.js, NestJS và Prisma/PostgreSQL. Cần một phương án tổ chức mã nguồn giúp đồng bộ API, giao diện, tài liệu, Postman, Docker Compose và CI. \\
+Nhóm gồm 6 thành viên cùng phát triển ứng dụng sử dụng Next.js, NestJS và Prisma/PostgreSQL. Cần một phương án tổ chức mã nguồn giúp đồng bộ API, giao diện, tài liệu, Postman, Docker Compose và CI. \\
 
 Quyết định &
 Sử dụng một repository duy nhất với hai ứng dụng độc lập: \texttt{apps/web} cho Next.js và \texttt{apps/api} cho NestJS. Các thư mục \texttt{docs}, \texttt{tests} và \texttt{postman} được quản lý cùng repository. Không sử dụng Nx hoặc Turborepo để giữ cấu hình đơn giản. \\

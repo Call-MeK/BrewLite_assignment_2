@@ -6,8 +6,10 @@
 
 \paragraph{Kết quả đạt được.}
 Báo cáo đã khép kín chuỗi yêu cầu $\rightarrow$ mô hình hóa $\rightarrow$ kiến trúc $\rightarrow$
-hai sprint $\rightarrow$ CI/CD $\rightarrow$ production. Sản phẩm có 12 yêu cầu chức năng và 9 yêu
-cầu phi chức năng được đặc tả, 49 test backend, 10 test frontend và 1 kịch bản E2E HTTP; ba địa
+hai sprint $\rightarrow$ CI/CD $\rightarrow$ production. Sản phẩm có 22 yêu cầu chức năng và 8 yêu
+cầu phi chức năng được chuẩn hóa trong báo cáo (Bảng~\ref{tab:fr-summary}--\ref{tab:nfr-summary}),
+tương ứng 12 nhóm yêu cầu chức năng và 9 yêu cầu phi chức năng của SRS; 49 test backend, 10 test
+frontend và 1 kịch bản E2E HTTP; ba địa
 chỉ production (web, API, health) truy cập được qua HTTPS. Luồng cốt lõi chạy thật với ZaloPay
 Sandbox: tạo đơn, thanh toán, callback/sync, state machine, trừ/hoàn kho, voucher và điểm loyalty.
 CI chạy trên \code{main} và là cổng merge của nhóm; CD tự động chạy sau CI xanh, deploy đúng commit

@@ -95,10 +95,11 @@ các tài liệu use-case trong \file{docs/}. \\
 
 3 &
 Activity, sequence, class và deployment diagram. &
-\partialok &
-Có Activity, Sequence, Database UML và
-\file{docs/architecture/deployment-diagram.puml};
-chưa có Class Diagram riêng được xác nhận. \\
+\pass &
+Activity, Sequence, Class và Database UML trong \file{docs/diagrams/}
+(\file{class-domain.puml}, \file{usecase-*.puml}, \file{sequence-*.puml},
+\file{activity-*.puml}), \file{docs/database-uml.puml};
+\file{docs/architecture/deployment-diagram.puml}. \\
 
 4 &
 Source code frontend, backend và migration. &
@@ -118,7 +119,9 @@ Pipeline CI/CD chạy thành công. &
 \partialok &
 \file{.github/workflows/ci.yml},
 \file{.github/workflows/cd.yml}.
-CI gần nhất thành công; lần chạy CD đầu tiên thất bại tại bước deploy API. \\
+CI trên \code{main} xanh (lần chạy gần nhất thành công); cả hai lần chạy CD đều
+dừng ở bước \textit{Deploy API to Render} (lỗi \code{jq} khi đọc phản hồi API
+Render), nên các bước smoke test và rollback chưa từng được thực thi. \\
 
 7 &
 URL production, API và health check. &
@@ -132,13 +135,14 @@ Release notes, README và hướng dẫn rollback. &
 \partialok &
 Có \file{README.md} và
 \file{docs/deployment.md} hướng dẫn triển khai, rollback;
-chưa tìm thấy Release Notes riêng. \\
+chưa có Release Notes riêng, chưa có git tag và chưa có GitHub Release
+(mục Releases trống). \\
 
 9 &
 Video/demo và Sprint Retrospective. &
 \partialok &
-Có môi trường demo trực tuyến;
-chưa tìm thấy video demo và tài liệu Sprint Retrospective trong repository. \\
+Có môi trường demo trực tuyến và bảng Sprint Retrospective trong báo cáo
+(\tabref{tabC:retro}); chưa có video demo trong repository. \\
 
 \bottomrule
 \end{tabularx}
