@@ -313,6 +313,12 @@ Theo Definition of Done, nhóm sử dụng trạng thái CI thành công
 làm điều kiện kiểm tra trước khi tích hợp mã nguồn.
 
 \paragraph{Minh chứng.}
+\projectlink{pull/20}{PR số 20} từ nhánh \code{docs} vào \code{main} có
+\projectlink{actions/runs/44692799160}{lượt CI thành công} tại commit \code{287a9272}.
+Có thể đối chiếu với \projectlink{actions/runs/43477272062}{lượt CI thất bại}.
+Ngày 21/11/2026, \href{https://api.github.com/repos/Call-MeK/BrewLite_assignment_2/branches/main}{GitHub API}
+trả về \code{protected=false} cho \code{main}. Nhóm yêu cầu CI xanh trong Definition of Done,
+nhưng chưa có minh chứng GitHub tự chặn merge khi CI lỗi.
 Hình \ref{figB:ci-pass} minh họa lần chạy CI thành công,
 trong đó cả Frontend CI và Backend CI đều đạt trạng thái Success.
 Hình \ref{figB:ci-fail} minh họa lần chạy CI thất bại,

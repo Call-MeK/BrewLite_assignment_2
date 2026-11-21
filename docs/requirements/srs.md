@@ -8,6 +8,8 @@ và [kịch bản kiểm thử](../test-scenarios/test-scenarios.md).
 `Won't` = không làm trong đồ án. Mỗi yêu cầu có tiêu chí chấp nhận (AC) kiểm chứng được và được
 truy vết ở mục 8 của báo cáo.
 
+[Sơ đồ use-case tổng quát](../diagrams/usecase-overall.svg) mô tả phạm vi của hệ thống. [Nguồn PlantUML](../diagrams/usecase-overall.puml).
+
 ## 1. Yêu cầu chức năng
 
 ### FR-01 – Menu sản phẩm

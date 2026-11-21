@@ -296,8 +296,8 @@ demo.
 3 & Đẩy image lên registry &
   \bad{Chưa} -- không dùng GHCR/Docker Hub; Render build trực tiếp từ Git \\
 4 & Deploy tự động &
-  \pass{} -- Render API theo \code{commitId}; Vercel deploy hook/Git integration, có chờ
-  deployment đúng SHA khi khai báo token \\
+  \partialok{} -- Workflow có bước deploy Render/Vercel. Hai lượt CD trên commit
+  \code{69180eba} đều dừng khi xử lý phản hồi Render \\
 5 & Migration cơ sở dữ liệu &
   \partialok{} -- có bước \code{prisma migrate deploy} trong CD nếu khai báo
   \code{PROD\_DATABASE\_URL}; nếu không, migration nằm trong container start nên không bảo đảm
@@ -355,17 +355,14 @@ CD & GitHub Actions, workflow \path{.github/workflows/cd.yml} (chạy sau CI xan
 \end{tabularx}
 \end{table}
 
-Hai tài khoản seed dùng cho chấm bài: khách hàng
-\code{demo@brewlite.test / Demo@12345} (có sẵn 120 điểm loyalty) và quản trị
-\code{admin@brewlite.test / Admin@12345}. Đây là tài khoản demo trên môi trường sandbox, không
-phải người dùng thật.
+Tài khoản có quyền quản trị phục vụ trình diễn được trao riêng cho người nghiệm thu.
 
-\paragraph{Ghi chú phát hành (chưa có tag).}
-Tại thời điểm kiểm tra, repo \textbf{chưa có git tag và chưa có GitHub Release} nào (kết quả
-\code{git tag -l} và mục Releases đều trống), nên không tồn tại tag \code{v1.0.0}. Bản nộp được
-đánh dấu bằng commit SHA: \code{3dc9552c} trên nhánh \code{docs} (bản báo cáo này); commit mới nhất
-của \code{main} lúc kiểm tra là \code{69180eba} --- commit đã chạy CI xanh và là mục tiêu của lần
-chạy CD. Nếu nhóm tạo tag \code{v1.0.0} trước khi nộp, tag phải trỏ đúng commit đã chạy CD xanh.
+\paragraph{Ghi chú phiên bản bàn giao.}
+Bản ứng dụng được đối chiếu tại commit \projectlink{commit/69180eba}{\code{69180eba}}.
+Ngày 21/11/2026, \projectlink{tags}{danh sách tag} và \projectlink{releases}{GitHub Releases}
+đều trống. Hai lượt CD \projectlink{actions/runs/43794425915}{tự động}
+và \projectlink{actions/runs/44525034610}{thủ công} đều dừng tại bước triển khai API.
+Các ghi chú dưới đây mô tả phạm vi ứng dụng tại commit này.
 
 \begin{itemize}
   \item Luồng end-to-end: menu $\rightarrow$ chi tiết/size/topping $\rightarrow$ giỏ $\rightarrow$
@@ -375,8 +372,8 @@ chạy CD. Nếu nhóm tạo tag \code{v1.0.0} trước khi nộp, tag phải tr
     \code{/admin/payments}.
   \item State machine bảy trạng thái, kiểm soát tồn kho, voucher và điểm loyalty.
   \item 49 test backend + 10 test frontend + 1 E2E HTTP; build và lint chạy trong CI.
-  \item Triển khai Vercel + Render + Neon; CI là cổng merge, CD tự động chạy sau CI xanh với
-    smoke test và rollback khi smoke test lỗi.
+  \item Web, API và database lần lượt đặt trên Vercel, Render và Neon. Workflow CD
+    cấu hình smoke test sau deploy và quay lui khi smoke test lỗi.
   \item Hạn chế đã biết: chưa đẩy image lên registry/image tag; smoke test mới phủ \code{/health}
     và trang chủ; rollback chỉ tự động khi smoke test lỗi; Render Free cold start 30--60 giây;
     chưa có E2E trình duyệt.
@@ -405,7 +402,13 @@ Hành động & Tắt Auto-Deploy của Render/Vercel để CD là cổng duy nh
 \end{tabularx}
 \end{table}
 
-\textbf{Video demo 3--5 phút:} nhóm quay luồng đăng nhập $\rightarrow$ chọn món $\rightarrow$ đặt
-hàng $\rightarrow$ thanh toán ZaloPay $\rightarrow$ xem lịch sử $\rightarrow$ admin đổi trạng thái.
-Link video: \textbf{[ĐIỀN LINK VIDEO]} --- phải thay bằng liên kết thật (hoặc ghi ``chưa có trong
-repo'') trước khi nộp; không mô tả như đã có.
+\paragraph{Sprint Review và trình diễn.}
+Phạm vi bàn giao để nghiệm thu gồm menu, giỏ hàng, JWT, đặt đơn, thanh toán Sandbox
+và theo dõi trạng thái. Bảng kết quả kiểm thử ghi nhận 49/49 test backend, 10/10
+test frontend và 1/1 kịch bản E2E HTTP. Đầu việc còn mở là kiểm chứng một lượt CD
+đi qua cả hai smoke test và gắn tag cho bản phát hành.
+
+Kịch bản demo trực tiếp: khách chọn món và tùy chọn, đăng nhập, đặt đơn, thanh toán
+Sandbox rồi xem lịch sử. Quản trị viên cập nhật trạng thái và khách kiểm tra kết quả.
+Hồ sơ hiện có URL ứng dụng và kịch bản; nhóm chưa cung cấp video hoặc biên bản
+buổi Sprint Review ghi nhận người tham dự, phản hồi và kết quả nghiệm thu.

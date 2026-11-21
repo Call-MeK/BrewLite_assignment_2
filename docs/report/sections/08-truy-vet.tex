@@ -9,11 +9,38 @@ Mỗi yêu cầu chức năng được truy vết theo đúng mẫu của đề:
 use-case/user story $\rightarrow$ thiết kế/sơ đồ $\rightarrow$ code/API $\rightarrow$ test}. Cột
 Test dùng mã scenario \code{TS-...} hoặc tên tệp test thật; các ô ghi ``thủ công'' là kiểm tra
 theo checklist, không có test tự động. \tabref{tabC:trace-fr} truy vết 12 nhóm yêu cầu chức năng
-của SRS, tương ứng 22 yêu cầu chi tiết FR-01$\dots$FR-22 ở \tabref{tab:fr-summary}; do đó mã
-FR-xx trong bảng này theo cách đánh số của SRS và không trùng với Bảng~8.
-\tabref{tabC:trace-nfr} truy vết 9 yêu cầu phi chức năng NFR-01$\dots$NFR-09 của SRS, trong khi
-\tabref{tab:nfr-summary} đánh số 8 yêu cầu phi chức năng theo thuộc tính chất lượng mà báo cáo
-dùng để nghiệm thu.
+của SRS. Backlog và hai ma trận dưới đây dùng mã SRS. Chương yêu cầu dùng mã
+chi tiết cho 22 chức năng và 8 mục tiêu chất lượng. Bảng sau nối hai cách đánh số.
+
+\begin{table}[H]
+\centering\small
+\caption{Ánh xạ mã của chương yêu cầu sang mã SRS}
+\label{tab:doi-chieu-ma}
+\begin{tabularx}{\textwidth}{@{}p{3.8cm} p{3.3cm} X@{}}
+\toprule
+\textbf{Mã chương yêu cầu} & \textbf{Mã SRS liên quan} & \textbf{Phạm vi} \\
+\midrule
+FR-01 đến FR-03 & FR-04, FR-11 & Đăng ký, JWT và quyền quản trị. \\
+FR-04 đến FR-06 & FR-01 & Danh mục, danh sách và tìm kiếm món. \\
+FR-07 đến FR-09 & FR-02, FR-05 & Chi tiết, tùy chọn và xác minh giá khi đặt đơn. \\
+FR-10 đến FR-12 & FR-03 & Thao tác giỏ, tổng tiền và lưu giỏ. \\
+FR-13 / FR-14 / FR-15 & FR-05 / FR-09 / FR-10 & Lần lượt là tạo đơn, trừ kho và khuyến mãi/điểm. \\
+FR-16 & FR-07, FR-11 & Chuyển trạng thái và quyền thao tác đơn. \\
+FR-17 đến FR-20 & FR-05, FR-08, FR-12 & Thanh toán, gửi lặp, xử lý lỗi và thông báo kết quả. \\
+FR-21, FR-22 & FR-06, FR-07, FR-12 & Lịch sử đơn, trạng thái và phản hồi cho khách. \\
+\midrule
+NFR-01 / NFR-02 & NFR-01 / NFR-02, NFR-08 & Hiệu năng / bảo mật và cấu hình. \\
+NFR-03, NFR-04 & NFR-04 & Transaction, tồn kho và chống ghi trùng. \\
+NFR-05 / NFR-06 & NFR-03 / NFR-09 & Tương thích trình duyệt và PWA / đóng gói, triển khai. \\
+NFR-07 / NFR-08 & NFR-07 / NFR-09 & CI / khả năng phục hồi khi triển khai. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Giới hạn minh chứng.} Số đo ở \tabref{tabC:trace-nfr} là trung vị của API đọc.
+Các ngưỡng p95 xem menu và tạo đơn, khả năng cài đặt PWA và thời gian phục hồi dưới
+5 phút ở \tabref{tab:nfr-summary} vẫn cần kết quả đo hoặc chạy thử riêng. NFR-05
+(khả dụng) và NFR-06 (bảo trì) của SRS được truy vết riêng ở bảng NFR của chương này.
 
 {\small
 \begin{longtable}{@{}p{1.0cm} p{2.9cm} p{3.3cm} p{4.0cm} p{2.9cm}@{}}

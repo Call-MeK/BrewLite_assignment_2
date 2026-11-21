@@ -23,7 +23,18 @@ BrewLite là ứng dụng web đặt cà phê **không dùng tiền mặt** cho 
 | Vận hành minh bạch | Admin xem được đơn, giao dịch, tồn kho và lịch sử trạng thái |
 | Chất lượng mã nguồn | Build + test chạy tự động trên `main` qua GitHub Actions |
 
-## 3. Actor
+## 3. Stakeholder và actor
+
+| Stakeholder | Mục tiêu và kỳ vọng |
+|---|---|
+| Khách hàng | Chọn món đúng giá, thanh toán và theo dõi tiến độ đơn. |
+| Nhân viên quầy | Nhận đúng đơn và cập nhật các bước pha chế, giao món. |
+| Quản lý cửa hàng | Kiểm soát thực đơn, tồn nguyên liệu và đối soát doanh thu. |
+| Giảng viên / khách hàng nghiệm thu | Tái lập hệ thống và kiểm tra sản phẩm, tài liệu, lịch sử thay đổi. |
+| Nhóm phát triển | Theo dõi yêu cầu từ thiết kế đến kiểm thử và phát hành. |
+| Đơn vị thanh toán | Xử lý giao dịch Sandbox đúng số tiền, xác thực và chống ghi trùng. |
+
+### Actor trong hệ thống
 
 | Actor | Quyền chính |
 |---|---|
