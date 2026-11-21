@@ -8,30 +8,63 @@
 % ---------------------------------------------------------------------
 %  PHỤ LỤC A: THỰC ĐƠN VÀ DANH MỤC
 % ---------------------------------------------------------------------
-\section{Phân hệ Thực đơn và Danh mục (Menu \& Catalog Module)}
+\section{Phân hệ Thực đơn (product catalog)}
 \label{app:menu}
-Nguồn thiết kế: \file{BrewLite.drawio}. Phân hệ Thực đơn và Danh mục là điểm chạm đầu tiên của khách hàng với hệ thống BrewLite, cho phép duyệt danh sách đồ uống phân theo danh mục (Cà phê, Trà \& Trái cây, Đá xay), lọc nhanh và tìm kiếm món uống theo tên tiếng Việt không dấu.
+Phân hệ thực đơn là điểm chạm đầu tiên giữa khách hàng và hệ thống. Khách hàng không cần đăng nhập vẫn xem được thực đơn của cửa hàng. Khách hàng có thể xem được toàn bộ đồ uống có trong cửa hàng, lọc đồ uống theo danh mục và tìm kiếm đồ uống theo tên.
+
+\subsection{UseCase Diagram}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.82\textwidth,height=0.45\textheight,keepaspectratio]{../figures/diagrams/usecase-product-catalog.png}
-\caption{Use Case Diagram: Phân hệ Thực đơn và Danh mục sản phẩm}
-\label{fig:uc-menu}
+\includegraphics[width=1.0\textwidth,height=0.7\textheight,keepaspectratio]{../figures/diagrams/usecase-CAT.png}
+\caption{Use Case Diagram: Phân hệ Product-catalog}
+\label{fig:uc-CAT}
+\end{figure}
+
+\subsection{Sequence Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth,height=0.45\textheight,keepaspectratio]{../figures/diagrams/sd-product-catalog.png}
+\caption{Sequence Diagram: Xem menu sản phẩm}
+\label{fig:sq-menu}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/activity-product-catalog-part1.png}
-\caption{Activity Diagram: Quy trình duyệt thực đơn, lọc danh mục và tìm kiếm món (phần 1/2)}
+\includegraphics[width=0.82\textwidth,height=0.45\textheight,keepaspectratio]{../figures/diagrams/sd-loc-san-pham.png}
+\caption{Sequence Diagram: Lọc sản phẩm theo danh mục}
+\label{fig:sq-catalog}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth,height=0.45\textheight,keepaspectratio]{../figures/diagrams/sd-tim-kiem-sp.png}
+\caption{Sequence Diagram: Tìm kiếm sản phẩm theo tên}
+\label{fig:sq-timkiem}
+\end{figure}
+
+\subsection{Activities Diagram}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/ad-xem-menu.png}
+\caption{Activity Diagram: Xem menu sản phẩm}
 \label{fig:ad-menu}
 \end{figure}
 
 \begin{figure}[H]
-\ContinuedFloat
 \centering
-\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/activity-product-catalog-part2.png}
-\caption{Activity Diagram: Quy trình duyệt thực đơn, lọc danh mục và tìm kiếm món (phần 2/2)}
-\label{fig:ad-menu-part2}
+\includegraphics[width=0.82\textwidth,height=0.45\textheight,keepaspectratio]{../figures/diagrams/ad-loc-san-pham.png}
+\caption{Sequence Diagram: Lọc sản phẩm theo danh mục}
+\label{fig:ad-catalog}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.92\textheight,keepaspectratio]{../figures/diagrams/ad-tim-kiem-sp.png}
+\caption{Activity Diagram: Tìm kiếm sản phẩm theo tên}
+\label{fig:ad-timkiem}
 \end{figure}
 
 % ---------------------------------------------------------------------
